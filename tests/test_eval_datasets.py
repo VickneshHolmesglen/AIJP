@@ -67,7 +67,11 @@ def test_judge_validation_sets_are_balanced_enough_to_mean_something(name: str) 
 
 @pytest.mark.parametrize(
     ("dataset", "overlay"),
-    [("consistency.json", "seeded_patches"), ("consistency_v2.json", "seeded_patches_v2")],
+    [
+        ("consistency.json", "seeded_patches"),
+        ("consistency_v2.json", "seeded_patches_v2"),
+        ("consistency_v3.json", "seeded_patches_v3"),
+    ],
 )
 def test_seeded_overlay_changes_exactly_what_the_dataset_documents(
     dataset: str, overlay: str

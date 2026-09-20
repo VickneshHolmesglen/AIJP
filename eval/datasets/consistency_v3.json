@@ -1,0 +1,264 @@
+{
+  "description": "HELD-OUT TEST set (v3) for the Milestone 19 judge change. Overlay eval/seeded_patches_v3: six NEW deliberate mismatches, mixing CODE-ONLY changes where a config value still agrees with the design (the trap that beat the v1/v2 judge), BEHAVIOURAL changes (a halved armor, a reversed comparison) and config-only changes. Written BEFORE the per-source judge was implemented; the judge was developed on v1 and v2, which are spent, and this set is run once per variant. By the AI assistant, not an independent party. `unsupported` claims are half far off-topic, half on-topic near-misses.",
+  "patches_dir": "seeded_patches_v3",
+  "seeded_changes": [
+    {
+      "file": "src/enemies/enemy.gd",
+      "change": "MIN_DAMAGE is 2; the design says no hit deals less than 1 (config minimum_damage still says 1). CODE-ONLY: the config agrees with the design."
+    },
+    {
+      "file": "src/enemies/enemy.gd",
+      "change": "apply_poison refreshes the duration to 8.0 seconds; the design says 5 (config poison_duration_sec still says 5). CODE-ONLY."
+    },
+    {
+      "file": "src/enemies/enemy.gd",
+      "change": "take_damage subtracts armor / 2; the design says armor is subtracted flat. BEHAVIOURAL."
+    },
+    {
+      "file": "src/towers/tower.gd",
+      "change": "find_target keeps the FARTHEST enemy (comparison reversed); the design says the Arrow Tower fires at the closest. BEHAVIOURAL, one character."
+    },
+    {
+      "file": "config/game.yaml",
+      "change": "flawless_bonus is 50; the design says 25."
+    },
+    {
+      "file": "config/game.yaml",
+      "change": "boss_leak_penalty is 3; the design says a leaked boss costs 5 lives."
+    }
+  ],
+  "claims": [
+    {
+      "id": "a1",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "No hit ever deals less than 1 damage.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "a2",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "Applying Poison again refreshes its duration to 5 seconds.",
+      "design": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "a3",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "Armor is subtracted flat from every hit.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "a4",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "The Arrow Tower fires at the closest enemy.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "src/towers/tower.gd"
+      ]
+    },
+    {
+      "id": "a5",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "Clearing a wave without leaking any enemy grants a flawless bonus of 25 gold.",
+      "design": [
+        "docs/design/economy.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "a6",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "If a Shardlord leaks it costs the player 5 lives instead of 1.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "b1",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "No more than 12 towers can be built at once.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "b2",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Every run begins with 20 lives.",
+      "design": [
+        "docs/design/economy.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "b3",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Chill slows enemies by 30 percent.",
+      "design": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "b4",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Towers cannot be upgraded beyond level 3.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "src/towers/tower.gd"
+      ]
+    },
+    {
+      "id": "b5",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "A boss enrages when its health falls below 25 percent.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "b6",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Wraiths cannot be slowed by Chill.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "b7",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "The cost of an upgrade grows with the level reached.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "src/towers/tower.gd"
+      ]
+    },
+    {
+      "id": "b8",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "The Shardlord is treated as a boss because it has at least 5000 health.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "d1",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "The game has a cooperative two-player mode.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "d2",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Sound effects can be muted in a settings menu.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "d3",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Towers have unlockable cosmetic skins.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "d4",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "The enemy path is randomised at the start of every run.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "d5",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Burn stops Poison from ticking.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "d6",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Runners take extra damage from Frost Towers.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "d7",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Selling a tower during a wave gives a smaller refund.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "d8",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Cannon shells stun the enemies they hit.",
+      "design": [],
+      "implementation": []
+    }
+  ]
+}
