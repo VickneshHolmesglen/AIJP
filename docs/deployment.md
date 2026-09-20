@@ -61,7 +61,8 @@ variable; `.env.example` lists them all. Compose reads a `.env` file next to `do
 | `AIJP_EMBEDDING_MODEL` / `AIJP_EMBEDDING_DIM` | `nomic-embed-text` / `768` | The dimension is baked into the table; changing it needs a migration and re-embedding |
 | `AIJP_LLM_MODEL` | `qwen3.5` | Answer and judge model |
 | `AIJP_MIN_EVIDENCE_SCORE` | `0.55` | Evidence gate for `/ask`, chosen from `eval/results/qa-*.md` |
-| `AIJP_CONSISTENCY_MIN_COSINE` | `0.60` | Gate for the consistency check, chosen from `eval/results/consistency-*.md` |
+| `AIJP_CONSISTENCY_MIN_COSINE` | `0.60` | Gate for the consistency check. Pooled over 60 claims it lets 39/40 claims with evidence through and blocks 13/20 unsupported ones (`eval/results/gate-sweep-consistency-*.md`); 0.65 loses 20% of real claims |
+| `AIJP_CONSISTENCY_JUDGE` | `verdict` | `per_source` makes the model judge each source separately and code decide (any contradicting code source means a discrepancy). Held-out: 20/22 vs 17/22; pooled 53/60 vs 49/60 (p=0.22, not significant); about +1 s per check |
 | `AIJP_RETRIEVAL_MODE` | `vector` | `hybrid` did not beat it on the benchmark |
 | `AIJP_LLM_THINK` | `false` | The answer model reasons before replying. Pooled over 64 held-out and dev questions it got 46 right versus 40 (p=0.07), at about 6x the median latency (1.7 s to 9.9 s). Its extra tokens are not in `llm_tokens_total`. Allow for p95 latencies of 30-40 s in any proxy timeout |
 | `AIJP_ASK_CALCULATOR` | `false` | The model writes arithmetic and the server computes it. **Not recommended**: with `qwen3.5` it made answers much worse on the held-out set (5/28 vs 15/28 correct) because the model does not reliably follow the protocol; it may suit a stronger model. See `eval/results/compare-calc-*.md` |
@@ -352,7 +353,7 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 - Every log line is JSON, and the request id links the request line to the Ollama calls it made.
 - The MCP server runs over stdio inside the container with all seven tools.
 - The CI job commands run locally, including the skip guard, which passes with a healthy database
-  (457 tests, 0 skipped) and fails when the database is unreachable (skips).
+  (476 tests, 0 skipped) and fails when the database is unreachable (skips).
 - **From a fresh `git clone` of the commit** (no `.venv`, no caches, only tracked files): the
   locked install, `ruff format --check`, `ruff check`, `mypy`, all 457 tests with the skip guard
   taken verbatim from `ci.yml`, the image build, the container under the compose hardening (uid

@@ -49,13 +49,17 @@ class Settings(BaseSettings):
     # (see docs/deployment.md), or set this to false.
     metrics_enabled: bool = True
     # Consistency check: passages fetched per side, and the best cosine each side must reach before
-    # the model is asked to judge. 0.60 was chosen from the sweep in
-    # eval/results/consistency-2026-09-20.md (16 claims): every claim with real evidence still
-    # passed and all four unsupported claims were blocked, where 0.55 blocked only half. The margin
-    # is thin (the weakest real-evidence claim sits between 0.60 and 0.65), so revisit it as the
-    # dataset grows or the embedding model changes.
+    # the model is asked to judge. 0.60 was first picked from 16 claims (all 4 unsupported blocked)
+    # and CONFIRMED on the pooled sweep over 60 claims, eval/results/gate-sweep-consistency-*.md:
+    # it lets 39 of 40 claims with real evidence through and blocks 13 of 20 unsupported ones (the
+    # v1-only "4 of 4" was luck: on-topic near-misses score high). 0.65 would block 18 of 20 but
+    # lose 8 of 40 real claims. Kept by the user's decision; revisit if the embedding model changes.
     consistency_top_k: int = 4
     consistency_min_cosine: float = 0.60
+    # How the consistency check reaches a verdict. "verdict": the model picks one (the original).
+    # "per_source": the model states a stance for EVERY source and code decides, so one agreeing
+    # config value cannot hide code that disagrees. See eval/results/consistency-v3-*.md.
+    consistency_judge: Literal["verdict", "per_source"] = "verdict"
     # Raw cosine similarity below which we refuse without calling the LLM. Chosen from the
     # threshold table in eval/results/qa-2026-09-20.md (nomic-embed-text, 48 questions): at 0.55
     # every answerable question still passed and 25% of unanswerable ones were blocked. That

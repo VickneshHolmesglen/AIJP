@@ -471,3 +471,41 @@ def test_task_survives_deletion_of_its_run(env, db_engine) -> None:
         session.commit()
         tasks = list(session.scalars(select(Task)))
     assert len(tasks) == 1 and tasks[0].source_run_id is None  # SET NULL, not cascade
+
+
+# ------------------------------------------------------------------ per-source judge (M19)
+
+
+@pytest.mark.integration
+def test_per_source_mode_lets_contradicting_code_override_an_agreeing_source(env) -> None:
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        chunk_max_chars=300,
+        chunk_overlap_chars=60,
+        consistency_min_cosine=0.05,
+        consistency_judge="per_source",
+    )
+    llm = env.install(
+        {
+            "design": [{"ref": "D1", "stance": "states"}],
+            "implementation": [
+                {"ref": "C1", "stance": "contradicts", "evidence": "poison_stacks = 1"}
+            ],
+            "explanation": "Design says stacks accumulate; code appears to reset [D1] [C1].",
+        }
+    )
+    run = env.check().json()
+    assert run["verdict"] == "potential_discrepancy" and run["status"] == "awaiting_approval"
+    assert "ONE SOURCE AT A TIME" in llm.calls[0][0]  # the per-source prompt was used
+    judge = next(s for s in run["steps"] if s["name"] == "judge")
+    assert judge["input"]["mode"] == "per_source"
+    assert run["result"]["implementation_evidence"][0]["cited"] is True
+    assert len(run["actions"]) == 1  # still only a draft: a human approves it
+
+
+@pytest.mark.integration
+def test_default_mode_is_unchanged_and_uses_the_original_prompt(env) -> None:
+    llm = env.install(DISCREPANCY)
+    run = env.check().json()
+    assert run["verdict"] == "potential_discrepancy"
+    assert "ONE SOURCE AT A TIME" not in llm.calls[0][0]
+    assert Settings().consistency_judge == "verdict"

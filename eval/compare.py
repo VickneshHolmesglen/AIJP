@@ -44,6 +44,31 @@ METRICS: list[tuple[str, Callable[[Record], bool], Callable[[Record], bool]]] = 
 ]
 
 
+# Consistency-check results (eval.consistency) have a `verdict` and an `expected` verdict per claim.
+CONSISTENCY_METRICS: list[tuple[str, Callable[[Record], bool], Callable[[Record], bool]]] = [
+    (
+        "all claims: verdict matches the label",
+        lambda r: True,
+        lambda r: r["verdict"] == r["expected"],
+    ),
+    (
+        "seeded: discrepancy found",
+        lambda r: r["kind"] == "seeded",
+        lambda r: r["verdict"] == "potential_discrepancy",
+    ),
+    (
+        "consistent: confirmed",
+        lambda r: r["kind"] == "consistent",
+        lambda r: r["verdict"] == "consistent",
+    ),
+    (
+        "unsupported: left undecided",
+        lambda r: r["kind"] == "unsupported",
+        lambda r: r["verdict"] == "insufficient_evidence",
+    ),
+]
+
+
 @dataclass
 class Outcome:
     n: int = 0
@@ -84,7 +109,7 @@ def paired_outcomes(
 
 def compare(pairs: list[tuple[list[Record], list[Record]]]) -> str:
     out = [
-        "# Paired comparison of two QA runs",
+        "# Paired comparison of two runs",
         "",
         f"Pooled over {len(pairs)} question set(s). 'gained' = right only in the second run, "
         "'lost' = right only in the first. The sign test asks whether the gained/lost split "
@@ -93,7 +118,8 @@ def compare(pairs: list[tuple[list[Record], list[Record]]]) -> str:
         "| metric | n | first | second | gained | lost | sign-test p |",
         "|---|---|---|---|---|---|---|",
     ]
-    for label, counts, success in METRICS:
+    is_consistency = bool(pairs and pairs[0][0] and "verdict" in pairs[0][0][0])
+    for label, counts, success in CONSISTENCY_METRICS if is_consistency else METRICS:
         total = Outcome()
         for base, other in pairs:
             total.add(paired_outcomes(base, other, counts, success))

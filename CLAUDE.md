@@ -54,7 +54,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 457
+  DONE. Ruff, mypy pass. Tests: 476
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -287,12 +287,39 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   Gotchas: in Git Bash `docker run ... --tmpfs /tmp` needs `MSYS_NO_PATHCONV=1` or the path is
   rewritten to `C:/...`; a clone runs the same shared `aijp_test` database, so still never run two
   test/eval processes at once.
+- M19 (NOT in the handoff doc; user chose "consistency gate + judge fix"). DECISIONS (user):
+  KEEP the gate at 0.60; KEEP the per-source judge OPT-IN (`AIJP_CONSISTENCY_JUDGE=per_source`).
+  Built: `decide_from_stances` + `JUDGE_PER_SOURCE_SYSTEM` in `app/agent/consistency.py`: the model
+  gives a stance per source (design states/contradicts/unrelated; implementation
+  supports/contradicts/unrelated), CODE applies the rule "any contradicting implementation source
+  => potential_discrepancy even if a config value agrees" (invented refs ignored, odd stance words
+  = unrelated, no usable output => insufficient_evidence, verdict needs a design side); step
+  `judge` records `mode`. Tools: `eval/gate_sweep.py` (pooled sweep with CIs, from result files),
+  `eval/compare.py` now also compares consistency runs. Consistency runner: `judge mode` and
+  `judge thinking` in the report, `-persource`/`-think` in the filename, `think` honoured.
+  PROTOCOL: v3 consistency set (`consistency_v3.json` + `seeded_patches_v3/`: 6 new mismatches,
+  code-only x2, behavioural x2, config-only x2; 8 consistent; 8 unsupported, 4 near-miss) was
+  COMMITTED BEFORE the judge existed (git c1823dc). v1+v2 were the dev sets (judge prompt frozen
+  after 1 round). v3 is now SPENT. Each arm run once.
+  RESULTS: held-out v3 (22 claims): current judge 17/22, per-source 20/22 (3 gained, 0 lost,
+  p=0.25), current+think 18/22, per-source+think 19/22 (median 21 s and 54 s vs 2.4 s). POOLED
+  v1+v2+v3 (60): 49 -> 53 correct (5 gained, 1 lost, p=0.22); seeded found 12 -> 14 of 18,
+  unsupported left undecided 16 -> 19 of 20, consistent confirmed 21 -> 20 of 22; +~1 s/check.
+  Direction consistent, NOT significant. Thinking adds little for its cost here.
+  WHY the target failure only half-fixed: per-source fixes "config outvotes code" STRUCTURALLY but
+  the model still mislabels a single source (v2 z4: it called code multiplying speed by 0.6
+  "supports" a 30% slow, a 2-step inference) and sometimes the contradicting chunk is not among the
+  4 retrieved (z6). So the remaining limits are per-source reasoning and retrieval coverage.
+  GATE (pooled 60 claims, `gate-sweep-consistency-2026-09-20.md`): 0.60 lets 39/40 real claims
+  through and blocks 13/20 unsupported; 0.65: 32/40 and 18/20; 0.55: 40/40 and 6/20. The v1-only
+  "4/4 blocked" was luck (on-topic near-misses score high). The M10 report was REGENERATED at 0.60
+  (v1: 4/6 seeded found, 0/6 false alarms, 6/6 confirmed, 4/4 undecided).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
   finds (the last big unverified claim); (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
-  config agrees with the design, the 0.60 consistency gate needs a pooled v1+v2 recalibration (user
-  decision), the faithfulness judge mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
+  config agrees with the design (M19 fixed it only structurally, opt-in), the faithfulness judge
+  mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
   (3) multi-project support (a migration now); (4) an actual cloud deployment (needs an account and

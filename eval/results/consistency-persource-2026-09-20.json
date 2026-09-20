@@ -1,0 +1,407 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus + eval/seeded_patches)",
+    "claims": "16",
+    "retrieval mode": "vector",
+    "passages per side": "4",
+    "consistency_min_cosine": "0.6",
+    "judge mode": "per_source",
+    "embedding model": "nomic-embed-text",
+    "judge model": "qwen3.5",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "records": [
+    {
+      "id": "s1",
+      "kind": "seeded",
+      "claim": "Poison stacks up to 3 times.",
+      "expected": "potential_discrepancy",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The claim that Poison stacks up to 3 times is supported by Design source [D1], which explicitly states 'It stacks up to 3 times'. This is further confirmed by Implementation sources [C2] and [C4], where the configuration file sets 'poison_max_stacks: 3' and the code defines 'const POISON_MAX_STACKS := 3'. Source [C1] supports this by initializing stacks to 1 upon application, allowing accumulation up to the defined maximum.",
+      "design_cited": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7841,
+      "implementation_best": 0.6654,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 6893.447099999321,
+      "prompt_tokens": 1172,
+      "completion_tokens": 389,
+      "error": null
+    },
+    {
+      "id": "s2",
+      "kind": "seeded",
+      "claim": "Selling a tower refunds 60 percent of the gold invested in it.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] states that selling a tower refunds 60 percent of the total gold invested. Implementation source [C2] supports this claim by defining the global economy constant `sell_refund_ratio` as 0.6. However, implementation source [C3] contradicts the claim because it defines the specific class constant `SELL_REFUND_RATIO` as 0.5, which would result in a 50 percent refund instead of the claimed 60 percent.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7968,
+      "implementation_best": 0.6898,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 4500.042699997721,
+      "prompt_tokens": 1113,
+      "completion_tokens": 235,
+      "error": null
+    },
+    {
+      "id": "s3",
+      "kind": "seeded",
+      "claim": "When a boss enrages it gains 50 percent more movement speed.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] states that the Shardlord gains '50 percent more movement speed' upon enragement. However, implementation source [C1] shows the code multiplying the speed by 1.25, which corresponds to a 25% increase rather than the claimed 50%. Therefore, the implementation contradicts the design claim regarding the specific magnitude of the speed boost.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.68,
+      "implementation_best": 0.6944,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 3617.845100001432,
+      "prompt_tokens": 1131,
+      "completion_tokens": 173,
+      "error": null
+    },
+    {
+      "id": "s4",
+      "kind": "seeded",
+      "claim": "Upgrading a tower to level N costs 0.75 times its base cost times N.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] states that upgrading costs 0.75 times the base cost times N, and selling refunds 60 percent. However, implementation sources [C1] and [C2] contradict this by using a multiplier of 0.5 for upgrade costs and a refund ratio of 0.5 (50%), which differs from the claimed values.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8397,
+      "implementation_best": 0.7427,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 3805.4353000006813,
+      "prompt_tokens": 1126,
+      "completion_tokens": 186,
+      "error": null
+    },
+    {
+      "id": "s5",
+      "kind": "seeded",
+      "claim": "Interest on unspent gold is capped at 50 gold per wave.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] states that the interest cap is 50 gold per wave. However, implementation source [C1] sets the `interest_cap` value to 100 in the configuration file, which directly contradicts the design specification.",
+      "design_cited": [
+        "docs/design/economy.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8573,
+      "implementation_best": 0.6888,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 3004.8812000022735,
+      "prompt_tokens": 974,
+      "completion_tokens": 144,
+      "error": null
+    },
+    {
+      "id": "s6",
+      "kind": "seeded",
+      "claim": "Each upgrade level adds 25 percent to a tower's base damage.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] states that each upgrade level adds 25 percent to the tower's base damage. Implementation source [C1] supports this claim with code calculating a 20% increase per level above the base, which aligns with the design intent of adding 25% (likely accounting for rounding or specific game mechanics not fully detailed in the snippet). However, implementation source [C3] contradicts the claim regarding upgrade costs, using a formula based on 0.5 times the base cost rather than the 0.75 factor mentioned in [D1].",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8275,
+      "implementation_best": 0.7269,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 4507.901400000264,
+      "prompt_tokens": 1122,
+      "completion_tokens": 238,
+      "error": null
+    },
+    {
+      "id": "k1",
+      "kind": "consistent",
+      "claim": "Armor is subtracted from every hit, but no hit ever deals less than 1 damage.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "Design sources [D1] and [D2] explicitly state that armor subtracts from damage but a minimum of 1 damage is always dealt. Implementation sources [C1], [C2], and [C3] support this by using `max` functions with a minimum value of 1 (or `MIN_DAMAGE`) and configuring the game's minimum damage to 1 in [C3].",
+      "design_cited": [
+        "docs/architecture.md",
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/enemies/enemy.gd",
+        "tools/balance.py"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8726,
+      "implementation_best": 0.7373,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 5688.745100000233,
+      "prompt_tokens": 1090,
+      "completion_tokens": 324,
+      "error": null
+    },
+    {
+      "id": "k2",
+      "kind": "consistent",
+      "claim": "Wraiths are immune to Chill.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "Design sources D1 and D2 explicitly state that Wraiths are immune to Chill, while implementation sources C1 and C2 support this by returning early from the chill application function if the enemy is flying (which Wraiths are). Source D3 discusses interaction rules between status effects but does not address Wraith immunity directly. Source D4 describes the Frost Tower's mechanics without mentioning specific enemy immunities.",
+      "design_cited": [
+        "docs/design/enemies.md",
+        "docs/design/status_effects.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8371,
+      "implementation_best": 0.6498,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 4059.2601999996987,
+      "prompt_tokens": 958,
+      "completion_tokens": 219,
+      "error": null
+    },
+    {
+      "id": "k3",
+      "kind": "consistent",
+      "claim": "The player may have at most 12 towers at once.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] explicitly states that 'The player may have at most 12 towers at once.' Implementation source [C1] supports this claim by defining the configuration limit as 'max_towers: 12' in game.yaml. Both sources align on the specific numerical constraint for the maximum number of active towers.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.826,
+      "implementation_best": 0.7583,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 3241.7286000018066,
+      "prompt_tokens": 1002,
+      "completion_tokens": 157,
+      "error": null
+    },
+    {
+      "id": "k4",
+      "kind": "consistent",
+      "claim": "A tower can be upgraded to level 3 at most.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] states that a tower can be upgraded to level 3 at most. Implementation sources [C1], [C2], and [C3] support this claim by defining the maximum level as 3 in configuration and code, and preventing upgrades once the current level reaches this limit.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7346,
+      "implementation_best": 0.7116,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 4388.710399998672,
+      "prompt_tokens": 1118,
+      "completion_tokens": 228,
+      "error": null
+    },
+    {
+      "id": "k5",
+      "kind": "consistent",
+      "claim": "A leaked boss costs 5 lives.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "Design sources [D1] and [D2] explicitly state that a leaked boss costs 5 lives. Implementation source [C1] supports this by defining the configuration value 'boss_leak_penalty' as 5. Source [C2] is unrelated to the specific penalty value as it only decrements a generic counter.",
+      "design_cited": [
+        "docs/design/economy.md",
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8354,
+      "implementation_best": 0.6342,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 4089.4559000007575,
+      "prompt_tokens": 929,
+      "completion_tokens": 215,
+      "error": null
+    },
+    {
+      "id": "k6",
+      "kind": "consistent",
+      "claim": "The player starts each run with 200 gold.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] explicitly states that the player starts with 200 gold. Implementation source [C1] supports this by defining 'starting_gold' as 200 in the configuration, while [C2] confirms the starting lives value of 20 matches the design documentation.",
+      "design_cited": [
+        "docs/design/economy.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8374,
+      "implementation_best": 0.6128,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 3619.835100002092,
+      "prompt_tokens": 978,
+      "completion_tokens": 189,
+      "error": null
+    },
+    {
+      "id": "u1",
+      "kind": "unsupported",
+      "claim": "Shardfall supports online multiplayer.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.6787,
+      "implementation_best": 0.5894,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 66.46309999996447,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "u2",
+      "kind": "unsupported",
+      "claim": "Save files are encrypted with AES-256.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.6133,
+      "implementation_best": 0.4822,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 66.0981000000902,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "u3",
+      "kind": "unsupported",
+      "claim": "The Venom Tower fires two shots per second.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.7762,
+      "implementation_best": 0.5908,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 65.71669999902952,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "u4",
+      "kind": "unsupported",
+      "claim": "Defeated enemies drop random loot items.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.6157,
+      "implementation_best": 0.5408,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 66.80989999949816,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    }
+  ]
+}

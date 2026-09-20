@@ -175,3 +175,29 @@ def test_hash_alternatives_match_whole_numbers_only() -> None:
     assert not keyword_correct("Ratio is 0.75", [["#0"]])
     # plain alternatives keep their old substring behaviour
     assert keyword_correct("Costs 180 gold", [["180"]])
+
+
+def test_gate_sweep_counts_claims_with_evidence_and_blocked_unsupported() -> None:
+    from eval.gate_sweep import passes, sweep
+
+    def rec(kind: str, design: float, impl: float, symbols: int = 0) -> dict:
+        return {
+            "kind": kind,
+            "design_best": design,
+            "implementation_best": impl,
+            "symbol_matches": symbols,
+        }
+
+    records = [
+        rec("seeded", 0.8, 0.7),
+        rec("consistent", 0.9, 0.5),
+        rec("consistent", 0.9, 0.3, symbols=2),
+        rec("unsupported", 0.65, 0.62),
+        rec("unsupported", 0.4, 0.7),
+    ]
+    assert passes(records[2], 0.6)  # a symbol match stands in for the implementation cosine
+    assert not passes(records[1], 0.6)  # implementation side too weak
+    by_t = {row[0]: row[1:] for row in sweep(records, [0.4, 0.6, 0.7])}
+    assert by_t[0.4] == (3, 3, 0, 2)  # every real claim passes; no unsupported claim is blocked
+    assert by_t[0.6] == (2, 3, 1, 2)  # one real claim lost; one unsupported claim blocked
+    assert by_t[0.7] == (2, 3, 2, 2)  # both unsupported claims blocked

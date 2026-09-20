@@ -263,7 +263,7 @@ def main() -> None:
     embedder = OllamaEmbedder(
         settings.ollama_base_url, settings.embedding_model, settings.embedding_dim
     )
-    llm = OllamaLLM(settings.ollama_base_url, settings.llm_model)
+    llm = OllamaLLM(settings.ollama_base_url, settings.llm_model, think=settings.llm_think)
     data = json.loads(args.dataset.read_text("utf-8"))
     claims = data["claims"]
     if args.limit:
@@ -302,13 +302,18 @@ def main() -> None:
         "retrieval mode": settings.retrieval_mode,
         "passages per side": str(settings.consistency_top_k),
         "consistency_min_cosine": str(settings.consistency_min_cosine),
+        "judge mode": settings.consistency_judge,
+        "judge thinking": "ON" if settings.llm_think else "off",
         "embedding model": settings.embedding_model,
         "judge model": settings.llm_model,
         "platform": platform.platform(),
     }
     report = build_report(records, meta, patched)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    stem = f"consistency{dataset_tag(args.dataset, 'consistency')}-{meta['date']}" + (
+    variant = ("-persource" if settings.consistency_judge == "per_source" else "") + (
+        "-think" if settings.llm_think else ""
+    )
+    stem = f"consistency{dataset_tag(args.dataset, 'consistency')}{variant}-{meta['date']}" + (
         "-smoke" if args.limit else ""
     )
     (args.out_dir / f"{stem}.md").write_text(report, encoding="utf-8")

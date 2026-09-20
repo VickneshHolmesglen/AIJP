@@ -129,7 +129,8 @@ sequence; the model only fills the judging step, and its output is validated:
 - The result always carries a disclaimer: this is triage from retrieved passages, not proof.
 
 Measured on a corpus with six deliberately seeded design/code mismatches, six consistent claims and
-four unsupported ones (`uv run python -m eval.consistency`, report in
+four unsupported ones (the first of three claim sets, 60 claims in all; see `docs/deployment.md` and
+`eval/results/compare-judge-persource-*.md` for the pooled results and the opt-in per-source judge) (`uv run python -m eval.consistency`, report in
 `eval/results/consistency-2026-09-20.md`, local `qwen3.5`): 4 of 6 seeded mismatches found, 0 of 6
 false alarms, 6 of 6 consistent claims confirmed, 3 of 4 unsupported claims correctly left
 undecided, median 29 s per check. The misses are informative, not hidden: the model sometimes

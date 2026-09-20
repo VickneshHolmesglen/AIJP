@@ -1,0 +1,548 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus + eval/seeded_patches_v3)",
+    "claims": "22",
+    "retrieval mode": "vector",
+    "passages per side": "4",
+    "consistency_min_cosine": "0.6",
+    "embedding model": "nomic-embed-text",
+    "judge model": "qwen3.5",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "records": [
+    {
+      "id": "a1",
+      "kind": "seeded",
+      "claim": "No hit ever deals less than 1 damage.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "Design source [D1] states that armor is subtracted flat from every hit and no hit deals less than 1 damage. However, implementation source [C2] calculates damage using the formula `max(MIN_DAMAGE, raw_amount - armor / 2)`, which divides armor by 2 before subtraction rather than subtracting it flat as described in the design.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7322,
+      "implementation_best": 0.6697,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 7799.352499998349,
+      "prompt_tokens": 991,
+      "completion_tokens": 107,
+      "error": null
+    },
+    {
+      "id": "a2",
+      "kind": "seeded",
+      "claim": "Applying Poison again refreshes its duration to 5 seconds.",
+      "expected": "potential_discrepancy",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] states that applying Poison refreshes the duration to 5 seconds, and the configuration file [C2] confirms this with 'poison_duration_sec: 5'. The implementation in [C1] sets 'poison_time_left = 8.0', which appears to be a discrepancy in the specific value (8 vs 5), but since the claim specifically asks about the *refresh* behavior and the config explicitly defines the duration as 5, the design intent is supported by the configuration while the code might use a different internal timing logic or unit. However, looking closer at [C1], it sets 8.0 seconds directly, which contradicts the design's 5 seconds stated in [D1] and [C2]. Wait, let me re-read carefully. The claim is 'Applying Poison again refreshes its duration to 5 seconds'. Design [D1] says exactly that. Config [C2] says 'poison_duration_sec: 5'. Code [C1] sets 'poison_time_left = 8.0'. This is a clear numerical discrepancy between the design/config (5s) and implementation (8s). Therefore, it is a potential_discrepancy.",
+      "design_cited": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7409,
+      "implementation_best": 0.7488,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 5346.702099999675,
+      "prompt_tokens": 965,
+      "completion_tokens": 291,
+      "error": null
+    },
+    {
+      "id": "a3",
+      "kind": "seeded",
+      "claim": "Armor is subtracted flat from every hit.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] and architecture docs [D2] state that armor is subtracted 'flat' from every hit. However, the implementation in [C2] divides the armor value by 2 before subtraction (`raw_amount - armor / 2`), which contradicts the 'flat' subtraction described in the design.",
+      "design_cited": [
+        "docs/architecture.md",
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8277,
+      "implementation_best": 0.6828,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2827.2473999968497,
+      "prompt_tokens": 1153,
+      "completion_tokens": 105,
+      "error": null
+    },
+    {
+      "id": "a4",
+      "kind": "seeded",
+      "claim": "The Arrow Tower fires at the closest enemy.",
+      "expected": "potential_discrepancy",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": false,
+      "design_best": 0.8064,
+      "implementation_best": 0.5914,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 74.88980000198353,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "a5",
+      "kind": "seeded",
+      "claim": "Clearing a wave without leaking any enemy grants a flawless bonus of 25 gold.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that clearing a wave without leaking an enemy grants a flawless bonus of 25 gold. However, the implementation configuration in [C2] sets the `flawless_bonus` value to 50, which contradicts the specified design amount.",
+      "design_cited": [
+        "docs/design/economy.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8572,
+      "implementation_best": 0.6636,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2359.9563999996462,
+      "prompt_tokens": 985,
+      "completion_tokens": 92,
+      "error": null
+    },
+    {
+      "id": "a6",
+      "kind": "seeded",
+      "claim": "If a Shardlord leaks it costs the player 5 lives instead of 1.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that if a Shardlord leaks, it costs 5 lives instead of 1. However, the implementation in [C2] shows a generic function `_on_enemy_leaked` that subtracts exactly 1 from the alive count regardless of the enemy type, and the configuration file [C4] sets `boss_leak_penalty` to 3 rather than 5. This indicates a discrepancy between the intended penalty of 5 lives and the implemented logic.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/systems/wave_spawner.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8165,
+      "implementation_best": 0.6376,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 3013.030099999014,
+      "prompt_tokens": 947,
+      "completion_tokens": 138,
+      "error": null
+    },
+    {
+      "id": "b1",
+      "kind": "consistent",
+      "claim": "No more than 12 towers can be built at once.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that 'The player may have at most 12 towers at once.' This limit is directly mirrored in the implementation configuration [C1], which defines 'max_towers: 12' under the limits section.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.773,
+      "implementation_best": 0.7151,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2216.6513000011037,
+      "prompt_tokens": 980,
+      "completion_tokens": 82,
+      "error": null
+    },
+    {
+      "id": "b2",
+      "kind": "consistent",
+      "claim": "Every run begins with 20 lives.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D2] explicitly states that the player starts each run with 20 lives, and this is directly confirmed by the configuration file [C1] which sets 'starting_lives' to 20.",
+      "design_cited": [
+        "docs/design/economy.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.6863,
+      "implementation_best": 0.6506,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2073.848799998814,
+      "prompt_tokens": 971,
+      "completion_tokens": 75,
+      "error": null
+    },
+    {
+      "id": "b3",
+      "kind": "consistent",
+      "claim": "Chill slows enemies by 30 percent.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] and [D2] explicitly state that the Chill effect slows movement by 30 percent for 2 seconds. This is confirmed in the implementation configuration [C2], which sets the 'chill_slow_ratio' to 0.3, representing a 30 percent reduction.",
+      "design_cited": [
+        "docs/design/status_effects.md",
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": false,
+      "design_best": 0.8208,
+      "implementation_best": 0.6735,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2321.7901999996684,
+      "prompt_tokens": 930,
+      "completion_tokens": 97,
+      "error": null
+    },
+    {
+      "id": "b4",
+      "kind": "consistent",
+      "claim": "Towers cannot be upgraded beyond level 3.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that each tower can be upgraded to level 3, and the implementation in [C2] defines a constant MAX_LEVEL set to 3 which is checked in the upgrade function [C3]. The code correctly prevents upgrades once this limit is reached.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7269,
+      "implementation_best": 0.7138,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2324.148799998511,
+      "prompt_tokens": 1020,
+      "completion_tokens": 92,
+      "error": null
+    },
+    {
+      "id": "b5",
+      "kind": "consistent",
+      "claim": "A boss enrages when its health falls below 25 percent.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] states that the Shardlord enrages when its health drops below 25 percent, and the configuration file [C2] confirms this with the setting 'boss_enrage_health_ratio: 0.25'. The implementation in [C4] defines the necessary state variables like '_enraged' to track this condition, supporting the claim that the logic exists to handle this specific trigger.",
+      "design_cited": [
+        "docs/design/economy.md",
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.691,
+      "implementation_best": 0.6828,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2861.546799998905,
+      "prompt_tokens": 1089,
+      "completion_tokens": 123,
+      "error": null
+    },
+    {
+      "id": "b6",
+      "kind": "consistent",
+      "claim": "Wraiths cannot be slowed by Chill.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documents state that Wraiths are immune to Chill [D2], and the implementation code checks if an enemy is flying (which Wraiths are) to return early from applying the chill effect, effectively preventing it [C1][C2]. This confirms that the code enforces the design rule that Wraiths cannot be slowed by Chill.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8397,
+      "implementation_best": 0.6259,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2449.739599996974,
+      "prompt_tokens": 903,
+      "completion_tokens": 105,
+      "error": null
+    },
+    {
+      "id": "b7",
+      "kind": "consistent",
+      "claim": "The cost of an upgrade grows with the level reached.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] states that upgrading to level N costs 0.75 times the base cost times N, implying a cost dependent on the target level. The implementation in [C1] calculates the upgrade cost as `base_cost * 0.75 * (level + 1)`, where `level` is the current level before incrementing (as seen in [C2]), meaning the cost indeed grows as the tower reaches higher levels.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7348,
+      "implementation_best": 0.75,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2905.993000000308,
+      "prompt_tokens": 1063,
+      "completion_tokens": 128,
+      "error": null
+    },
+    {
+      "id": "b8",
+      "kind": "consistent",
+      "claim": "The Shardlord is treated as a boss because it has at least 5000 health.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that the Shardlord is the boss and possesses 5000 health. This aligns with the implementation in [C2], where the `is_boss()` function returns true if an enemy's maximum health is greater than or equal to 5000.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8827,
+      "implementation_best": 0.7377,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2359.2091999998956,
+      "prompt_tokens": 979,
+      "completion_tokens": 93,
+      "error": null
+    },
+    {
+      "id": "d1",
+      "kind": "unsupported",
+      "claim": "The game has a cooperative two-player mode.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant design and implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.5824,
+      "implementation_best": 0.5488,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 69.56179999906453,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "d2",
+      "kind": "unsupported",
+      "claim": "Sound effects can be muted in a settings menu.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant design and implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.5569,
+      "implementation_best": 0.5206,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 70.78470000124071,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "d3",
+      "kind": "unsupported",
+      "claim": "Towers have unlockable cosmetic skins.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.6618,
+      "implementation_best": 0.5769,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 66.2605000034091,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "d4",
+      "kind": "unsupported",
+      "claim": "The enemy path is randomised at the start of every run.",
+      "expected": "insufficient_evidence",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] states that enemies walk along a 'fixed path' from the spawn gate to the Shard Core, which contradicts the claim that the path is randomised. While the implementation sources [C2] and [C3] show how waves are spawned and configured, they do not provide evidence of path randomization logic; instead, the design explicitly describes a fixed route.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "data/waves.json",
+        "src/systems/wave_spawner.gd"
+      ],
+      "evidence_ok": null,
+      "design_best": 0.6703,
+      "implementation_best": 0.6287,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2862.681499998871,
+      "prompt_tokens": 1123,
+      "completion_tokens": 117,
+      "error": null
+    },
+    {
+      "id": "d5",
+      "kind": "unsupported",
+      "claim": "Burn stops Poison from ticking.",
+      "expected": "insufficient_evidence",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that 'Poison and Burn can be active on the same enemy at the same time,' whereas the claim asserts that Burn stops Poison from ticking. The implementation code [C3] calculates poison damage based on stacks and time without any conditional check for the presence of a Burn status, further supporting the design's assertion that they coexist.",
+      "design_cited": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": null,
+      "design_best": 0.7746,
+      "implementation_best": 0.6831,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2714.1173999989405,
+      "prompt_tokens": 995,
+      "completion_tokens": 109,
+      "error": null
+    },
+    {
+      "id": "d6",
+      "kind": "unsupported",
+      "claim": "Runners take extra damage from Frost Towers.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.7622,
+      "implementation_best": 0.5922,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 66.0688999996637,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "d7",
+      "kind": "unsupported",
+      "claim": "Selling a tower during a wave gives a smaller refund.",
+      "expected": "insufficient_evidence",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that selling a tower refunds 60 percent of the total gold invested, including upgrades. However, the implementation in [C2] defines `SELL_REFUND_RATIO` as 0.6 but does not specify any conditional logic or wave-state checks that would reduce this refund during an active wave. Without code showing a dynamic reduction based on wave status, the claim that refunds are smaller during waves appears unsupported by the provided sources.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": null,
+      "design_best": 0.6849,
+      "implementation_best": 0.6246,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2969.316599999729,
+      "prompt_tokens": 1112,
+      "completion_tokens": 128,
+      "error": null
+    },
+    {
+      "id": "d8",
+      "kind": "unsupported",
+      "claim": "Cannon shells stun the enemies they hit.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.7463,
+      "implementation_best": 0.5985,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 69.31999999869731,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    }
+  ]
+}

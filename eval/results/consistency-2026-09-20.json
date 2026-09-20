@@ -5,7 +5,9 @@
     "claims": "16",
     "retrieval mode": "vector",
     "passages per side": "4",
-    "consistency_min_cosine": "0.55",
+    "consistency_min_cosine": "0.6",
+    "judge mode": "verdict",
+    "judge thinking": "off",
     "embedding model": "nomic-embed-text",
     "judge model": "qwen3.5",
     "platform": "Windows-10-10.0.19045-SP0"
@@ -32,7 +34,7 @@
       "implementation_best": 0.6654,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 20858.144900001207,
+      "latency_ms": 2618.9138000008825,
       "prompt_tokens": 1108,
       "completion_tokens": 94,
       "error": null
@@ -57,7 +59,7 @@
       "implementation_best": 0.6898,
       "symbol_matches": 0,
       "action_drafted": true,
-      "latency_ms": 29073.962200000096,
+      "latency_ms": 2371.268599999894,
       "prompt_tokens": 1049,
       "completion_tokens": 92,
       "error": null
@@ -82,7 +84,7 @@
       "implementation_best": 0.6944,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 32468.356499999572,
+      "latency_ms": 2622.123399996781,
       "prompt_tokens": 1067,
       "completion_tokens": 109,
       "error": null
@@ -107,7 +109,7 @@
       "implementation_best": 0.7427,
       "symbol_matches": 0,
       "action_drafted": true,
-      "latency_ms": 36641.71460000034,
+      "latency_ms": 2928.5598999995273,
       "prompt_tokens": 1062,
       "completion_tokens": 130,
       "error": null
@@ -132,7 +134,7 @@
       "implementation_best": 0.6888,
       "symbol_matches": 0,
       "action_drafted": true,
-      "latency_ms": 27309.902500001044,
+      "latency_ms": 2196.066199998313,
       "prompt_tokens": 910,
       "completion_tokens": 92,
       "error": null
@@ -157,7 +159,7 @@
       "implementation_best": 0.7269,
       "symbol_matches": 0,
       "action_drafted": true,
-      "latency_ms": 37784.777799999574,
+      "latency_ms": 3003.2252999990305,
       "prompt_tokens": 1058,
       "completion_tokens": 136,
       "error": null
@@ -183,7 +185,7 @@
       "implementation_best": 0.7373,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 33794.6479000002,
+      "latency_ms": 2701.266600000963,
       "prompt_tokens": 1026,
       "completion_tokens": 118,
       "error": null
@@ -208,7 +210,7 @@
       "implementation_best": 0.6498,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 29064.337400001023,
+      "latency_ms": 2331.5918000007514,
       "prompt_tokens": 894,
       "completion_tokens": 102,
       "error": null
@@ -233,7 +235,7 @@
       "implementation_best": 0.7583,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 25946.795000001657,
+      "latency_ms": 2133.8176999997813,
       "prompt_tokens": 938,
       "completion_tokens": 83,
       "error": null
@@ -258,7 +260,7 @@
       "implementation_best": 0.7116,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 32618.875500000286,
+      "latency_ms": 2625.6352000018524,
       "prompt_tokens": 1054,
       "completion_tokens": 110,
       "error": null
@@ -285,7 +287,7 @@
       "implementation_best": 0.6342,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 30240.2134999993,
+      "latency_ms": 2377.9602000031446,
       "prompt_tokens": 865,
       "completion_tokens": 103,
       "error": null
@@ -310,7 +312,7 @@
       "implementation_best": 0.6128,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 24618.968400000085,
+      "latency_ms": 2000.4193999993731,
       "prompt_tokens": 914,
       "completion_tokens": 78,
       "error": null
@@ -322,26 +324,18 @@
       "expected": "insufficient_evidence",
       "verdict": "insufficient_evidence",
       "status": "completed",
-      "downgrade_reason": null,
-      "explanation": "The provided design sources [D1-D4] and implementation sources [C1-C4] describe a single-player tower defense game with specific mechanics for enemies, towers, and wave progression, but none of them mention or define online multiplayer functionality. The claim that the game supports online multiplayer cannot be verified or refuted based solely on these documents.",
-      "design_cited": [
-        "docs/architecture.md",
-        "docs/design/enemies.md",
-        "docs/design/towers.md"
-      ],
-      "implementation_cited": [
-        "config/game.yaml",
-        "data/waves.json",
-        "tools/balance.py"
-      ],
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
       "evidence_ok": null,
       "design_best": 0.6787,
       "implementation_best": 0.5894,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 30050.35289999978,
-      "prompt_tokens": 917,
-      "completion_tokens": 125,
+      "latency_ms": 67.36459999956423,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
       "error": null
     },
     {
@@ -360,7 +354,7 @@
       "implementation_best": 0.4822,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 2232.0411000000604,
+      "latency_ms": 63.79279999964638,
       "prompt_tokens": 0,
       "completion_tokens": 0,
       "error": null
@@ -370,24 +364,20 @@
       "kind": "unsupported",
       "claim": "The Venom Tower fires two shots per second.",
       "expected": "insufficient_evidence",
-      "verdict": "potential_discrepancy",
-      "status": "awaiting_approval",
-      "downgrade_reason": null,
-      "explanation": "The design documentation [D1] describes the Venom Tower's value as coming from damage over time via Poison, while the implementation configuration [C2] confirms a poison duration of 5 seconds and max stacks of 3. However, neither source explicitly states the Venom Tower's fire rate; instead, the claim asserts it fires two shots per second, which contradicts the design implication that its primary mechanic is DoT rather than rapid projectile firing like the Arrow Tower [D2]. Without a specific fire rate value in the provided implementation or design sources for the Venom Tower, we cannot confirm if it actually fires two shots per second as claimed.",
-      "design_cited": [
-        "docs/design/towers.md"
-      ],
-      "implementation_cited": [
-        "config/game.yaml"
-      ],
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
       "evidence_ok": null,
       "design_best": 0.7762,
       "implementation_best": 0.5908,
       "symbol_matches": 0,
-      "action_drafted": true,
-      "latency_ms": 41254.836399999476,
-      "prompt_tokens": 1029,
-      "completion_tokens": 161,
+      "action_drafted": false,
+      "latency_ms": 66.63099999786937,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
       "error": null
     },
     {
@@ -406,7 +396,7 @@
       "implementation_best": 0.5408,
       "symbol_matches": 0,
       "action_drafted": false,
-      "latency_ms": 2219.003399999565,
+      "latency_ms": 65.38089999958174,
       "prompt_tokens": 0,
       "completion_tokens": 0,
       "error": null
