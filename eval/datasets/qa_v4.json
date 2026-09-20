@@ -1,0 +1,224 @@
+{
+  "description": "Answer-level set (v4). Numeric answers match as WHOLE numbers ('#N'); `derivations` (ignored by the runners) shows how each was computed. Lookups use keyword groups.",
+  "answerable": {
+    "k01": [
+      [
+        "#225"
+      ]
+    ],
+    "k02": [
+      [
+        "#120"
+      ]
+    ],
+    "k03": [
+      [
+        "#50"
+      ]
+    ],
+    "k04": [
+      [
+        "#245"
+      ]
+    ],
+    "k05": [
+      [
+        "#465"
+      ]
+    ],
+    "k06": [
+      [
+        "#20"
+      ]
+    ],
+    "k07": [
+      [
+        "#75"
+      ]
+    ],
+    "k08": [
+      [
+        "#23"
+      ]
+    ],
+    "k09": [
+      [
+        "#10"
+      ]
+    ],
+    "k10": [
+      [
+        "#7"
+      ]
+    ],
+    "k11": [
+      [
+        "#25"
+      ]
+    ],
+    "k12": [
+      [
+        "#24"
+      ]
+    ],
+    "k13": [
+      [
+        "#220"
+      ]
+    ],
+    "k14": [
+      [
+        "#60"
+      ]
+    ],
+    "k15": [
+      [
+        "#3"
+      ]
+    ],
+    "k16": [
+      [
+        "#40"
+      ]
+    ],
+    "k17": [
+      [
+        "#75"
+      ]
+    ],
+    "k18": [
+      [
+        "#90"
+      ]
+    ],
+    "l01": [
+      [
+        "2 seconds",
+        "2 s",
+        "two seconds"
+      ]
+    ],
+    "l02": [
+      [
+        "1.5"
+      ]
+    ],
+    "l03": [
+      [
+        "#8"
+      ]
+    ],
+    "l04": [
+      [
+        "#60"
+      ]
+    ],
+    "l05": [
+      [
+        "north"
+      ]
+    ],
+    "l06": [
+      [
+        "refresh"
+      ]
+    ],
+    "l07": [
+      [
+        "immune"
+      ]
+    ],
+    "l08": [
+      [
+        "arrow"
+      ]
+    ],
+    "l09": [
+      [
+        "save",
+        "serialis",
+        "serializ"
+      ]
+    ],
+    "l10": [
+      [
+        "is_boss"
+      ]
+    ],
+    "l11": [
+      [
+        "start_wave"
+      ]
+    ],
+    "l12": [
+      [
+        "#12"
+      ]
+    ]
+  },
+  "derivations": {
+    "k01": "90 + 0.75*90*2 = 225",
+    "k02": "(80 + 0.75*80*2) * 0.6 = 120",
+    "k03": "40 * (1 + 0.25) = 50",
+    "k04": "100 + 10*12 + 25 = 245",
+    "k05": "(100+20+25) + (100+30+25) + (100+40+25) = 465",
+    "k06": "min(400*0.05, 50) = 20",
+    "k07": "10*5 + 1*25 = 75",
+    "k08": "(10 + 1) + (4 + 8) = 23",
+    "k09": "20 - 2*5 = 10",
+    "k10": "max(1, 12 - 5) = 7",
+    "k11": "max(1, 40 - 15) = 25",
+    "k12": "80 * 0.3 = 24",
+    "k13": "50 + 80 + 90 = 220",
+    "k14": "200 - 90 - 50 = 60",
+    "k15": "-(-35 // 12) = 3",
+    "k16": "4 * 2 * 5 = 40",
+    "k17": "0.75 * 50 * 2 = 75",
+    "k18": "120 * 0.75 = 90",
+    "l03": "8 = 8",
+    "l04": "60 = 60",
+    "l12": "12 = 12"
+  },
+  "unanswerable": [
+    {
+      "id": "y01",
+      "kind": "near",
+      "question": "How much health does a level 2 Grunt have?"
+    },
+    {
+      "id": "y02",
+      "kind": "near",
+      "question": "How much bounty does the Shardlord pay?"
+    },
+    {
+      "id": "y03",
+      "kind": "near",
+      "question": "What is the speed of the Wraith while burning?"
+    },
+    {
+      "id": "y04",
+      "kind": "near",
+      "question": "What colour are the Arrow Tower's bolts?"
+    },
+    {
+      "id": "y05",
+      "kind": "near",
+      "question": "How many enemies spawn in wave 11?"
+    },
+    {
+      "id": "y06",
+      "kind": "far",
+      "question": "Which artist designed the Shardlord?"
+    },
+    {
+      "id": "y07",
+      "kind": "far",
+      "question": "How many players are online at the moment?"
+    },
+    {
+      "id": "y08",
+      "kind": "far",
+      "question": "Does the game support saving to the cloud?"
+    }
+  ]
+}

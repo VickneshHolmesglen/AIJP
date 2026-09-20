@@ -1,0 +1,415 @@
+{
+  "description": "HELD-OUT TEST set (v4) for Milestone 21. 18 computational questions and 12 lookups that need no derived number, over the same corpus. Written BEFORE the escalation feature and never used for tuning. By the AI assistant, not an independent party.",
+  "kinds": {
+    "computation": "the answer is a number derived from stated facts",
+    "lookup": "the answer is stated in the sources; no calculation needed"
+  },
+  "questions": [
+    {
+      "id": "k01",
+      "kind": "computation",
+      "question": "How much gold does a Venom Tower cost in total when built and upgraded to level 2?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Venom Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k02",
+      "kind": "computation",
+      "question": "How much gold do I get back if I sell a Frost Tower upgraded to level 2?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k03",
+      "kind": "computation",
+      "question": "How much damage does a level 2 Cannon Tower deal per shell?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k04",
+      "kind": "computation",
+      "question": "How much gold does clearing wave 12 pay with no leaks?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Wave income"
+        }
+      ]
+    },
+    {
+      "id": "k05",
+      "kind": "computation",
+      "question": "How much gold do waves 2, 3 and 4 pay in total if none of them leaks?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Wave income"
+        }
+      ]
+    },
+    {
+      "id": "k06",
+      "kind": "computation",
+      "question": "How much interest is earned on 400 unspent gold at the start of a wave?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Interest"
+        }
+      ]
+    },
+    {
+      "id": "k07",
+      "kind": "computation",
+      "question": "How much bounty in total does wave 4 pay if every enemy is killed?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k08",
+      "kind": "computation",
+      "question": "How many enemies spawn in total across waves 4 and 5?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        }
+      ]
+    },
+    {
+      "id": "k09",
+      "kind": "computation",
+      "question": "How many lives remain from the starting lives after two Shardlords leak?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Lives"
+        },
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Starting resources"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k10",
+      "kind": "computation",
+      "question": "How much damage does one base Arrow bolt deal to an enemy with 5 armor?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Armor and minimum damage"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k11",
+      "kind": "computation",
+      "question": "How much damage does a base Cannon shell deal to a Shardlord after armor?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k12",
+      "kind": "computation",
+      "question": "How much slower in speed units is a chilled Grunt than an unchilled one?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k13",
+      "kind": "computation",
+      "question": "How much total gold do one Arrow Tower, one Frost Tower and one Venom Tower cost?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Venom Tower"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k14",
+      "kind": "computation",
+      "question": "How much starting gold is left after building one Venom Tower and one Arrow Tower?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Starting resources"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Venom Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k15",
+      "kind": "computation",
+      "question": "How many base Arrow bolts does it take to kill one Runner?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k16",
+      "kind": "computation",
+      "question": "What is the total poison damage over the full duration at 2 stacks?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        }
+      ]
+    },
+    {
+      "id": "k17",
+      "kind": "computation",
+      "question": "How much does upgrading an Arrow Tower from level 1 to level 2 cost?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "k18",
+      "kind": "computation",
+      "question": "How much health does a Wraith have when it has lost a quarter of its health?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ]
+    },
+    {
+      "id": "l01",
+      "kind": "lookup",
+      "question": "How long does Chill last?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ]
+    },
+    {
+      "id": "l02",
+      "kind": "lookup",
+      "question": "What is the fire rate of the Arrow Tower?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        }
+      ]
+    },
+    {
+      "id": "l03",
+      "kind": "lookup",
+      "question": "How much gold does a Runner pay as a bounty?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        }
+      ]
+    },
+    {
+      "id": "l04",
+      "kind": "lookup",
+      "question": "What percentage of invested gold is refunded when a tower is sold?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ]
+    },
+    {
+      "id": "l05",
+      "kind": "lookup",
+      "question": "Which spawn gate do waves come from?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "meta"
+        }
+      ]
+    },
+    {
+      "id": "l06",
+      "kind": "lookup",
+      "question": "What happens to Poison when it is applied to an enemy that already has it?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        }
+      ]
+    },
+    {
+      "id": "l07",
+      "kind": "lookup",
+      "question": "Can Wraiths be slowed by Chill?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ]
+    },
+    {
+      "id": "l08",
+      "kind": "lookup",
+      "question": "Which towers can hit flying enemies?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        }
+      ]
+    },
+    {
+      "id": "l09",
+      "kind": "lookup",
+      "question": "What does the SaveManager singleton do?",
+      "expected": [
+        {
+          "path": "docs/architecture.md",
+          "section_prefix": "Shardfall Architecture > Saving"
+        }
+      ]
+    },
+    {
+      "id": "l10",
+      "kind": "lookup",
+      "question": "Where is the check that decides a boss from an ordinary enemy?",
+      "expected": [
+        {
+          "path": "src/enemies/enemy.gd",
+          "section_prefix": "Enemy > is_boss"
+        }
+      ]
+    },
+    {
+      "id": "l11",
+      "kind": "lookup",
+      "question": "How does the spawner start the next wave after clearing one?",
+      "expected": [
+        {
+          "path": "src/systems/wave_spawner.gd",
+          "section_prefix": "WaveSpawner > _check_cleared"
+        }
+      ]
+    },
+    {
+      "id": "l12",
+      "kind": "lookup",
+      "question": "What is the maximum number of towers the player may have at once?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section": "Towers"
+        }
+      ]
+    }
+  ]
+}

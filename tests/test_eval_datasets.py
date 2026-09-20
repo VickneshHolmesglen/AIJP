@@ -21,7 +21,7 @@ def load(name: str) -> dict:
     return json.loads((DATASETS / name).read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("suffix", ["", "_v2", "_v3"])
+@pytest.mark.parametrize("suffix", ["", "_v2", "_v3", "_v4"])
 def test_retrieval_and_qa_sets_are_consistent(suffix: str) -> None:
     retrieval, qa = load(f"retrieval{suffix}.json"), load(f"qa{suffix}.json")
     ids = [q["id"] for q in retrieval["questions"]]
@@ -121,3 +121,19 @@ def test_v3_test_set_is_disjoint_from_the_earlier_sets_and_answers_are_whole_num
         (group,) = groups
         assert len(group) == 1 and group[0].startswith("#"), f"{qid}: expected one whole number"
         assert qid in qa["derivations"]
+
+
+def test_v4_test_set_is_new_and_mixes_computation_with_plain_lookups() -> None:
+    earlier = {
+        q["question"].lower()
+        for name in ("retrieval.json", "retrieval_v2.json", "retrieval_v3.json")
+        for q in load(name)["questions"]
+    }
+    v4 = load("retrieval_v4.json")["questions"]
+    assert not earlier & {q["question"].lower() for q in v4}
+    kinds = [q["kind"] for q in v4]
+    # The escalation idea only pays off on a MIX: enough of each kind to see both effects.
+    assert kinds.count("computation") >= 15 and kinds.count("lookup") >= 10
+    qa = load("qa_v4.json")
+    computed = set(qa["derivations"]) & {q["id"] for q in v4 if q["kind"] == "computation"}
+    assert computed == {q["id"] for q in v4 if q["kind"] == "computation"}
