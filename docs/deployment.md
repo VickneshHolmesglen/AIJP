@@ -269,9 +269,21 @@ Actions are referenced by major version tag. Pinning to commit SHAs is stronger 
 supply-chain attacks; Dependabot (configured in `.github/dependabot.yml`) is set up to keep whatever
 is pinned current.
 
-This repository has not been pushed to GitHub, so the workflow itself has not run there. The steps
-it contains were run locally instead (see section 9). To enable it: `git init`, commit, and push to
-a GitHub repository.
+The repository is a local git repository (one commit) that has not been pushed anywhere, so the
+workflow itself has not run on GitHub. What was done instead (see section 9): `actionlint` passes,
+and all three jobs' steps were run from a fresh `git clone` of the commit, which proves nothing the
+working directory supplied silently (an ignored file, a stale virtualenv) is needed.
+
+To publish it (create an EMPTY repository on GitHub first, private is a sensible default):
+
+```bash
+git remote add origin https://github.com/<you>/<repo>.git
+git push -u origin main
+```
+
+Then open the repository's **Actions** tab. Expect the first run to be the real test: differences
+between this Windows machine and GitHub's Ubuntu runners (paths, the Docker `host-gateway` entry,
+action versions) are the most likely place for a surprise, and only that run can show them.
 
 There is deliberately no deploy job yet: nothing is published to a registry automatically. To
 publish by hand: `docker build -t <registry>/project-intelligence:<tag> .` then `docker push`.
@@ -341,6 +353,12 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 - The MCP server runs over stdio inside the container with all seven tools.
 - The CI job commands run locally, including the skip guard, which passes with a healthy database
   (457 tests, 0 skipped) and fails when the database is unreachable (skips).
+- **From a fresh `git clone` of the commit** (no `.venv`, no caches, only tracked files): the
+  locked install, `ruff format --check`, `ruff check`, `mypy`, all 457 tests with the skip guard
+  taken verbatim from `ci.yml`, the image build, the container under the compose hardening (uid
+  10001, read-only filesystem, healthy, `/health` and `/health/ready` answer, an unauthenticated
+  request gets 401, `app.migrate check` reports the latest revision, every log line is JSON), and
+  `pip-audit` (no known vulnerabilities). `actionlint` reports no problems in the workflow.
 - Authentication against the real stack: 401 without a key (including a body-less write rejected
   before parsing), role checks (reader gets 403 on writes), a revoked key stops working on the next
   request, and the same steps as the CI auth smoke test pass in the container. A real browser
@@ -349,7 +367,8 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 
 **Not** verified:
 
-- The GitHub Actions workflow has never run on GitHub.
+- The GitHub Actions workflow has never run on GitHub (its steps were reproduced locally, and
+  `actionlint` is clean, but the Ubuntu runners themselves are untested).
 - The optional `ollama` compose profile: its configuration renders, but the image was not pulled or run.
 - GPU passthrough for the Ollama container, and Linux hosts (the `host-gateway` entry is standard but untested here).
 - Any cloud deployment, in any form.

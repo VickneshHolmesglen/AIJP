@@ -69,7 +69,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   tokens, dependency errors, agent runs/actions), `/metrics` (reader key since M12, AIJP_METRICS_ENABLED);
   `docs/deployment.md` (config, security checklist, monitoring/alerts, backup/restore, CI, cloud
   sketch, and an explicit verified/NOT-verified list). Query strings and bodies are never logged.
-  NOT verified: the GitHub Actions workflow on GitHub (repo is not on git/GitHub), the `ollama`
+  NOT verified: the GitHub Actions workflow on GitHub (see M17), the `ollama`
   profile image, GPU passthrough, Linux hosts, any cloud deployment, load. Backup/restore WAS tested
   with real embedded data (identical MD5 of text and vectors, all 4 indexes restored).
 - M10 design (user chose: fixed workflows, design-vs-code headline, approval on task creation):
@@ -272,9 +272,25 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
     flag correct derived numbers (M15), so do not read that as a 50-point faithfulness gain.
   * Reranker tokens / think tokens: think's extra tokens are not in `usage` (Ollama reports them
     separately), so its cost is understated.
-- NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M16 are complete, so ask the user what
-  next. Open follow-ups, roughly by value: (1) push to GitHub so CI actually runs, and fix whatever
-  it finds; (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
+- M17 (NOT in the handoff doc; user chose "push to GitHub + CI", then chose LOCAL COMMIT ONLY
+  for now, PRIVATE when it is pushed, and to KEEP the existing git identity). Done: `git init -b
+  main`, one commit (`f5926a1`, 194 files, identity from the global config = Vicknesh / GitHub
+  noreply, which differs from the session email: ask before changing),
+  `.gitattributes` (`* text=auto eol=lf`, so Linux CI and the Dockerfile see LF; many working files
+  were CRLF and git normalises them; the eval corpus was already LF, which matters because its
+  content is benchmark input), `.gitignore` extended, a stray empty file `Bearer` removed, secret
+  scan clean. VERIFIED FROM A FRESH CLONE (scratchpad `clone/`): locked install, format, lint, mypy,
+  457 tests + the ci.yml skip guard verbatim, image build, hardened container smoke, pip-audit, and
+  `actionlint` on the workflow. NOT DONE: no remote exists and nothing was pushed (no `gh` CLI
+  here; the user must create an empty repo and give its URL, or approve installing gh), so the
+  workflow has STILL never run on GitHub. Push commands are in docs/deployment.md section 7.
+  Gotchas: in Git Bash `docker run ... --tmpfs /tmp` needs `MSYS_NO_PATHCONV=1` or the path is
+  rewritten to `C:/...`; a clone runs the same shared `aijp_test` database, so still never run two
+  test/eval processes at once.
+- NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
+  next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
+  origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
+  finds (the last big unverified claim); (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
   config agrees with the design, the 0.60 consistency gate needs a pooled v1+v2 recalibration (user
   decision), the faithfulness judge mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
