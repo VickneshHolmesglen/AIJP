@@ -1,0 +1,316 @@
+# Project Intelligence RAG
+
+Portfolio project: a RAG system that understands software project docs and source code, answers
+with verifiable citations, and refuses when evidence is insufficient. Full spec and milestones are
+in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it before large changes.
+
+## Commands
+- `uv sync` — install deps
+- `docker compose up -d db` — PostgreSQL 16 + pgvector (also creates the `aijp_test` database)
+- `uv run uvicorn app.main:app --reload` — run the API (docs at /docs); applies migrations at start
+- `uv run alembic revision --autogenerate -m "..."` — new migration after a model change (then read
+  and edit the file); `uv run python -m app.migrate current|check|upgrade`
+- `uv run pytest` — tests; DB integration tests skip automatically if Postgres is down
+- `uv run ruff check . && uv run ruff format . && uv run mypy app` — lint, format, types
+- `uv run python -m eval.consistency` — design-vs-code check on the seeded corpus (16 claims,
+  ~9 min: each check takes ~30 s locally); run detached, machine otherwise idle
+- `uv run python -m eval.qa` — answer-quality eval (needs Postgres + Ollama; ~15-20 min with the
+  local model; `--limit N` for a smoke run); writes `eval/results/qa-<date>.md`
+- `uv run python -m eval.compare BASE.json OTHER.json [BASE2.json OTHER2.json]` — paired, pooled
+  comparison of two qa runs (CIs + sign test). Run any eval on the v2 set with e.g.
+  `--dataset eval/datasets/retrieval_v2.json` (qa: `--retrieval-dataset ... --qa-dataset
+  ...qa_v2.json --judge-dataset ...judge_validation_v2.json`; consistency: `--dataset
+  ...consistency_v2.json`); reports get a `-v2` tag
+- `uv run python -m eval.retrieval` — retrieval benchmark (needs Postgres + Ollama); wipes and
+  reuses the `aijp_test` DB, refuses to touch `aijp`; writes `eval/results/retrieval-<date>.md`
+
+## Rules
+- NO LangChain / LlamaIndex. Keep the RAG pipeline explicit and explainable in an interview.
+- Every significant dependency must have a "why is this here?" answer.
+- Citations (path, page, section, line range) are part of the data model; never drop provenance.
+- Never invent benchmark numbers; only publish output from the evaluation tooling.
+- Untrusted input: uploaded files are validated (type, size, content sniffing) before parsing.
+- Add new file formats by adding a loader to `app/ingestion/loaders.py`, not by special-casing.
+- After each milestone, explain: what, why, alternatives, tradeoffs, interview takeaways.
+
+## Layout
+- `app/ingestion/` — validation, loaders (bytes -> Segments with provenance), chunker
+- `app/services.py` — ingestion orchestration + document queries
+- `app/api/` — FastAPI routers; `app/models.py` — SQLAlchemy models (Chunk.embedding is pgvector)
+- `app/retrieval.py` — vector / lexical (Postgres FTS) / hybrid (RRF) search, all return `Hit`
+- `app/agent/` — fixed workflows + audit + approval: `consistency.py` (design-vs-code check),
+  `recorder.py` (per-step audit rows), `actions.py` (registry + human approval). `app/symbols.py`
+  is the shared symbol lookup (MCP `find_symbol` and the workflow). `app/api/agent.py` is the API.
+- `app/static/` — the UI: vanilla ES modules, no build step, no framework, self-hosted fonts
+  (`fonts/`, OFL). Served at `/ui/` (`/` redirects) with a strict CSP set in `app/main.py`.
+  `app/api/system.py` (`GET /status`) and `app/api/evaluation.py` (`/eval/reports`) exist for it.
+- `eval/` — benchmark: `corpus/` (fixed synthetic project; ruff-excluded), `datasets/`,
+  `metrics.py` (pure, unit-tested), `retrieval.py` + `qa.py` (runners), `judge.py` (LLM
+  faithfulness judge + its own validation), `results/` (generated reports; `qa-run.log/.err` are
+  scratch output of a detached run)
+- `tests/` — unit tests need no DB; `@pytest.mark.integration` tests need Postgres
+
+## Status (last updated 2026-09-20)
+- Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
+  grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
+  containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
+  DONE. Ruff, mypy pass. Tests: 457
+  pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
+  server, agent workflow and the containers were also exercised end to end against real Ollama
+  nomic-embed-text + qwen3.5).
+- M11 (user chose: portable containers + cloud reference docs only, Prometheus + structured logs,
+  host Ollama with an optional container profile): `Dockerfile` (multi-stage, uv pinned to 0.11.7
+  = lockfile producer, non-root uid 10001, healthcheck, JSON uvicorn logs via
+  `app/uvicorn_logging.json`); `docker-compose.yml` (db + api, optional `ollama` profile, all ports
+  on 127.0.0.1, read-only fs, cap_drop ALL, no-new-privileges); `.github/workflows/ci.yml` (quality
+  job with a guard that FAILS ON ANY SKIPPED TEST, container smoke job, pip-audit job) +
+  dependabot; `app/observability.py` (JSON logs, request id, pure-ASGI middleware),
+  `app/metrics.py` (prometheus-client, the only new dependency: http, ask outcomes by reason, LLM
+  tokens, dependency errors, agent runs/actions), `/metrics` (reader key since M12, AIJP_METRICS_ENABLED);
+  `docs/deployment.md` (config, security checklist, monitoring/alerts, backup/restore, CI, cloud
+  sketch, and an explicit verified/NOT-verified list). Query strings and bodies are never logged.
+  NOT verified: the GitHub Actions workflow on GitHub (repo is not on git/GitHub), the `ollama`
+  profile image, GPU passthrough, Linux hosts, any cloud deployment, load. Backup/restore WAS tested
+  with real embedded data (identical MD5 of text and vectors, all 4 indexes restored).
+- M10 design (user chose: fixed workflows, design-vs-code headline, approval on task creation):
+  `POST /agent/consistency-checks` runs search_design -> search_implementation -> lookup_symbols ->
+  evidence_gate -> judge -> validate_verdict -> draft_action. Verdicts: consistent |
+  potential_discrepancy | insufficient_evidence; a verdict needs valid citations on BOTH sides or it
+  is downgraded. Tables: agent_runs, agent_steps (audit, committed per step), agent_actions
+  (drafts), tasks (created only on approval). Approval (`/agent/actions/{id}/approve|reject`) takes
+  NO payload, locks the row (FOR UPDATE), only executes kinds in `ACTION_REGISTRY`, and every
+  decision is an audit step. Settings: `consistency_top_k` (4), `consistency_min_cosine` (0.60, raised from 0.55 by user decision
+  2026-09-20 from the sweep below; the M10 report was generated at 0.55).
+  NOT exposed over MCP on purpose: it writes audit rows, and the MCP server is read-only.
+- M10 results (eval/results/consistency-2026-09-20.md, 16 claims, seeded corpus = eval/corpus +
+  eval/seeded_patches, real models): 4/6 seeded mismatches found, 0/6 false alarms, 6/6 consistent
+  confirmed, 3/4 unsupported left undecided, 12/12 verdicts cite a correct source on both sides,
+  median 29.1 s, p95 41.3 s, ~1100 tokens/call. Failures are model reasoning, not retrieval: s3
+  (1.25 vs 50 percent) the model wrote both numbers and still said consistent; s1 (poison replaces
+  instead of stacking) it cited the constant/config not the function; u3 (unsupported) it returned
+  potential_discrepancy while its own explanation said the evidence was missing, which is exactly
+  the bogus task the approval gate exists to stop. Gate sweep: at 0.60 all 12 with-evidence claims
+  pass and all 4 unsupported are blocked (incl. u3); at 0.55 (current) only 50% blocked. Margin is
+  thin and n=16, so 0.60 is a candidate, not adopted. Do NOT tune the judge prompt on these 16
+  claims and report the improved score (overfitting); grow the dataset first.
+- M7 results (eval/results/qa-2026-09-20.md, 36 answerable + 12 unanswerable, vector mode, real
+  models, a clean run with nothing else using the machine): correct 34/36, citation accuracy
+  34/36, 0 false refusals, refused 11/12 unanswerable (all by the MODEL, none by the gate; the one
+  it answered was near-miss u11), judge-flagged unsupported 5/36 answered, median latency 7.5 s,
+  p95 21.1 s, ~673 tokens/query, cost $0 (local). CAVEATS found on review: the 2 "incorrect" are
+  keyword-check misses on plausible answers (c04, c06); the judge looks wrong on p04 and i03 (cited
+  text does support them) but right on u11, n08 (self-contradicting 262 vs 187 gold) and c08; the
+  judge's 12/12 validation was on easy cases, so extend `judge_validation.json` with hard ones.
+- Gate calibration finding (same report): unanswerable top-cosines span 0.527-0.777, near-misses
+  0.68-0.78, HIGHER than the lowest answerable (0.583). A cosine gate can only stop off-topic
+  questions (which the model already refuses); it cannot stop near-misses. At 0.55 all answerable
+  pass and 25% of unanswerable are blocked; at 0.60 8.3% of answerable are lost. DECISION
+  (user, 2026-09-20): default raised 0.5 -> 0.55. The M7 report was REGENERATED at 0.55 during M14
+  (same 34/36 correct, 0 false refusals, 11/12 refused, 3 of 48 stopped by the gate itself).
+- M9 MCP: `app/mcp_server.py` (official `mcp` SDK v2.x: `MCPServer`, NOT the v1 `FastMCP`; `mcp.Client(server)`
+  gives in-memory protocol tests). Run `uv run python -m app.mcp_server` (stdio). 7 read-only tools:
+  search_project, search_source_code, ask_project, find_symbol, list_documents, get_document,
+  get_project_status. `ProjectTools` holds the logic with injected deps; `build_server` registers
+  them. Expected failures raise `ToolError` (message reaches the client); unexpected ones are hidden
+  by the SDK. Audit log to stderr = tool/status/ms/argument SIZES only, never content (stdout is the
+  protocol channel: never print). Verified over real stdio with real models. Shared plumbing:
+  `app/providers.py` (Ollama providers), `app/presenters.py` (domain -> response schemas),
+  `app/system_status.py`; `retrieval.search` gained a `file_types` filter (SQL-level).
+  NOT built (no real backing yet): find_design_requirement, generate_project_report.
+- M8 UI: `/ui/` (see Layout). Views: Ask (footnote chips always shown, even if the model places no
+  inline [n]), Search (mode compare), Documents (files/folder upload, embed banner), Evaluation
+  (renders eval/results/*.md), System (/status). NOT built: "Projects" (no project concept in the
+  schema; needs a migration, which Alembic (M13) now makes routine).
+- M5 design: `app/ingestion/code_loaders.py` (registered in `loaders.LOADERS`): Python via stdlib
+  `ast` (parse only, never executed), GDScript via an indentation-aware line scanner (approximate,
+  no parser), YAML by top-level key (line scan, no parser), JSON by top-level key (validated with
+  json.loads). Symbol path goes in `Chunk.section` ("Enemy > take_damage"); no schema change.
+  Supported extensions: .pdf .txt .md .py .gd .json .yaml .yml. Syntax-broken Python falls back to
+  one plain segment. Known limits: GDScript multi-line strings at column 0 can split a function
+  early; chunk text is embedded without its section name (worth testing in the eval milestone).
+- M4 design: `app/llm.py` (LLMProvider Protocol + OllamaLLM), `app/qa.py` (retrieve -> retrieval
+  gate `is_evidence_sufficient` -> JSON-mode LLM -> server-side citation verification), `POST /ask`.
+  Refusal reasons: insufficient_evidence (LLM not called), model_declined, uncited_answer.
+  Sources are labelled untrusted in the prompt (prompt-injection defence).
+- M3 design: `app/embeddings.py` (EmbeddingProvider Protocol + OllamaEmbedder), embedding is a
+  separate step (`POST /embeddings`), `POST /search` returns hits with full citations, HNSW cosine
+  index created in `init_db`. `nomic-embed-text` is pulled in Ollama and verified (768-d).
+- Search scores are raw cosine similarity, NOT calibrated. Any refusal threshold must come from
+  the evaluation tooling, not a guess.
+- M6 design: `/search` takes `mode` (vector|lexical|hybrid); `settings.retrieval_mode` is the
+  default for `/search` and `/ask` and STAYS `vector`. Lexical = Postgres FTS (OR-ed terms, section
+  path indexed, GIN index in `init_db`); hybrid = RRF (k=60, pool 20 each). Hits carry `cosine`
+  separately from `score`; the evidence gate uses best cosine because RRF scores have no fixed scale.
+- M6 benchmark (eval/results/retrieval-2026-09-20.md, 37 questions, 73 chunks, real Ollama
+  embeddings): vector MRR@10 0.875, hybrid 0.749, lexical 0.591; hybrid recall@10 1.000 vs vector
+  0.973. Hybrid was better on 4 questions, worse on 11. Untuned equal-weight RRF hurt top-1 rank:
+  the right chunk is usually in hybrid's top 5 but not first, which is the case a reranker helps.
+  Do NOT tune RRF weights on this same 37-question set (overfitting); grow the dataset first.
+- M14 (NOT in the handoff doc; user chose the reranker). `app/rerank.py`: `LLMReranker` grades the
+  top-10 candidates 0-3 in ONE local-model call (no new dependency; alternatives rejected: a
+  cross-encoder = torch, one call per candidate = 10x calls, asking for a full ordering = the model
+  can drop/repeat ids). It only REORDERS (cannot add/drop/edit chunks), strict reply validation,
+  ties keep retrieval order, ANY failure -> original order (`safe_rerank`, metric
+  `rerank_total{outcome=ok|fallback}`). Wired opt-in (`AIJP_RERANK_ENABLED=false`,
+  `AIJP_RERANK_POOL=10`) into `/search` (hits get `rerank_grade`) and `qa.ask`. The evidence gate
+  runs FIRST on the plain-retrieval top_k, so reranking never changes which questions are refused
+  and a refused question makes no rerank call. `get_llm`/`LLMDep` moved to `app/api/search.py`
+  (re-exported from ask.py) to avoid an import cycle. NOT on MCP or the consistency workflow.
+  Protocol fixed BEFORE running (prompt and pool not tuned on the 37 questions).
+  RESULTS: `eval/results/rerank-2026-09-20.md` (ranking, 37 q): vector MRR@10 0.875 -> 0.911
+  (4 better / 0 worse), hybrid 0.769 -> 0.926 (10 / 0), recall@1 vector 0.811 -> 0.865, +1.7-1.8 s
+  per query. `qa-2026-09-20.md` (rerank OFF, regenerated at the 0.55 gate) vs
+  `qa-2026-09-20-rerank.md` (ON), 36+12 questions: correct 34/36 -> 33/36, citation precision
+  83.3% -> 81.0%, everything else identical, median latency 1.1 s -> 2.9 s. The one regression
+  (c02, `_load_waves` chunk fell out of the cited set) is 1 question = noise, but there was NO
+  gain anywhere. DECISION: stays off by default; better ranking did not become better answers
+  because the answer model already sees 5 chunks and recall@5 is 97%. Reranker tokens are not in
+  `llm_tokens_total`. Do not tune the reranker prompt on these questions; write new ones first.
+  Caveat: the regenerated baseline's median latency (1.1 s) is far below the old M7 report's 7.5 s;
+  the machine state differed, so do not compare latency across report dates.
+- M12 (NOT in the handoff doc; user chose: authentication and accountability, API keys, roles
+  reader < editor < approver, self-approval allowed but recorded). ON BY DEFAULT is MY decision, not
+  the user's: `AIJP_AUTH_ENABLED=false` opts out (loud startup warning, UI banner, anonymous actor).
+  `app/auth.py`: key `aijp_<8hex prefix>_<43 char secret>`, only SHA-256(secret) stored, constant-time
+  compare with a dummy compare for unknown prefixes, one generic 401 for every failure (reason goes
+  to log + `auth_failures_total`), 403 for a too-low role. `RequestGateMiddleware` rejects
+  unauthenticated mutating requests and oversized Content-Length BEFORE the body is parsed (FastAPI
+  parses bodies before resolving dependencies); it does not verify keys, so fake well-formed tokens
+  and chunked bodies still reach the parser (proxy cap needed). Middleware order: context outermost.
+  `app/keys.py` is the ONLY key management (CLI create/list/revoke; no HTTP endpoints).
+  `app/audit.py` `record_event` -> `audit_events` (identifiers/counts only, never text). New columns
+  `requested_by`, `decided_by`, `created_by` (added to old DBs by `_LEGACY_ADDITIVE` in `app/migrate.py`). `/auth/config` public, `/auth/me`, `/metrics` needs reader. MCP stdio
+  BYPASSES API auth (local trust). UI: key in memory, opt-in sessionStorage; `ctx.can(role)` hides
+  controls but the server is the authority. `tests/conftest.py` sets AIJP_AUTH_ENABLED=false for the
+  legacy suites; `tests/test_auth.py` has a role matrix + a guard that every route is covered.
+  CI container job now has separate public-endpoint and auth smoke steps (`curl -I` sends HEAD and
+  the GET-only route answers 405: use `curl -D - -o /dev/null`). NOT verified: GitHub Actions itself.
+- M13 (NOT in the handoff doc; user chose Alembic migrations). Schema is now owned by Alembic:
+  `app/migrations/versions/0001_baseline.py` is HAND-WRITTEN DDL (not `create_all`, which would
+  change meaning as models change), incl. the HNSW + FTS indexes; `app/migrate.py` `upgrade()` runs
+  at startup (`db.init_db` delegates to it) under a pg advisory lock; CLI `python -m app.migrate
+  upgrade|current|check`; `alembic.ini` exists only for `uv run alembic revision --autogenerate`.
+  Three cases: empty DB -> all revisions; LEGACY DB (tables, no alembic_version) -> `_LEGACY_ADDITIVE`
+  ALTERs then stamp 0001 (the real dev DB `aijp` was adopted this way, data intact); versioned ->
+  pending revisions. `tests/test_migrations.py` uses throwaway databases: fresh==models drift guard
+  (mutation-verified: adding a model column fails it), idempotent, downgrade, legacy adoption with
+  data, 4 concurrent starters, `check` exit codes. `include_object` ignores the two unmodelled
+  indexes. Embedding dim is read from settings when the baseline runs. Only the baseline exists;
+  downgrade drops everything; backup is the real rollback. CI runs `app.migrate check` in the
+  container job. NOT verified: a data-changing migration (none written yet), GitHub Actions.
+  Gotcha: importing `app/migrations/env.py` runs it (needs alembic context), so shared helpers live
+  in `app/migrate.py`.
+- M15 (NOT in the handoff doc; user chose bigger, harder evals). Second question sets over the
+  SAME corpus, written by the AI assistant (not independent) AFTER v1 results were known, so they
+  target v1's weak spots; not used to tune anything. Files: `eval/datasets/{retrieval,qa}_v2.json`
+  (36 answerable: multi_hop 11, negation 5, paraphrase_hard 8, code_reasoning 7, identifier 5; 14
+  unanswerable, 10 near-miss), `judge_validation_v2.json` (14 subtle cases), `consistency_v2.json`
+  + overlay `eval/seeded_patches_v2/` (6 NEW mismatches, each with a config value still agreeing
+  with the design; 8 seeded/8 consistent/8 unsupported, half of the unsupported are on-topic).
+  Runner changes: `require_all` labels (multi-hop credited only when ALL sources are retrieved,
+  `metrics.full_coverage_rank`), `dataset_tag` so v2 reports never overwrite v1 (`*-v2-<date>`),
+  dataset field `patches_dir`, Wilson 95% CIs on every qa proportion (`metrics.wilson_interval`),
+  sign-test p on paired tables (`metrics.sign_test_p`), and `eval/compare.py` (paired, POOLED
+  comparison of two qa runs; report `eval/results/compare-rerank-2026-09-20.md`).
+  `tests/test_eval_datasets.py` guards structure (labels name real files, overlay changes exactly
+  what `seeded_changes` documents, judge sets are balanced). The runner's label check caught 3
+  wrong section labels on the first v2 run (fixed): keep it.
+  FINDINGS (v2, real models, one run each; all reports in eval/results/*-v2-*):
+  * v2 is much harder: vector MRR@10 0.562 (v1 0.875), recall@1 0.333 (0.811).
+  * Reranker, held-out ranking: vector MRR 0.562 -> 0.679, 11 better / 0 worse (p=0.001); hybrid
+    0.550 -> 0.600, 10/0 (p=0.002). So the M14 ranking gain REPLICATES on new questions.
+  * Reranker, end to end, POOLED 72 answerable: 59/72 correct with and without it; gained 2, lost
+    2 (p=1.0); latency 1.2 -> 2.9-3.0 s. M14's decision (off by default) is CONFIRMED with twice
+    the data. Caveat: 72 questions cannot detect a difference of a few points either way.
+  * WHY reranking doesn't help: v2 answer failures (25/36 correct) are model REASONING, not
+    retrieval. multi_hop is 4/11 correct: m02 said 48 damage (12*1.5=18), m11 said 1250 (rank 1!),
+    m10 said 360 (435), m03/m04 wrong sums. The right chunks were retrieved; qwen3.5 does the
+    arithmetic badly. Also 3 false refusals from the gate/model (h03, h07: insufficient_evidence).
+  * Judge validation: 12/12 on v1's easy cases but 12/14 (85.7%) on v2's subtle ones (1 false
+    supported, 1 false unsupported), so its faithfulness numbers are less trustworthy than v1
+    implied. It also flags correct DERIVED numbers (e.g. 180 for m01) as unsupported: v2's
+    unsupported rate (26.5%) is inflated by that; do not compare it with v1's 13.5%.
+  * Consistency v2: seeded found 4/6, false alarms 1/8 (y5), confirmed 7/8, unsupported left
+    undecided 7/8 (x5 got a verdict), verdict accuracy 18/22. Misses z4/z6: the model cited the
+    config that still agrees with the design and answered `consistent`, and for z4 its own
+    reasoning found the 0.6 vs 0.3 mismatch and it still said consistent (same failure as v1 s1/s3).
+  * GATE: the consistency gate 0.60 was chosen on v1 (blocked 4/4 unsupported). On v2 it blocks
+    only 4/8 (on-topic near-misses have high cosine) and the sweep shows 0.65 already loses 14% of
+    with-evidence claims. The v1 calibration does NOT generalise; the value is UNCHANGED pending
+    a user decision (do not tune it on v2 alone; v1+v2 pooled would be the basis).
+  Not done: re-run of the v1 qa/retrieval reports with CIs (their files predate the CI columns).
+- M16 (NOT in the handoff doc; user chose "fix the answer bottleneck"). Hypothesis from M15:
+  the model can't do arithmetic. Built `app/calc.py` (hand-written recursive-descent parser, NO
+  eval/ast, exact Decimal, + - * / ( ) min max round int abs and c1.. references; 60 tests incl. a
+  hostile-input suite) and an OPT-IN calculator mode in `qa.ask` (`AIJP_ASK_CALCULATOR`): the model
+  writes `calculations`, refers to results as `{c1}`, the server evaluates and substitutes; new
+  refusal reasons `calculation_failed` and `ungrounded_number` (a number in the answer that is not
+  in the cited passages, the question or a calculation); `calculations` shown in the response and
+  the UI. Also an opt-in `AIJP_LLM_THINK` (answer model reasons before replying; the eval judge
+  never thinks). BOTH DEFAULT OFF.
+  PROTOCOL: v2 = DEV set (2 calculator rounds + think arms allowed), v3 = HELD-OUT TEST set
+  (`{retrieval,qa}_v3.json`, 28 computation questions + 6 near-miss, written BEFORE the calculator
+  existed, answers computed by code with derivations stored, whole-number `#N` matching), every arm
+  run ONCE, all reported. v3 is now SPENT for tuning: any further change needs new questions (v4).
+  RESULTS (answerable correct; reports `qa-*-v3-*`, `compare-{think,calc}-2026-09-20.md`):
+  * v3 held-out: baseline 15/28, calculator 5/28 (0 gained, 10 lost, p=0.002), thinking 20/28
+    (5 gained, 0 lost, p=0.062), calculator+thinking 18/28. Median latency 1.7 s / 2.3 s / 9.9 s /
+    7.9 s. Dev v2: baseline 25/36, calc r1 23, calc r2 21, think 26, calc+think 26.
+  * POOLED v2+v3 (64): baseline 40, THINK 46 (7 gained, 1 lost, p=0.070), calculator 26 (0/14,
+    p<0.001). Near-miss refusals with think 11/16 -> 15/16.
+  * WHY the calculator failed (diagnosed, not tuned): (1) the arithmetic was never the only
+    problem: the calculator computed every expression right, but the model wrote WRONG FORMULAS
+    (off-by-one upgrade levels, forgot the flawless bonus, used another question's formula);
+    (2) qwen3.5 at temp 0 without thinking does not reliably follow the delegate-your-arithmetic
+    protocol: it types its own number (c24 wrote 400 for 60+35+300; c26 wrote a correct 170 with no
+    calculation). The ungrounded_number check then WITHHOLDS those (15 of 28 on v3), correctly per
+    its design, which is why the mode looks so bad. So the M15 claim "it's the arithmetic" was
+    incomplete: it is formulation + instruction-following, and reasoning (think) helps more.
+  * think is NOT enabled by default: p=0.07 is borderline, 6x latency, the sample is small. Enable
+    per deployment with AIJP_LLM_THINK=true if accuracy matters more than latency.
+  * The judge's unsupported rate fell 56.7% -> 4.0% on v3 with think, but the judge is known to
+    flag correct derived numbers (M15), so do not read that as a 50-point faithfulness gain.
+  * Reranker tokens / think tokens: think's extra tokens are not in `usage` (Ollama reports them
+    separately), so its cost is understated.
+- NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M16 are complete, so ask the user what
+  next. Open follow-ups, roughly by value: (1) push to GitHub so CI actually runs, and fix whatever
+  it finds; (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
+  config agrees with the design, the 0.60 consistency gate needs a pooled v1+v2 recalibration (user
+  decision), the faithfulness judge mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
+  the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
+  thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
+  (3) multi-project support (a migration now); (4) an actual cloud deployment (needs an account and
+  a decision on where the models run).
+  Docker Desktop must be running first, then `docker compose up -d db`.
+
+## Local environment notes (Windows)
+- `docker` is not on PATH. It lives in
+  `C:\Users\Shaukan\AppData\Local\Programs\DockerDesktop\resources\bin`; add it to PATH or call it
+  by full path. Docker Desktop must be running (engine up) before `docker compose`.
+- WSL2 was missing and was installed on 2026-09-20; a restart was needed before Docker Desktop
+  could start. Docker Desktop previously failed with "unable to start" for that reason.
+- Use the Write/Edit tools for files; long shell heredocs failed in the Bash tool. In Bash
+  heredocs a doubled backslash (`\\n`) collapses to one, silently turning "\n" string escapes
+  into real newlines and breaking Python files: never patch code that way, use the Edit tool.
+- NEVER run `pytest` (integration tests) or `eval.retrieval`/`eval.qa` concurrently: they share
+  the `aijp_test` database and each wipes its tables. Running pytest mid-eval corrupts the eval.
+- Do not run browsers, the UI server or any model call while `eval.qa` is running: it measures
+  latency, and contention (seen once: one question took 66 s instead of ~12 s) invalidates it.
+- UI testing: Chrome is not installed, Edge is. Drive it with `playwright-core` installed in the
+  scratchpad (`chromium.launch({executablePath: '...\\msedge.exe'})`); nothing is added to the repo.
+- UI rule: text from uploads or the LLM must only ever reach the DOM via `textContent`/text nodes
+  (`app/static/js/dom.js`). Never `innerHTML`; the CSP also forbids inline script/style.
+- UI gotcha: native `Element.append(null)` renders the literal text "null". Build children with
+  `h()` or dom.js `append()`, which filter null/false. (This shipped once and was caught only by
+  looking at a real screenshot.)
+- Use `127.0.0.1`, NOT `localhost`, for the database (and Ollama) from the host. Compose publishes
+  Postgres on IPv4 loopback only; on Docker Desktop `localhost` resolves to `::1` first, which is
+  silently dropped, so EVERY new connection stalls 20-30 s before falling back (measured: 0.02 s
+  vs 30 s). I introduced this by hardening the port binding and only noticed because a script
+  "hung"; all defaults now use 127.0.0.1. Symptom to recognise: fast queries but slow connects.
+- Windows tooling: find a server by its LISTENING port (`Get-NetTCPConnection -LocalPort N`), not by
+  command-line pattern; the launcher's command line differs (`uvicorn.exe app.main:app`). A
+  PowerShell command containing `Remove-Item` near the project dir can be refused as a whole, so
+  nothing after it runs; check state before assuming a cleanup happened.
+- Available: Python 3.11, uv, git, Ollama. Docker engine 29.8.0 and the pgvector/pgvector:pg16
+  image are verified working (2026-09-20). Start Docker Desktop via Start-Process on its exe.

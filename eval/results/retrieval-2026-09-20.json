@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus)",
+    "questions": "37",
+    "embedding model": "nomic-embed-text",
+    "chunking": "1200 chars, 150 overlap",
+    "hybrid": "RRF k=60, pool=20 per retriever",
+    "top_k": "10",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "per_question": [
+    {
+      "id": "p01",
+      "kind": "paraphrase",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "p02",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": 10,
+      "hybrid": 3
+    },
+    {
+      "id": "p03",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "p04",
+      "kind": "paraphrase",
+      "vector": 2,
+      "lexical": null,
+      "hybrid": 4
+    },
+    {
+      "id": "p05",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": 6,
+      "hybrid": 1
+    },
+    {
+      "id": "p06",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": null,
+      "hybrid": 3
+    },
+    {
+      "id": "p07",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 2
+    },
+    {
+      "id": "p08",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": 5,
+      "hybrid": 2
+    },
+    {
+      "id": "p09",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "p10",
+      "kind": "paraphrase",
+      "vector": 1,
+      "lexical": null,
+      "hybrid": 4
+    },
+    {
+      "id": "i01",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "i02",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "i03",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "i04",
+      "kind": "identifier",
+      "vector": 2,
+      "lexical": 3,
+      "hybrid": 3
+    },
+    {
+      "id": "i05",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "i06",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "i07",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "i08",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "i09",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "i10",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 4,
+      "hybrid": 3
+    },
+    {
+      "id": "n01",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "n02",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "n03",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "n04",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "n05",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "n06",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 1
+    },
+    {
+      "id": "n07",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "n08",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "n09",
+      "kind": "numeric",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "c01",
+      "kind": "code_location",
+      "vector": 2,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "c02",
+      "kind": "code_location",
+      "vector": 1,
+      "lexical": 5,
+      "hybrid": 2
+    },
+    {
+      "id": "c03",
+      "kind": "code_location",
+      "vector": 1,
+      "lexical": 4,
+      "hybrid": 2
+    },
+    {
+      "id": "c04",
+      "kind": "code_location",
+      "vector": null,
+      "lexical": 3,
+      "hybrid": 6
+    },
+    {
+      "id": "c05",
+      "kind": "code_location",
+      "vector": 7,
+      "lexical": 5,
+      "hybrid": 5
+    },
+    {
+      "id": "c06",
+      "kind": "code_location",
+      "vector": 4,
+      "lexical": 1,
+      "hybrid": 2
+    },
+    {
+      "id": "c07",
+      "kind": "code_location",
+      "vector": 1,
+      "lexical": 6,
+      "hybrid": 2
+    },
+    {
+      "id": "c08",
+      "kind": "code_location",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 1
+    }
+  ]
+}

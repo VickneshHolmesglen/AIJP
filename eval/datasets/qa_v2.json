@@ -1,0 +1,292 @@
+{
+  "description": "Answer-level set (v2) paired with retrieval_v2.json. `answerable` maps a question id to `answer_must_include` groups: every group needs at least one alternative as a case-insensitive substring of the answer. Numeric answers were computed by hand from the corpus (m01: 0.75*120*2=180; m02: 12*(1+0.25*2)=18; m03: 80+120+180=380; m04: int(237*0.6)=142 or 142.5; m09: 50+80; m10: 135+145+155=435; m11: 100+70+25=195). `unanswerable` questions have no answer in the corpus; 'near' ones are on-topic.",
+  "answerable": {
+    "m01": [
+      [
+        "180"
+      ]
+    ],
+    "m02": [
+      [
+        "18"
+      ]
+    ],
+    "m03": [
+      [
+        "380"
+      ]
+    ],
+    "m04": [
+      [
+        "142"
+      ]
+    ],
+    "m05": [
+      [
+        "venom"
+      ],
+      [
+        "armor",
+        "armour",
+        "ignores"
+      ]
+    ],
+    "m06": [
+      [
+        "immune"
+      ]
+    ],
+    "m07": [
+      [
+        "20"
+      ],
+      [
+        "arrow"
+      ]
+    ],
+    "m08": [
+      [
+        "remov",
+        "cancel"
+      ]
+    ],
+    "m09": [
+      [
+        "130"
+      ]
+    ],
+    "m10": [
+      [
+        "435"
+      ]
+    ],
+    "m11": [
+      [
+        "195"
+      ]
+    ],
+    "t01": [
+      [
+        "cannon"
+      ]
+    ],
+    "t02": [
+      [
+        "refresh"
+      ]
+    ],
+    "t03": [
+      [
+        "not stack",
+        "doesn't stack",
+        "does not"
+      ]
+    ],
+    "t04": [
+      [
+        "ignore"
+      ]
+    ],
+    "t05": [
+      [
+        "at least 1",
+        "1 damage",
+        "minimum",
+        "never"
+      ]
+    ],
+    "h01": [
+      [
+        "wraith"
+      ]
+    ],
+    "h02": [
+      [
+        "lives"
+      ],
+      [
+        "zero",
+        "0"
+      ]
+    ],
+    "h03": [
+      [
+        "12"
+      ]
+    ],
+    "h04": [
+      [
+        "0.8"
+      ]
+    ],
+    "h05": [
+      [
+        "waves.json"
+      ]
+    ],
+    "h06": [
+      [
+        "shardlord"
+      ]
+    ],
+    "h07": [
+      [
+        "three arrow",
+        "3 arrow"
+      ]
+    ],
+    "h08": [
+      [
+        "bounty"
+      ],
+      [
+        "gold"
+      ]
+    ],
+    "r01": [
+      [
+        "reset",
+        "cleared",
+        "zero",
+        "removed"
+      ]
+    ],
+    "r02": [
+      [
+        "base_cost",
+        "base cost"
+      ]
+    ],
+    "r03": [
+      [
+        "false"
+      ]
+    ],
+    "r04": [
+      [
+        "5000"
+      ]
+    ],
+    "r05": [
+      [
+        "0.7"
+      ]
+    ],
+    "r06": [
+      [
+        "wave_cleared"
+      ],
+      [
+        "cooldown",
+        "wait",
+        "timer"
+      ]
+    ],
+    "r07": [
+      [
+        "hit_efficiency",
+        "0.7",
+        "efficiency"
+      ]
+    ],
+    "d01": [
+      [
+        "25"
+      ]
+    ],
+    "d02": [
+      [
+        "0.25",
+        "25"
+      ]
+    ],
+    "d03": [
+      [
+        "3"
+      ]
+    ],
+    "d04": [
+      [
+        "0.3",
+        "30"
+      ]
+    ],
+    "d05": [
+      [
+        "5"
+      ]
+    ]
+  },
+  "unanswerable": [
+    {
+      "id": "w01",
+      "kind": "far",
+      "question": "How many people work at the studio that makes Shardfall?"
+    },
+    {
+      "id": "w02",
+      "kind": "far",
+      "question": "What does Shardfall cost on Steam?"
+    },
+    {
+      "id": "w03",
+      "kind": "far",
+      "question": "Does the game include a level editor?"
+    },
+    {
+      "id": "w04",
+      "kind": "far",
+      "question": "How much RAM does the game recommend?"
+    },
+    {
+      "id": "w05",
+      "kind": "near",
+      "question": "How much health does a Wraith regenerate per second?"
+    },
+    {
+      "id": "w06",
+      "kind": "near",
+      "question": "What is the fire rate of the Frost Tower?"
+    },
+    {
+      "id": "w07",
+      "kind": "near",
+      "question": "How much gold does the Shardlord pay as a bounty?"
+    },
+    {
+      "id": "w08",
+      "kind": "near",
+      "question": "How many enemies are in wave 12?"
+    },
+    {
+      "id": "w09",
+      "kind": "near",
+      "question": "How much damage does Cannon splash deal at the very edge of its radius?"
+    },
+    {
+      "id": "w10",
+      "kind": "near",
+      "question": "What is the movement speed of the Shardlord?"
+    },
+    {
+      "id": "w11",
+      "kind": "near",
+      "question": "Which key does the player press to sell a tower?"
+    },
+    {
+      "id": "w12",
+      "kind": "near",
+      "question": "How does the interest rate change after wave 30?"
+    },
+    {
+      "id": "w13",
+      "kind": "near",
+      "question": "How long is the boss invulnerable right after it enrages?"
+    },
+    {
+      "id": "w14",
+      "kind": "near",
+      "question": "What is the Frost Tower's upgrade discount at level 3?"
+    }
+  ]
+}

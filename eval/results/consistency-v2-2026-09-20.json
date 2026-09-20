@@ -1,0 +1,564 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus + eval/seeded_patches_v2)",
+    "claims": "22",
+    "retrieval mode": "vector",
+    "passages per side": "4",
+    "consistency_min_cosine": "0.6",
+    "embedding model": "nomic-embed-text",
+    "judge model": "qwen3.5",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "records": [
+    {
+      "id": "z1",
+      "kind": "seeded",
+      "claim": "The player may have at most 12 towers at once.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that the player may have at most 12 towers at once. However, the implementation configuration in [C1] sets the limit to 10 (`max_towers: 10`), which contradicts the design specification.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.826,
+      "implementation_best": 0.7436,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2262.7204000018537,
+      "prompt_tokens": 938,
+      "completion_tokens": 90,
+      "error": null
+    },
+    {
+      "id": "z2",
+      "kind": "seeded",
+      "claim": "The player starts each run with 20 lives.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that the player starts with 20 lives, but the implementation configuration [C1] sets the starting lives to 25. This creates a discrepancy between the intended starting resource count and the actual configured value.",
+      "design_cited": [
+        "docs/design/economy.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7829,
+      "implementation_best": 0.6951,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2081.011499998567,
+      "prompt_tokens": 826,
+      "completion_tokens": 85,
+      "error": null
+    },
+    {
+      "id": "z3",
+      "kind": "seeded",
+      "claim": "Chill lasts 2 seconds, and reapplying it only refreshes the timer.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] states that Chill lasts for 2 seconds, but the implementation in [C1] sets `chill_time_left` to 3.0 seconds. Additionally, while the design mentions reapplying only refreshes the timer, the code does not explicitly show this logic, though it does handle immunity correctly.",
+      "design_cited": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8037,
+      "implementation_best": 0.7182,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2447.52150000204,
+      "prompt_tokens": 950,
+      "completion_tokens": 102,
+      "error": null
+    },
+    {
+      "id": "z4",
+      "kind": "seeded",
+      "claim": "Chill slows movement by 30 percent.",
+      "expected": "potential_discrepancy",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] and [D2] explicitly state that the Chill effect slows movement by 30 percent for 2 seconds. The implementation in [C4] configures 'chill_slow_ratio' as 0.3, and the physics logic in [C3] applies a multiplier of 0.6 (which corresponds to a 40% reduction or 60% speed remaining, effectively a 40% slow? Wait, let me re-read carefully). Actually, if speed *= 0.6, the new speed is 60% of the original, meaning it is slowed by 40%. However, looking at [C2], the formula uses (1.0 - chill_slow). If chill_slow is 0.3, the divisor is 0.7, resulting in a ~43% increase in time, which implies a ~30% speed reduction? No, if speed_new = speed_old * (1 - slow), then slow=0.3 means speed becomes 0.7 (30% slow). But [C3] hardcodes `speed *= 0.6`. This is a discrepancy. Let me re-evaluate the math. If I want to slow by 30%, the new speed should be 70% of the old speed (multiplier 0.7). The code in [C3] uses 0.6, which is a 40% slow. The config [C4] says 0.3. If the formula in [C2] is used with 0.3, it yields 0.7. But [C3] overrides this with 0.6. This is a potential discrepancy.",
+      "design_cited": [
+        "docs/design/status_effects.md",
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8282,
+      "implementation_best": 0.6801,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 6564.61969999873,
+      "prompt_tokens": 959,
+      "completion_tokens": 395,
+      "error": null
+    },
+    {
+      "id": "z5",
+      "kind": "seeded",
+      "claim": "A tower can be upgraded to level 3 at most.",
+      "expected": "potential_discrepancy",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that a tower can be upgraded to level 3 and the player may have at most 12 towers. However, the implementation in [C2] defines MAX_LEVEL as 5, allowing upgrades beyond level 3. Additionally, the configuration file [C1] sets max_tower_level to 3, which contradicts the code constant but aligns with the design claim regarding the maximum level.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7346,
+      "implementation_best": 0.7157,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 2976.1027000022295,
+      "prompt_tokens": 1055,
+      "completion_tokens": 127,
+      "error": null
+    },
+    {
+      "id": "z6",
+      "kind": "seeded",
+      "claim": "A boss enrages when its health drops below 25 percent.",
+      "expected": "potential_discrepancy",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] states that the Shardlord enrages when its health drops below 25 percent, and the configuration file [C2] confirms this with a setting of 'boss_enrage_health_ratio: 0.25', which corresponds to 25 percent.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": false,
+      "design_best": 0.703,
+      "implementation_best": 0.6782,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2214.971900000819,
+      "prompt_tokens": 928,
+      "completion_tokens": 88,
+      "error": null
+    },
+    {
+      "id": "y1",
+      "kind": "consistent",
+      "claim": "Arrow Towers can attack flying enemies such as Wraiths.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] explicitly states that Arrow bolts can hit flying enemies, and [D2] confirms that Wraiths are flying enemies requiring towers that can target the air. The implementation code in [C1] calculates damage based on tower fire rates and efficiency factors without excluding any specific enemy types like flying ones, which is consistent with the design intent that these towers function against all valid targets.",
+      "design_cited": [
+        "docs/design/enemies.md",
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "tools/balance.py"
+      ],
+      "evidence_ok": false,
+      "design_best": 0.8265,
+      "implementation_best": 0.6413,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2698.2223999984853,
+      "prompt_tokens": 982,
+      "completion_tokens": 115,
+      "error": null
+    },
+    {
+      "id": "y2",
+      "kind": "consistent",
+      "claim": "A leaked boss costs 5 lives.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] and [D2] explicitly state that a leaked boss costs 5 lives, while the implementation in [C1] configures 'boss_leak_penalty' to 5 and [C2] applies this penalty when an enemy is leaked. The code logic aligns with the documented behavior.",
+      "design_cited": [
+        "docs/design/economy.md",
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/systems/wave_spawner.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8354,
+      "implementation_best": 0.6342,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2420.4968999983976,
+      "prompt_tokens": 865,
+      "completion_tokens": 103,
+      "error": null
+    },
+    {
+      "id": "y3",
+      "kind": "consistent",
+      "claim": "Selling a tower refunds 60 percent of the gold invested.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] explicitly states that selling a tower refunds 60 percent of the total gold invested. This is directly implemented in the code where [C2] defines the constant `sell_refund_ratio` as 0.6, and [C3] calculates the refund by multiplying `total_invested` by this ratio.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.778,
+      "implementation_best": 0.676,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2591.1519000001135,
+      "prompt_tokens": 1052,
+      "completion_tokens": 104,
+      "error": null
+    },
+    {
+      "id": "y4",
+      "kind": "consistent",
+      "claim": "Poison stacks up to 3 times.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] states that Poison stacks up to 3 times, and the implementation in [C4] defines POISON_MAX_STACKS as 3. Additionally, the apply_poison function in [C1] enforces this limit using min(poison_stacks + 1, POISON_MAX_STACKS), confirming the claim.",
+      "design_cited": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation_cited": [
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.7841,
+      "implementation_best": 0.6721,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2685.750199998438,
+      "prompt_tokens": 1121,
+      "completion_tokens": 104,
+      "error": null
+    },
+    {
+      "id": "y5",
+      "kind": "consistent",
+      "claim": "Upgrading a tower to level N costs 0.75 times its base cost times N.",
+      "expected": "consistent",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] states that upgrading to level N costs 0.75 times the base cost times N. However, the implementation in [C1] calculates the upgrade cost as `base_cost * 0.75 * (level + 1)`, which implies the cost is based on the target level rather than the current level increment, and also contradicts the design's implied incremental cost structure. Additionally, the maximum tower level defined in the code [C2] is 5, whereas the design limit [D3] suggests a max of 3.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8397,
+      "implementation_best": 0.7516,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 3401.4741999999387,
+      "prompt_tokens": 1063,
+      "completion_tokens": 160,
+      "error": null
+    },
+    {
+      "id": "y6",
+      "kind": "consistent",
+      "claim": "Interest is capped at 50 gold per wave.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] explicitly states that interest earned at the start of each wave is capped at 50 gold to prevent hoarding from being optimal. This rule is directly mirrored in the implementation configuration [C1], which sets the 'interest_cap' parameter to 50.",
+      "design_cited": [
+        "docs/design/economy.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8624,
+      "implementation_best": 0.7149,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2242.7558999988833,
+      "prompt_tokens": 905,
+      "completion_tokens": 88,
+      "error": null
+    },
+    {
+      "id": "y7",
+      "kind": "consistent",
+      "claim": "Wave income is 100 gold plus 10 gold per wave number.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] explicitly states that clearing a wave grants a base income of 100 gold plus 10 gold per wave number. This is directly mirrored in the configuration file [C1], which defines 'base_income_per_wave' as 100 and 'income_per_wave_number' as 10.",
+      "design_cited": [
+        "docs/design/economy.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.8864,
+      "implementation_best": 0.7333,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2353.5301000010804,
+      "prompt_tokens": 911,
+      "completion_tokens": 98,
+      "error": null
+    },
+    {
+      "id": "y8",
+      "kind": "consistent",
+      "claim": "Boss waves are 20 and 40.",
+      "expected": "consistent",
+      "verdict": "consistent",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design document [D1] states that the Shardlord boss appears on waves 20 and 40, which is directly confirmed by the implementation in [C1] where the 'boss_waves' dictionary explicitly maps keys '20' and '40' to 'shardlord'. The configuration file [C2] further supports this context by defining a specific penalty for boss leaks, aligning with the special nature of these waves.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "data/waves.json"
+      ],
+      "evidence_ok": true,
+      "design_best": 0.6694,
+      "implementation_best": 0.8215,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2989.101400002255,
+      "prompt_tokens": 1175,
+      "completion_tokens": 125,
+      "error": null
+    },
+    {
+      "id": "x1",
+      "kind": "unsupported",
+      "claim": "The game has a built-in level editor.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.6497,
+      "implementation_best": 0.5777,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 66.88829999984591,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "x2",
+      "kind": "unsupported",
+      "claim": "Each tower can be rotated by the player.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The provided design sources [D1-D4] describe tower mechanics like levels, costs, and damage but do not mention rotation capabilities. Similarly, the implementation sources [C1-C4] define limits, hit efficiency, and simulation logic without any code or configuration indicating whether towers support rotation. Therefore, there is no evidence in the retrieved sources to confirm or deny the claim.",
+      "design_cited": [
+        "docs/architecture.md",
+        "docs/design/economy.md",
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "tools/balance.py"
+      ],
+      "evidence_ok": null,
+      "design_best": 0.769,
+      "implementation_best": 0.6289,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2883.4343000016815,
+      "prompt_tokens": 942,
+      "completion_tokens": 131,
+      "error": null
+    },
+    {
+      "id": "x3",
+      "kind": "unsupported",
+      "claim": "Save files are compressed with gzip.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.657,
+      "implementation_best": 0.4631,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 66.78489999831072,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "x4",
+      "kind": "unsupported",
+      "claim": "A hard mode doubles every enemy's health.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.607,
+      "implementation_best": 0.5999,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 65.26739999753772,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "x5",
+      "kind": "unsupported",
+      "claim": "Chill also reduces an enemy's armor.",
+      "expected": "insufficient_evidence",
+      "verdict": "potential_discrepancy",
+      "status": "awaiting_approval",
+      "downgrade_reason": null,
+      "explanation": "The design documentation [D1] and [D4] states that the Chill effect only slows movement by 30 percent for 2 seconds, with no mention of armor reduction. The implementation code [C1] confirms this logic by setting a duration timer without modifying any armor property, while [C2] defines the slow ratio as 0.3 but does not include an armor reduction parameter. Therefore, the claim that Chill reduces armor contradicts both the design intent and the implemented behavior.",
+      "design_cited": [
+        "docs/design/status_effects.md",
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "src/enemies/enemy.gd"
+      ],
+      "evidence_ok": null,
+      "design_best": 0.7715,
+      "implementation_best": 0.6943,
+      "symbol_matches": 0,
+      "action_drafted": true,
+      "latency_ms": 3014.8431999987224,
+      "prompt_tokens": 969,
+      "completion_tokens": 141,
+      "error": null
+    },
+    {
+      "id": "x6",
+      "kind": "unsupported",
+      "claim": "Cannon splash damage falls off with distance from the impact point.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The provided design sources [D1] describe the Cannon Tower's splash radius and effects but do not specify whether the damage decreases with distance or is uniform within that radius. The implementation sources [C1], [C2], [C3], and [C4] focus on damage calculation, hit efficiency, DPS, and level scaling, with no code or configuration showing a distance-based falloff formula for splash damage.",
+      "design_cited": [
+        "docs/design/towers.md"
+      ],
+      "implementation_cited": [
+        "src/towers/tower.gd",
+        "tools/balance.py"
+      ],
+      "evidence_ok": null,
+      "design_best": 0.7152,
+      "implementation_best": 0.6155,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2812.0462999977462,
+      "prompt_tokens": 931,
+      "completion_tokens": 128,
+      "error": null
+    },
+    {
+      "id": "x7",
+      "kind": "unsupported",
+      "claim": "Wraiths regenerate health over time.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": "evidence_gate",
+      "explanation": "No sufficiently relevant implementation evidence was found for this claim.",
+      "design_cited": [],
+      "implementation_cited": [],
+      "evidence_ok": null,
+      "design_best": 0.7506,
+      "implementation_best": 0.5345,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 68.83720000041649,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "error": null
+    },
+    {
+      "id": "x8",
+      "kind": "unsupported",
+      "claim": "The Shardlord drops a rare item when it dies.",
+      "expected": "insufficient_evidence",
+      "verdict": "insufficient_evidence",
+      "status": "completed",
+      "downgrade_reason": null,
+      "explanation": "The design documents [D1] and [D2] describe the Shardlord's health, armor, wave appearance, and leak mechanics but do not mention any item drops upon death. The implementation sources [C1], [C3], and [C4] provide configuration for waves, economy, and metadata but contain no code or data defining drop tables or loot generation. Therefore, there is no evidence in the provided sources to confirm or deny the claim about item drops.",
+      "design_cited": [
+        "docs/design/enemies.md"
+      ],
+      "implementation_cited": [
+        "config/game.yaml",
+        "data/waves.json"
+      ],
+      "evidence_ok": null,
+      "design_best": 0.7903,
+      "implementation_best": 0.6489,
+      "symbol_matches": 0,
+      "action_drafted": false,
+      "latency_ms": 2885.5153000004066,
+      "prompt_tokens": 970,
+      "completion_tokens": 139,
+      "error": null
+    }
+  ]
+}

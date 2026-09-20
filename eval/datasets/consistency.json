@@ -1,0 +1,31 @@
+{
+  "description": "Claims for the design-vs-code consistency check. The corpus is eval/corpus with the files in eval/seeded_patches overlaid: six deliberate mismatches were introduced into the CODE/CONFIG while the design documents were left untouched. `seeded` claims state the design and should be flagged potential_discrepancy; `consistent` claims are true of both design and code; `unsupported` claims are about things neither design nor code addresses. Authored by hand before any run.",
+  "seeded_changes": [
+    {"file": "src/enemies/enemy.gd", "change": "apply_poison replaces the stack count (poison_stacks = 1) instead of stacking up to POISON_MAX_STACKS; the design says it stacks up to 3. The config still says poison_max_stacks: 3."},
+    {"file": "src/enemies/enemy.gd", "change": "boss enrage multiplies speed by 1.25; the design says +50 percent."},
+    {"file": "src/towers/tower.gd", "change": "SELL_REFUND_RATIO is 0.5; the design says 60 percent (config still says 0.6)."},
+    {"file": "src/towers/tower.gd", "change": "upgrade cost uses 0.5 * base_cost * (level + 1); the design says 0.75."},
+    {"file": "src/towers/tower.gd", "change": "damage per upgrade level adds 20 percent; the design says 25 percent."},
+    {"file": "config/game.yaml", "change": "interest_cap is 100; the design says 50."}
+  ],
+  "claims": [
+    {"id": "s1", "kind": "seeded", "expected": "potential_discrepancy", "claim": "Poison stacks up to 3 times.", "design": ["docs/design/status_effects.md"], "implementation": ["src/enemies/enemy.gd"]},
+    {"id": "s2", "kind": "seeded", "expected": "potential_discrepancy", "claim": "Selling a tower refunds 60 percent of the gold invested in it.", "design": ["docs/design/towers.md"], "implementation": ["src/towers/tower.gd"]},
+    {"id": "s3", "kind": "seeded", "expected": "potential_discrepancy", "claim": "When a boss enrages it gains 50 percent more movement speed.", "design": ["docs/design/enemies.md"], "implementation": ["src/enemies/enemy.gd"]},
+    {"id": "s4", "kind": "seeded", "expected": "potential_discrepancy", "claim": "Upgrading a tower to level N costs 0.75 times its base cost times N.", "design": ["docs/design/towers.md"], "implementation": ["src/towers/tower.gd"]},
+    {"id": "s5", "kind": "seeded", "expected": "potential_discrepancy", "claim": "Interest on unspent gold is capped at 50 gold per wave.", "design": ["docs/design/economy.md"], "implementation": ["config/game.yaml"]},
+    {"id": "s6", "kind": "seeded", "expected": "potential_discrepancy", "claim": "Each upgrade level adds 25 percent to a tower's base damage.", "design": ["docs/design/towers.md"], "implementation": ["src/towers/tower.gd"]},
+
+    {"id": "k1", "kind": "consistent", "expected": "consistent", "claim": "Armor is subtracted from every hit, but no hit ever deals less than 1 damage.", "design": ["docs/design/enemies.md"], "implementation": ["src/enemies/enemy.gd"]},
+    {"id": "k2", "kind": "consistent", "expected": "consistent", "claim": "Wraiths are immune to Chill.", "design": ["docs/design/enemies.md", "docs/design/status_effects.md"], "implementation": ["src/enemies/enemy.gd"]},
+    {"id": "k3", "kind": "consistent", "expected": "consistent", "claim": "The player may have at most 12 towers at once.", "design": ["docs/design/towers.md"], "implementation": ["config/game.yaml"]},
+    {"id": "k4", "kind": "consistent", "expected": "consistent", "claim": "A tower can be upgraded to level 3 at most.", "design": ["docs/design/towers.md"], "implementation": ["src/towers/tower.gd"]},
+    {"id": "k5", "kind": "consistent", "expected": "consistent", "claim": "A leaked boss costs 5 lives.", "design": ["docs/design/enemies.md", "docs/design/economy.md"], "implementation": ["config/game.yaml"]},
+    {"id": "k6", "kind": "consistent", "expected": "consistent", "claim": "The player starts each run with 200 gold.", "design": ["docs/design/economy.md"], "implementation": ["config/game.yaml"]},
+
+    {"id": "u1", "kind": "unsupported", "expected": "insufficient_evidence", "claim": "Shardfall supports online multiplayer.", "design": [], "implementation": []},
+    {"id": "u2", "kind": "unsupported", "expected": "insufficient_evidence", "claim": "Save files are encrypted with AES-256.", "design": [], "implementation": []},
+    {"id": "u3", "kind": "unsupported", "expected": "insufficient_evidence", "claim": "The Venom Tower fires two shots per second.", "design": [], "implementation": []},
+    {"id": "u4", "kind": "unsupported", "expected": "insufficient_evidence", "claim": "Defeated enemies drop random loot items.", "design": [], "implementation": []}
+  ]
+}

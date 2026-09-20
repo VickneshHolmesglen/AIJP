@@ -1,0 +1,1330 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus)",
+    "questions": "36 answerable + 14 unanswerable",
+    "retrieval mode": "vector",
+    "top_k": "5",
+    "min_evidence_score": "0.55",
+    "reranking": "off",
+    "calculator": "off",
+    "answer model thinking": "ON (the judge never thinks)",
+    "embedding model": "nomic-embed-text",
+    "answer + judge model": "qwen3.5",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "validation": {
+    "total": 14,
+    "correct": 12,
+    "unparseable": 0,
+    "false_supported": 1,
+    "false_unsupported": 1
+  },
+  "records": [
+    {
+      "id": "m01",
+      "kind": "answerable",
+      "question": "How much gold does upgrading a Cannon Tower to level 2 cost?",
+      "refused": false,
+      "reason": null,
+      "answer": "Upgrading a Cannon Tower to level 2 costs 180 gold. The base cost is 120 gold [2]. The upgrade cost formula is 0.75 times the base cost times N (where N is the target level) [1], or calculated as int(base_cost * 0.75 * (level + 1)) in code [3]. For level 2, the calculation is 120 * 0.75 * 2 = 180.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Upgrades and selling"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ],
+        [
+          "src/towers/tower.gd",
+          "Tower > upgrade_cost"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7483500542223442,
+      "latency_ms": 84755.74869999764,
+      "prompt_tokens": 602,
+      "completion_tokens": 3778,
+      "cited_text": "[1] ## Upgrades and selling\nEach upgrade level adds 25 percent to the tower's base damage. Upgrading to level N costs\n0.75 times the base cost times N. Selling a tower refunds 60 percent of the total gold invested\nin it, including upgrades. The refund is intentionally lossy to discourage constant rebuilding.\n\n[2] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.\n\n[3] func upgrade_cost() -> int:\n\treturn int(base_cost * 0.75 * (level + 1))",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "m02",
+      "kind": "answerable",
+      "question": "How much damage does a fully upgraded Arrow Tower deal per shot?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": 5,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7969681266585661,
+      "latency_ms": 38946.1958000029,
+      "prompt_tokens": 628,
+      "completion_tokens": 1850,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "m03",
+      "kind": "answerable",
+      "question": "What is the total gold needed to build a Frost Tower and upgrade it all the way to level 3?",
+      "refused": false,
+      "reason": null,
+      "answer": "The total gold needed is 260 gold. This consists of the base Frost Tower cost of 80 gold [1] plus upgrade costs calculated as 0.75 \u00d7 base cost \u00d7 level N [2]. For level 3: 0.75 \u00d7 80 \u00d7 3 = 180 gold in upgrades, totaling 80 + 180 = 260 gold.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Frost Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Upgrades and selling"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7584446154634475,
+      "latency_ms": 10983.879700001125,
+      "prompt_tokens": 624,
+      "completion_tokens": 549,
+      "cited_text": "[1] ## Frost Tower\nThe Frost Tower throws ice shards that apply the Chill effect. Chill slows an enemy by 30 percent\nfor 2 seconds. Base damage is only 6, so the Frost Tower is a support tower. It costs 80 gold.\n\n[2] ## Upgrades and selling\nEach upgrade level adds 25 percent to the tower's base damage. Upgrading to level N costs\n0.75 times the base cost times N. Selling a tower refunds 60 percent of the total gold invested\nin it, including upgrades. The refund is intentionally lossy to discourage constant rebuilding.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "m04",
+      "kind": "answerable",
+      "question": "If I sell a level 3 Arrow Tower, how much gold do I get back?",
+      "refused": false,
+      "reason": null,
+      "answer": "You get back 97.5 gold. The Arrow Tower base cost is 50 gold [2]. Upgrading to level 3 costs 0.75 \u00d7 50 \u00d7 3 = 112.5 gold in upgrades [1], for a total invested of 162.5 gold. Selling refunds 60% of the total gold invested [1], which is 0.6 \u00d7 162.5 = 97.5 gold.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Upgrades and selling"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7419853210449219,
+      "latency_ms": 26680.230899997696,
+      "prompt_tokens": 600,
+      "completion_tokens": 1240,
+      "cited_text": "[1] ## Upgrades and selling\nEach upgrade level adds 25 percent to the tower's base damage. Upgrading to level N costs\n0.75 times the base cost times N. Selling a tower refunds 60 percent of the total gold invested\nin it, including upgrades. The refund is intentionally lossy to discourage constant rebuilding.\n\n[2] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "m05",
+      "kind": "answerable",
+      "question": "Which tower is the best answer to the boss, and why?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6931846165524231,
+      "latency_ms": 12466.672999998991,
+      "prompt_tokens": 599,
+      "completion_tokens": 626,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "m06",
+      "kind": "answerable",
+      "question": "Can I use Frost Towers against the flying enemies?",
+      "refused": false,
+      "reason": null,
+      "answer": "No, you cannot effectively use Frost Towers against flying enemies. According to [3], Wraiths (flying enemies) are immune to Chill, and only towers that can target the air can hurt them. The Frost Tower's main mechanic is applying the Chill effect [1]. Since flying enemies are immune to Chill, the Frost Tower would not be effective against them.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Frost Tower"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Wraith"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7531283505269414,
+      "latency_ms": 11794.343800000206,
+      "prompt_tokens": 664,
+      "completion_tokens": 597,
+      "cited_text": "[1] ## Frost Tower\nThe Frost Tower throws ice shards that apply the Chill effect. Chill slows an enemy by 30 percent\nfor 2 seconds. Base damage is only 6, so the Frost Tower is a support tower. It costs 80 gold.\n\n[3] ## Wraith\nThe Wraith floats above the ground and is a flying enemy. It has 120 health and speed 100.\nWraiths are immune to Chill. Only towers that can target the air can hurt them. The bounty is\n30 gold.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "m07",
+      "kind": "answerable",
+      "question": "Will burning enemies take extra damage from my cheapest tower?",
+      "refused": false,
+      "reason": null,
+      "answer": "Yes. According to source [1], an enemy that is already burning takes 20 percent extra damage from Arrow Tower bolts. The Arrow Tower costs 50 gold per source [2], while the Cannon Tower costs 120 gold per source [3], making the Arrow Tower the cheapest tower. Therefore, burning enemies will take extra damage from your cheapest tower.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Burn"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7105218595577508,
+      "latency_ms": 11934.44620000082,
+      "prompt_tokens": 665,
+      "completion_tokens": 555,
+      "cited_text": "[1] ## Burn\nBurn deals 6 damage per second for 3 seconds. Burn does not stack. An enemy that is already\nburning takes 20 percent extra damage from Arrow Tower bolts, which rewards mixed defences.\n\n[2] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.\n\n[3] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "m08",
+      "kind": "answerable",
+      "question": "After a Cannon shell hits a chilled enemy, is that enemy still slowed?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": 9,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6189844268048004,
+      "latency_ms": 10886.363400000846,
+      "prompt_tokens": 662,
+      "completion_tokens": 561,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "m09",
+      "kind": "answerable",
+      "question": "How much gold do the two cheapest tower types cost together?",
+      "refused": false,
+      "reason": null,
+      "answer": "The two cheapest tower types are the Arrow Tower (50 gold) and the Frost Tower (80 gold), which together cost 130 gold.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Frost Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 4,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7013493172232456,
+      "latency_ms": 7957.248799997615,
+      "prompt_tokens": 629,
+      "completion_tokens": 341,
+      "cited_text": "[1] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.\n\n[4] ## Frost Tower\nThe Frost Tower throws ice shards that apply the Chill effect. Chill slows an enemy by 30 percent\nfor 2 seconds. Base damage is only 6, so the Frost Tower is a support tower. It costs 80 gold.\n\n[5] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "m10",
+      "kind": "answerable",
+      "question": "How much gold do waves 1 through 3 pay out in total if none leaks?",
+      "refused": false,
+      "reason": null,
+      "answer": "Waves 1 through 3 pay out a total of 435 gold. Wave 1 pays 135 (100 base + 10 wave number + 25 flawless), Wave 2 pays 145 (100 base + 20 wave number + 25 flawless), and Wave 3 pays 155 (100 base + 30 wave number + 25 flawless).",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Wave income"
+        ],
+        [
+          "config/game.yaml",
+          "economy"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7651355650456483,
+      "latency_ms": 40457.29030000075,
+      "prompt_tokens": 576,
+      "completion_tokens": 1938,
+      "cited_text": "[1] ## Wave income\nWhen a wave is cleared the player receives a base income of 100 gold plus 10 gold per wave number.\nClearing a wave without leaking any enemy also grants a flawless bonus of 25 gold.\n\n[3] # Global tuning constants for Shardfall.\neconomy:\n  starting_gold: 200\n  base_income_per_wave: 100\n  income_per_wave_number: 10\n  flawless_bonus: 25\n  interest_rate: 0.05\n  interest_cap: 50\n  sell_refund_ratio: 0.6",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "m11",
+      "kind": "answerable",
+      "question": "What does clearing wave 7 without a leak pay?",
+      "refused": false,
+      "reason": null,
+      "answer": "Clearing wave 7 without a leak pays 195 gold (base income of 100 gold + 10 gold per wave number \u00d7 7 = 70 gold + flawless bonus of 25 gold).",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Wave income"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.716650000217772,
+      "latency_ms": 7931.724200003373,
+      "prompt_tokens": 654,
+      "completion_tokens": 342,
+      "cited_text": "[1] ## Wave income\nWhen a wave is cleared the player receives a base income of 100 gold plus 10 gold per wave number.\nClearing a wave without leaking any enemy also grants a flawless bonus of 25 gold.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "t01",
+      "kind": "answerable",
+      "question": "Which towers cannot target flying enemies?",
+      "refused": false,
+      "reason": null,
+      "answer": "The Cannon Tower cannot target flying enemies. According to source [3], 'Shells cannot hit flying enemies.'",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7369354680853524,
+      "latency_ms": 9737.443599999096,
+      "prompt_tokens": 631,
+      "completion_tokens": 407,
+      "cited_text": "[3] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "t02",
+      "kind": "answerable",
+      "question": "Does Chill stack when it is applied repeatedly?",
+      "refused": false,
+      "reason": null,
+      "answer": "No, Chill does not stack when applied repeatedly. According to the documentation, 'Chill does not stack; reapplying only refreshes the timer.'",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Chill"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.722719945826535,
+      "latency_ms": 3475.5392000006395,
+      "prompt_tokens": 558,
+      "completion_tokens": 118,
+      "cited_text": "[1] ## Chill\nChill slows movement by 30 percent for 2 seconds. Chill does not stack; reapplying only refreshes\nthe timer. Wraiths are immune.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "t03",
+      "kind": "answerable",
+      "question": "Does Burn stack?",
+      "refused": false,
+      "reason": null,
+      "answer": "No, Burn does not stack. According to the documentation, 'Burn does not stack.'",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Burn"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7535181511440231,
+      "latency_ms": 5399.0822000014305,
+      "prompt_tokens": 567,
+      "completion_tokens": 210,
+      "cited_text": "[1] ## Burn\nBurn deals 6 damage per second for 3 seconds. Burn does not stack. An enemy that is already\nburning takes 20 percent extra damage from Arrow Tower bolts, which rewards mixed defences.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "t04",
+      "kind": "answerable",
+      "question": "Is Poison reduced by an enemy's armor?",
+      "refused": false,
+      "reason": null,
+      "answer": "No, Poison ignores armor.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Poison"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7488168771804186,
+      "latency_ms": 17171.36969999774,
+      "prompt_tokens": 570,
+      "completion_tokens": 856,
+      "cited_text": "[2] ## Poison\nPoison deals 4 damage per second per stack. It stacks up to 3 times. Applying Poison again\nrefreshes the duration to 5 seconds for all stacks. Poison ignores armor, which makes the Venom\nTower the best answer to Brutes and the Shardlord.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "t05",
+      "kind": "answerable",
+      "question": "Is there any enemy that can take no damage at all?",
+      "refused": false,
+      "reason": null,
+      "answer": "No, there is no enemy that can take no damage at all. According to source [1], 'No hit ever deals less than 1 damage, so armor can slow progress but never make an enemy invulnerable.' This is confirmed by source [3] which shows the effective_damage function returns max(1.0, raw - armor), and source [5] which sets minimum_damage: 1 in the combat configuration.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Armor and minimum damage"
+        ],
+        [
+          "tools/balance.py",
+          "effective_damage"
+        ],
+        [
+          "config/game.yaml",
+          "combat"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.3333333333333333,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6538460254669933,
+      "latency_ms": 8309.61759999991,
+      "prompt_tokens": 541,
+      "completion_tokens": 381,
+      "cited_text": "[1] ## Armor and minimum damage\nArmor is subtracted flat from every hit. No hit ever deals less than 1 damage, so armor can slow\nprogress but never make an enemy invulnerable.\n\n[3] def effective_damage(raw: float, armor: float) -> float:\n    \"\"\"A single hit after armor. Mirrors Enemy.take_damage: at least 1 damage always lands.\"\"\"\n    return max(1.0, raw - armor)\n\n[5] combat:\n  minimum_damage: 1\n  poison_max_stacks: 3\n  poison_duration_sec: 5\n  chill_slow_ratio: 0.3\n  burn_damage_per_sec: 6\n  boss_enrage_health_ratio: 0.25",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "h01",
+      "kind": "answerable",
+      "question": "Which unit is worth the most loot when it dies?",
+      "refused": false,
+      "reason": null,
+      "answer": "The Brute is worth the most loot at 25 gold bounty. The Grunt pays only 5 gold bounty. The Shardlord boss does not have a bounty value specified in the provided sources.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Brute"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Grunt"
+        ]
+      ],
+      "citation_any": false,
+      "citation_precision": 0.0,
+      "retrieval_rank": 6,
+      "precision_at_k": 0.0,
+      "top_cosine": 0.6480531053099992,
+      "latency_ms": 10229.566599999089,
+      "prompt_tokens": 727,
+      "completion_tokens": 454,
+      "cited_text": "[2] ## Brute\nThe Brute is a slow tank: 300 health, speed 45 and 8 armor. Armor subtracts from every incoming\nhit, so cheap low-damage towers are nearly useless against it. The bounty is 25 gold.\n\n[3] ## Grunt\nThe Grunt is the baseline enemy: 60 health, speed 80, no armor. Killing a Grunt pays a bounty of\n5 gold.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "h02",
+      "kind": "answerable",
+      "question": "What ends a run?",
+      "refused": false,
+      "reason": null,
+      "answer": "A run ends when lives reach zero.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Lives"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6323649699261724,
+      "latency_ms": 5647.041299998818,
+      "prompt_tokens": 576,
+      "completion_tokens": 230,
+      "cited_text": "[2] ## Lives\nEach leaked enemy costs 1 life. A leaked boss costs 5 lives. When lives reach zero the run ends\nand the score screen is shown.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "h03",
+      "kind": "answerable",
+      "question": "How quickly does the game let me start the next round?",
+      "refused": true,
+      "reason": "insufficient_evidence",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": 5,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.5389219957911395,
+      "latency_ms": 17.059300000255462,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "h04",
+      "kind": "answerable",
+      "question": "How frequently do individual monsters appear during a round?",
+      "refused": false,
+      "reason": null,
+      "answer": "Individual monsters appear every 0.8 seconds during a round, as specified by spawn_interval_sec: 0.8 in the waves configuration.",
+      "correct": true,
+      "cited": [
+        [
+          "config/game.yaml",
+          "waves"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 5,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.5784614243874397,
+      "latency_ms": 6540.946199998871,
+      "prompt_tokens": 727,
+      "completion_tokens": 278,
+      "cited_text": "[5] waves:\n  wave_cooldown_sec: 12\n  spawn_interval_sec: 0.8\n  boss_leak_penalty: 5",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "h05",
+      "kind": "answerable",
+      "question": "Which file says how many monsters come in each round?",
+      "refused": false,
+      "reason": null,
+      "answer": "The file data/waves.json contains information about how many monsters come in each round. Source [1] shows the waves array with enemy counts per wave.",
+      "correct": true,
+      "cited": [
+        [
+          "data/waves.json",
+          "waves"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6143809105045129,
+      "latency_ms": 5610.492899999372,
+      "prompt_tokens": 633,
+      "completion_tokens": 240,
+      "cited_text": "[1] \"waves\": [\n    {\"number\": 1, \"enemies\": [{\"kind\": \"grunt\", \"count\": 6}]},\n    {\"number\": 2, \"enemies\": [{\"kind\": \"grunt\", \"count\": 8}, {\"kind\": \"runner\", \"count\": 3}]},\n    {\"number\": 3, \"enemies\": [{\"kind\": \"runner\", \"count\": 10}]},\n    {\"number\": 4, \"enemies\": [{\"kind\": \"grunt\", \"count\": 10}, {\"kind\": \"brute\", \"count\": 1}]},\n    {\"number\": 5, \"enemies\": [{\"kind\": \"wraith\", \"count\": 4}, {\"kind\": \"grunt\", \"count\": 8}]}\n  ],",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "h06",
+      "kind": "answerable",
+      "question": "Which foe shows up on rounds 20 and 40?",
+      "refused": false,
+      "reason": null,
+      "answer": "Shardlord",
+      "correct": true,
+      "cited": [
+        [
+          "data/waves.json",
+          "boss_waves"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Shardlord (boss)"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.5563634230875327,
+      "latency_ms": 24506.627099999605,
+      "prompt_tokens": 570,
+      "completion_tokens": 1253,
+      "cited_text": "[1] \"boss_waves\": {\n    \"20\": \"shardlord\",\n    \"40\": \"shardlord\"\n  }\n}\n\n[3] ## Shardlord (boss)\nThe Shardlord is the boss. It has 5000 health and 15 armor and appears on waves 20 and 40. When\nits health drops below 25 percent it enrages and gains 50 percent more movement speed. If a\nShardlord leaks it costs 5 lives instead of 1.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "h07",
+      "kind": "answerable",
+      "question": "What can I buy with my opening funds?",
+      "refused": true,
+      "reason": "insufficient_evidence",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.539668931842669,
+      "latency_ms": 19.82990000033169,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "h08",
+      "kind": "answerable",
+      "question": "How does landing a killing blow turn into money?",
+      "refused": false,
+      "reason": null,
+      "answer": "When an enemy's health reaches zero after taking damage, it emits a `died` signal that carries the bounty value. The `GameState` then adds this bounty to the player's gold. This is documented in the data flow of a hit where towers call `Enemy.take_damage`, and when health reaches zero, the `died` signal with the bounty is emitted and processed by `GameState` to add gold.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/architecture.md",
+          "Shardfall Architecture > Data flow of a hit"
+        ],
+        [
+          "docs/design/economy.md",
+          "Economy"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.635466394019166,
+      "latency_ms": 8788.54599999977,
+      "prompt_tokens": 618,
+      "completion_tokens": 388,
+      "cited_text": "[1] ## Data flow of a hit\nA tower calls `Enemy.take_damage` with the raw damage. The enemy subtracts its armor, clamps the\nresult to the minimum damage, reduces its health and emits `died` when health reaches zero. The\n`died` signal carries the bounty, which `GameState` adds to the player's gold.\n\n[3] # Economy\n\nGold is the only currency. It is earned from bounties, wave income and interest, and spent on\ntowers and upgrades.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "r01",
+      "kind": "answerable",
+      "question": "What happens to an enemy's poison stacks when the poison timer runs out?",
+      "refused": false,
+      "reason": null,
+      "answer": "When the poison timer runs out (poison_time_left <= 0.0), the enemy's poison stacks are set to 0.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Poison"
+        ],
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > apply_poison"
+        ],
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > _process"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.3333333333333333,
+      "retrieval_rank": 4,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7539346951441541,
+      "latency_ms": 8139.764899999136,
+      "prompt_tokens": 616,
+      "completion_tokens": 358,
+      "cited_text": "[1] ## Poison\nPoison deals 4 damage per second per stack. It stacks up to 3 times. Applying Poison again\nrefreshes the duration to 5 seconds for all stacks. Poison ignores armor, which makes the Venom\nTower the best answer to Brutes and the Shardlord.\n\n[3] func apply_poison() -> void:\n\t# Poison ignores armor and refreshes its duration on every application.\n\tpoison_stacks = min(poison_stacks + 1, POISON_MAX_STACKS)\n\tpoison_time_left = 5.0\n\n[4] func _process(delta: float) -> void:\n\tif poison_time_left > 0.0:\n\t\tpoison_time_left -= delta\n\t\thealth -= int(4 * poison_stacks * delta)\n\t\tif poison_time_left <= 0.0:\n\t\t\tpoison_stacks = 0",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "r02",
+      "kind": "answerable",
+      "question": "What value does a tower's total_invested start with?",
+      "refused": false,
+      "reason": null,
+      "answer": "A tower's total_invested starts with the value of base_cost, as shown in src/towers/tower.gd where `total_invested = base_cost` is set in the _ready() function.",
+      "correct": true,
+      "cited": [
+        [
+          "src/towers/tower.gd",
+          "Tower > _ready"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 5,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6274010387181042,
+      "latency_ms": 6256.122399998276,
+      "prompt_tokens": 512,
+      "completion_tokens": 271,
+      "cited_text": "[5] func _ready() -> void:\n\ttotal_invested = base_cost",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "r03",
+      "kind": "answerable",
+      "question": "What does upgrade() return when the tower is already at its maximum level?",
+      "refused": false,
+      "reason": null,
+      "answer": "The upgrade() function returns false when the tower is already at its maximum level. This is because the first check in the function is 'if level >= MAX_LEVEL: return false' (source [2]).",
+      "correct": true,
+      "cited": [
+        [
+          "src/towers/tower.gd",
+          "Tower > upgrade"
+        ],
+        [
+          "src/towers/tower.gd",
+          "Tower > declarations: upgraded, MAX_LEVEL, SELL_REFUND_RATIO, base_cost, base_damage, fire_rate, targets_air, level, total_invested, _cooldown"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7479864358901978,
+      "latency_ms": 6377.320299998246,
+      "prompt_tokens": 663,
+      "completion_tokens": 262,
+      "cited_text": "[2] func upgrade() -> bool:\n\tif level >= MAX_LEVEL:\n\t\treturn false\n\tvar cost := upgrade_cost()\n\tif not GameState.spend_gold(cost):\n\t\treturn false\n\tlevel += 1\n\ttotal_invested += cost\n\tupgraded.emit(level)\n\treturn true\n\n[3] class_name Tower\nextends Node2D\n\nsignal upgraded(level: int)\n\nconst MAX_LEVEL := 3\nconst SELL_REFUND_RATIO := 0.6\n\n@export var base_cost: int = 50\n@export var base_damage: int = 12\n@export var fire_rate: float = 1.5\n@export var targets_air: bool = true\n\nvar level: int = 1\nvar total_invested: int = 0\nvar _cooldown := 0.0",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "r04",
+      "kind": "answerable",
+      "question": "How does the code recognise that an enemy is a boss?",
+      "refused": false,
+      "reason": null,
+      "answer": "The code recognizes an enemy as a boss by checking if its max_health is greater than or equal to 5000. This is implemented in the `is_boss()` function which returns `max_health >= 5000` [2]. The Enemy class has a `max_health` property that can be set via @export [3].",
+      "correct": true,
+      "cited": [
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > is_boss"
+        ],
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > declarations: died, enraged, MIN_DAMAGE, POISON_MAX_STACKS, max_health, armor, bounty, move_speed, is_flying, health, poison_stacks, poison_time_left, chill_time_left, _enraged"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6427334589839682,
+      "latency_ms": 6826.381400001992,
+      "prompt_tokens": 681,
+      "completion_tokens": 307,
+      "cited_text": "[2] func is_boss() -> bool:\n\treturn max_health >= 5000\n\n[3] class_name Enemy\nextends CharacterBody2D\n\nsignal died(bounty: int)\nsignal enraged\n\nconst MIN_DAMAGE := 1\nconst POISON_MAX_STACKS := 3\n\n@export var max_health: int = 60\n@export var armor: int = 0\n@export var bounty: int = 5\n@export var move_speed: float = 80.0\n@export var is_flying: bool = false\n\nvar health: int\nvar poison_stacks: int = 0\nvar poison_time_left: float = 0.0\nvar chill_time_left: float = 0.0\nvar _enraged := false",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "r05",
+      "kind": "answerable",
+      "question": "By how much does the code multiply an enemy's speed while it is chilled?",
+      "refused": false,
+      "reason": null,
+      "answer": "The code multiplies an enemy's speed by 0.7 while it is chilled.",
+      "correct": true,
+      "cited": [
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > _physics_process"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 5,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6790917795902539,
+      "latency_ms": 5056.101300000591,
+      "prompt_tokens": 809,
+      "completion_tokens": 202,
+      "cited_text": "[5] func _physics_process(delta: float) -> void:\n\tvar speed := move_speed\n\tif chill_time_left > 0.0:\n\t\tspeed *= 0.7\n\t\tchill_time_left -= delta\n\tvelocity = path_direction() * speed\n\tmove_and_slide()",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "r06",
+      "kind": "answerable",
+      "question": "What does WaveSpawner do once the last enemy of a wave is gone?",
+      "refused": false,
+      "reason": null,
+      "answer": "The WaveSpawner class declares a signal named wave_cleared with parameters number: int and flawless: bool.",
+      "correct": false,
+      "cited": [
+        [
+          "src/systems/wave_spawner.gd",
+          "WaveSpawner > declarations: wave_started, wave_cleared, WAVE_COOLDOWN_SEC, SPAWN_INTERVAL_SEC, enemy_scenes, current_wave, _waves, _alive, _leaked_this_wave"
+        ]
+      ],
+      "citation_any": false,
+      "citation_precision": 0.0,
+      "retrieval_rank": 8,
+      "precision_at_k": 0.0,
+      "top_cosine": 0.7270772349102471,
+      "latency_ms": 79557.89130000267,
+      "prompt_tokens": 759,
+      "completion_tokens": 3754,
+      "cited_text": "[1] class_name WaveSpawner\nextends Node\n\nsignal wave_started(number: int)\nsignal wave_cleared(number: int, flawless: bool)\n\nconst WAVE_COOLDOWN_SEC := 12.0\nconst SPAWN_INTERVAL_SEC := 0.8\n\n@export var enemy_scenes: Dictionary = {}\n\nvar current_wave: int = 0\nvar _waves: Array = []\nvar _alive: int = 0\nvar _leaked_this_wave: int = 0",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "r07",
+      "kind": "answerable",
+      "question": "How does the offline simulator work out the towers' combined damage output?",
+      "refused": false,
+      "reason": null,
+      "answer": "The offline simulator calculates combined damage output by summing each tower's effective damage: effective_damage(t.damage, enemy_armor) * t.fire_rate * HIT_EFFICIENCY for all towers. HIT_EFFICIENCY (0.7) represents the fraction of theoretical damage that lands on target in practice [1]. The total_dps is then multiplied by time_on_path to determine if it meets or exceeds enemy_hp [2].",
+      "correct": true,
+      "cited": [
+        [
+          "tools/balance.py",
+          "module"
+        ],
+        [
+          "tools/balance.py",
+          "simulate_wave"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7705360978577719,
+      "latency_ms": 7541.654800003016,
+      "prompt_tokens": 633,
+      "completion_tokens": 316,
+      "cited_text": "[1] \"\"\"Offline balance simulator for Shardfall waves.\"\"\"\n\nfrom dataclasses import dataclass\n\n# Fraction of a tower's theoretical damage that lands on target in practice (misses, overkill).\nHIT_EFFICIENCY = 0.7\n\n[2] def simulate_wave(\n    towers: list[TowerSpec],\n    enemy_hp: float,\n    enemy_armor: float,\n    path_length_px: float,\n    speed: float,\n) -> bool:\n    \"\"\"Return True if the towers can kill one enemy before it reaches the Shard Core.\"\"\"\n    total_dps = sum(\n        effective_damage(t.damage, enemy_armor) * t.fire_rate * HIT_EFFICIENCY for t in towers\n    )\n    return total_dps * time_on_path(path_length_px, speed) >= enemy_hp",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "d01",
+      "kind": "answerable",
+      "question": "What does the flawless_bonus setting give?",
+      "refused": false,
+      "reason": null,
+      "answer": "It grants 25 gold when clearing a wave without leaking any enemy.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Wave income"
+        ],
+        [
+          "config/game.yaml",
+          "economy"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.6420460902150563,
+      "latency_ms": 23078.57950000107,
+      "prompt_tokens": 619,
+      "completion_tokens": 971,
+      "cited_text": "[1] ## Wave income\nWhen a wave is cleared the player receives a base income of 100 gold plus 10 gold per wave number.\nClearing a wave without leaking any enemy also grants a flawless bonus of 25 gold.\n\n[2] # Global tuning constants for Shardfall.\neconomy:\n  starting_gold: 200\n  base_income_per_wave: 100\n  income_per_wave_number: 10\n  flawless_bonus: 25\n  interest_rate: 0.05\n  interest_cap: 50\n  sell_refund_ratio: 0.6",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "d02",
+      "kind": "answerable",
+      "question": "What is boss_enrage_health_ratio set to?",
+      "refused": false,
+      "reason": null,
+      "answer": "boss_enrage_health_ratio is set to 0.25",
+      "correct": true,
+      "cited": [
+        [
+          "config/game.yaml",
+          "combat"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7459820064316998,
+      "latency_ms": 6024.128900000505,
+      "prompt_tokens": 620,
+      "completion_tokens": 235,
+      "cited_text": "[1] combat:\n  minimum_damage: 1\n  poison_max_stacks: 3\n  poison_duration_sec: 5\n  chill_slow_ratio: 0.3\n  burn_damage_per_sec: 6\n  boss_enrage_health_ratio: 0.25",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "d03",
+      "kind": "answerable",
+      "question": "What is max_tower_level?",
+      "refused": false,
+      "reason": null,
+      "answer": "max_tower_level is 3",
+      "correct": true,
+      "cited": [
+        [
+          "config/game.yaml",
+          "limits"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers"
+        ],
+        [
+          "src/towers/tower.gd",
+          "Tower > declarations: upgraded, MAX_LEVEL, SELL_REFUND_RATIO, base_cost, base_damage, fire_rate, targets_air, level, total_invested, _cooldown"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.8036969304084778,
+      "latency_ms": 5180.478400001448,
+      "prompt_tokens": 627,
+      "completion_tokens": 180,
+      "cited_text": "[1] limits:\n  max_towers: 12\n  starting_lives: 20\n  max_tower_level: 3\n\n[2] # Towers\n\nTowers are the player's only way to stop enemies. Each tower is built on a build slot and can be\nupgraded to level 3. The player may have at most 12 towers at once.\n\n[3] class_name Tower\nextends Node2D\n\nsignal upgraded(level: int)\n\nconst MAX_LEVEL := 3\nconst SELL_REFUND_RATIO := 0.6\n\n@export var base_cost: int = 50\n@export var base_damage: int = 12\n@export var fire_rate: float = 1.5\n@export var targets_air: bool = true\n\nvar level: int = 1\nvar total_invested: int = 0\nvar _cooldown := 0.0",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "d04",
+      "kind": "answerable",
+      "question": "What is chill_slow_ratio?",
+      "refused": false,
+      "reason": null,
+      "answer": "chill_slow_ratio is 0.3",
+      "correct": true,
+      "cited": [
+        [
+          "config/game.yaml",
+          "combat"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7283410371311475,
+      "latency_ms": 5727.120300001843,
+      "prompt_tokens": 571,
+      "completion_tokens": 212,
+      "cited_text": "[5] combat:\n  minimum_damage: 1\n  poison_max_stacks: 3\n  poison_duration_sec: 5\n  chill_slow_ratio: 0.3\n  burn_damage_per_sec: 6\n  boss_enrage_health_ratio: 0.25",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "d05",
+      "kind": "answerable",
+      "question": "What is poison_duration_sec?",
+      "refused": false,
+      "reason": null,
+      "answer": "poison_duration_sec is 5",
+      "correct": true,
+      "cited": [
+        [
+          "config/game.yaml",
+          "combat"
+        ],
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > apply_poison"
+        ],
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Poison"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.6918493509292799,
+      "latency_ms": 6824.159200001304,
+      "prompt_tokens": 755,
+      "completion_tokens": 248,
+      "cited_text": "[2] combat:\n  minimum_damage: 1\n  poison_max_stacks: 3\n  poison_duration_sec: 5\n  chill_slow_ratio: 0.3\n  burn_damage_per_sec: 6\n  boss_enrage_health_ratio: 0.25\n\n[3] func apply_poison() -> void:\n\t# Poison ignores armor and refreshes its duration on every application.\n\tpoison_stacks = min(poison_stacks + 1, POISON_MAX_STACKS)\n\tpoison_time_left = 5.0\n\n[4] ## Poison\nPoison deals 4 damage per second per stack. It stacks up to 3 times. Applying Poison again\nrefreshes the duration to 5 seconds for all stacks. Poison ignores armor, which makes the Venom\nTower the best answer to Brutes and the Shardlord.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "w01",
+      "kind": "far",
+      "question": "How many people work at the studio that makes Shardfall?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6388282891596782,
+      "latency_ms": 7073.981699999422,
+      "prompt_tokens": 571,
+      "completion_tokens": 289,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w02",
+      "kind": "far",
+      "question": "What does Shardfall cost on Steam?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6806428763185572,
+      "latency_ms": 6902.106000001368,
+      "prompt_tokens": 605,
+      "completion_tokens": 287,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w03",
+      "kind": "far",
+      "question": "Does the game include a level editor?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.5621950068852287,
+      "latency_ms": 7405.510300002788,
+      "prompt_tokens": 561,
+      "completion_tokens": 331,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w04",
+      "kind": "far",
+      "question": "How much RAM does the game recommend?",
+      "refused": true,
+      "reason": "insufficient_evidence",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.494117601478797,
+      "latency_ms": 31.059699998877477,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w05",
+      "kind": "near",
+      "question": "How much health does a Wraith regenerate per second?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7177715102145352,
+      "latency_ms": 5604.850700001407,
+      "prompt_tokens": 625,
+      "completion_tokens": 271,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w06",
+      "kind": "near",
+      "question": "What is the fire rate of the Frost Tower?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7584526518696239,
+      "latency_ms": 6572.350900001766,
+      "prompt_tokens": 585,
+      "completion_tokens": 311,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w07",
+      "kind": "near",
+      "question": "How much gold does the Shardlord pay as a bounty?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7418680902169457,
+      "latency_ms": 6458.404299999529,
+      "prompt_tokens": 639,
+      "completion_tokens": 301,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w08",
+      "kind": "near",
+      "question": "How many enemies are in wave 12?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6814743064076584,
+      "latency_ms": 8003.353399999469,
+      "prompt_tokens": 745,
+      "completion_tokens": 347,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w09",
+      "kind": "near",
+      "question": "How much damage does Cannon splash deal at the very edge of its radius?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7184847072399412,
+      "latency_ms": 9096.86739999961,
+      "prompt_tokens": 660,
+      "completion_tokens": 415,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w10",
+      "kind": "near",
+      "question": "What is the movement speed of the Shardlord?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7767821481175348,
+      "latency_ms": 6015.662000001612,
+      "prompt_tokens": 655,
+      "completion_tokens": 284,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w11",
+      "kind": "near",
+      "question": "Which key does the player press to sell a tower?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6895009114594873,
+      "latency_ms": 6544.369399998686,
+      "prompt_tokens": 652,
+      "completion_tokens": 309,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w12",
+      "kind": "near",
+      "question": "How does the interest rate change after wave 30?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6204498244941709,
+      "latency_ms": 7467.96969999923,
+      "prompt_tokens": 587,
+      "completion_tokens": 316,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w13",
+      "kind": "near",
+      "question": "How long is the boss invulnerable right after it enrages?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6623637668545124,
+      "latency_ms": 7926.299400001881,
+      "prompt_tokens": 587,
+      "completion_tokens": 339,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "w14",
+      "kind": "near",
+      "question": "What is the Frost Tower's upgrade discount at level 3?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7220872442410516,
+      "latency_ms": 18455.321000001277,
+      "prompt_tokens": 691,
+      "completion_tokens": 836,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    }
+  ]
+}

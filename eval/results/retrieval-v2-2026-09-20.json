@@ -1,0 +1,266 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus)",
+    "questions": "36",
+    "embedding model": "nomic-embed-text",
+    "chunking": "1200 chars, 150 overlap",
+    "hybrid": "RRF k=60, pool=20 per retriever",
+    "top_k": "10",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "per_question": [
+    {
+      "id": "m01",
+      "kind": "multi_hop",
+      "vector": 2,
+      "lexical": 5,
+      "hybrid": 3
+    },
+    {
+      "id": "m02",
+      "kind": "multi_hop",
+      "vector": 5,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "m03",
+      "kind": "multi_hop",
+      "vector": 2,
+      "lexical": 3,
+      "hybrid": 2
+    },
+    {
+      "id": "m04",
+      "kind": "multi_hop",
+      "vector": 2,
+      "lexical": 3,
+      "hybrid": 2
+    },
+    {
+      "id": "m05",
+      "kind": "multi_hop",
+      "vector": 3,
+      "lexical": 7,
+      "hybrid": 4
+    },
+    {
+      "id": "m06",
+      "kind": "multi_hop",
+      "vector": 3,
+      "lexical": 10,
+      "hybrid": 6
+    },
+    {
+      "id": "m07",
+      "kind": "multi_hop",
+      "vector": 2,
+      "lexical": 5,
+      "hybrid": 3
+    },
+    {
+      "id": "m08",
+      "kind": "multi_hop",
+      "vector": 9,
+      "lexical": null,
+      "hybrid": 9
+    },
+    {
+      "id": "m09",
+      "kind": "multi_hop",
+      "vector": 4,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "m10",
+      "kind": "multi_hop",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 1
+    },
+    {
+      "id": "m11",
+      "kind": "multi_hop",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "t01",
+      "kind": "negation",
+      "vector": 3,
+      "lexical": 3,
+      "hybrid": 2
+    },
+    {
+      "id": "t02",
+      "kind": "negation",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 2
+    },
+    {
+      "id": "t03",
+      "kind": "negation",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "t04",
+      "kind": "negation",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "t05",
+      "kind": "negation",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "h01",
+      "kind": "paraphrase_hard",
+      "vector": 6,
+      "lexical": null,
+      "hybrid": 10
+    },
+    {
+      "id": "h02",
+      "kind": "paraphrase_hard",
+      "vector": 2,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "h03",
+      "kind": "paraphrase_hard",
+      "vector": 5,
+      "lexical": 2,
+      "hybrid": 6
+    },
+    {
+      "id": "h04",
+      "kind": "paraphrase_hard",
+      "vector": 5,
+      "lexical": null,
+      "hybrid": 6
+    },
+    {
+      "id": "h05",
+      "kind": "paraphrase_hard",
+      "vector": 1,
+      "lexical": null,
+      "hybrid": 2
+    },
+    {
+      "id": "h06",
+      "kind": "paraphrase_hard",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "h07",
+      "kind": "paraphrase_hard",
+      "vector": 3,
+      "lexical": null,
+      "hybrid": 3
+    },
+    {
+      "id": "h08",
+      "kind": "paraphrase_hard",
+      "vector": 1,
+      "lexical": null,
+      "hybrid": 4
+    },
+    {
+      "id": "r01",
+      "kind": "code_reasoning",
+      "vector": 4,
+      "lexical": 4,
+      "hybrid": 3
+    },
+    {
+      "id": "r02",
+      "kind": "code_reasoning",
+      "vector": 5,
+      "lexical": null,
+      "hybrid": 9
+    },
+    {
+      "id": "r03",
+      "kind": "code_reasoning",
+      "vector": 2,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "r04",
+      "kind": "code_reasoning",
+      "vector": 2,
+      "lexical": 8,
+      "hybrid": 2
+    },
+    {
+      "id": "r05",
+      "kind": "code_reasoning",
+      "vector": 5,
+      "lexical": 2,
+      "hybrid": 3
+    },
+    {
+      "id": "r06",
+      "kind": "code_reasoning",
+      "vector": 8,
+      "lexical": 7,
+      "hybrid": 6
+    },
+    {
+      "id": "r07",
+      "kind": "code_reasoning",
+      "vector": 2,
+      "lexical": 4,
+      "hybrid": 1
+    },
+    {
+      "id": "d01",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "d02",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 1
+    },
+    {
+      "id": "d03",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 2
+    },
+    {
+      "id": "d04",
+      "kind": "identifier",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "d05",
+      "kind": "identifier",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 3
+    }
+  ]
+}

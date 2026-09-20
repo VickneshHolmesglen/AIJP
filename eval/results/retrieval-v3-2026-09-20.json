@@ -1,0 +1,210 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus)",
+    "questions": "28",
+    "embedding model": "nomic-embed-text",
+    "chunking": "1200 chars, 150 overlap",
+    "hybrid": "RRF k=60, pool=20 per retriever",
+    "top_k": "10",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "per_question": [
+    {
+      "id": "c01",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 5,
+      "hybrid": 2
+    },
+    {
+      "id": "c02",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 5,
+      "hybrid": 3
+    },
+    {
+      "id": "c03",
+      "kind": "computation",
+      "vector": null,
+      "lexical": 6,
+      "hybrid": 8
+    },
+    {
+      "id": "c04",
+      "kind": "computation",
+      "vector": null,
+      "lexical": null,
+      "hybrid": null
+    },
+    {
+      "id": "c05",
+      "kind": "computation",
+      "vector": 3,
+      "lexical": 3,
+      "hybrid": 3
+    },
+    {
+      "id": "c06",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "c07",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "c08",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "c09",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "c10",
+      "kind": "computation",
+      "vector": 6,
+      "lexical": null,
+      "hybrid": null
+    },
+    {
+      "id": "c11",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 1
+    },
+    {
+      "id": "c12",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 10,
+      "hybrid": 5
+    },
+    {
+      "id": "c13",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "c14",
+      "kind": "computation",
+      "vector": 4,
+      "lexical": 5,
+      "hybrid": 4
+    },
+    {
+      "id": "c15",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 3,
+      "hybrid": 1
+    },
+    {
+      "id": "c16",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "c17",
+      "kind": "computation",
+      "vector": 3,
+      "lexical": 7,
+      "hybrid": 4
+    },
+    {
+      "id": "c18",
+      "kind": "computation",
+      "vector": 3,
+      "lexical": 7,
+      "hybrid": 4
+    },
+    {
+      "id": "c19",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "c20",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "c21",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "c22",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 4,
+      "hybrid": 3
+    },
+    {
+      "id": "c23",
+      "kind": "computation",
+      "vector": 1,
+      "lexical": 2,
+      "hybrid": 1
+    },
+    {
+      "id": "c24",
+      "kind": "computation",
+      "vector": 3,
+      "lexical": 4,
+      "hybrid": 4
+    },
+    {
+      "id": "c25",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 5,
+      "hybrid": 3
+    },
+    {
+      "id": "c26",
+      "kind": "computation",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "c27",
+      "kind": "computation",
+      "vector": 3,
+      "lexical": 3,
+      "hybrid": 3
+    },
+    {
+      "id": "c28",
+      "kind": "computation",
+      "vector": null,
+      "lexical": 7,
+      "hybrid": null
+    }
+  ]
+}

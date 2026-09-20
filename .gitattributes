@@ -1,0 +1,9 @@
+# One line ending everywhere. CI runs on Linux and the Dockerfile and shell steps need LF, while
+# this project is developed on Windows, where git would otherwise convert to CRLF on checkout.
+* text=auto eol=lf
+*.woff2 binary
+*.woff binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary

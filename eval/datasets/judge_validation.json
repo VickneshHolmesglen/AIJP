@@ -1,0 +1,17 @@
+{
+  "description": "Hand-labelled cases used to measure the faithfulness judge itself before trusting its verdicts. `supported` is the ground truth: true only if EVERY claim in the answer is stated in the sources. Faithful answers are paraphrased; unfaithful ones contain a wrong number, a claim absent from the sources, or outside knowledge.",
+  "cases": [
+    {"id": "j01", "supported": true, "sources": "Poison deals 4 damage per second per stack. It stacks up to 3 times.", "question": "How many stacks does poison have?", "answer": "Poison can stack up to 3 times."},
+    {"id": "j02", "supported": false, "sources": "Poison deals 4 damage per second per stack. It stacks up to 3 times.", "question": "How many stacks does poison have?", "answer": "Poison can stack up to 5 times."},
+    {"id": "j03", "supported": true, "sources": "The Cannon Tower has base damage 40, a splash radius of 96 pixels, and costs 120 gold.", "question": "What does the Cannon Tower cost?", "answer": "It costs 120 gold."},
+    {"id": "j04", "supported": false, "sources": "The Cannon Tower has base damage 40, a splash radius of 96 pixels, and costs 120 gold.", "question": "What does the Cannon Tower cost?", "answer": "It costs 120 gold and can hit flying enemies."},
+    {"id": "j05", "supported": true, "sources": "Interest is 5 percent on unspent gold, capped at 50 gold per wave.", "question": "Is interest capped?", "answer": "Yes, interest is limited to 50 gold each wave."},
+    {"id": "j06", "supported": false, "sources": "Interest is 5 percent on unspent gold, capped at 50 gold per wave.", "question": "What is the interest rate?", "answer": "The interest rate is 10 percent on unspent gold."},
+    {"id": "j07", "supported": true, "sources": "A leaked boss costs 5 lives. Each leaked ordinary enemy costs 1 life.", "question": "What does a leaked boss cost?", "answer": "A leaked boss costs 5 lives, compared to 1 life for other enemies."},
+    {"id": "j08", "supported": false, "sources": "A leaked boss costs 5 lives. Each leaked ordinary enemy costs 1 life.", "question": "What does a leaked boss cost?", "answer": "A leaked boss costs 5 lives and immediately ends the run."},
+    {"id": "j09", "supported": true, "sources": "Chill slows movement by 30 percent for 2 seconds. Wraiths are immune to Chill.", "question": "Who is immune to chill?", "answer": "Wraiths are immune to Chill."},
+    {"id": "j10", "supported": false, "sources": "Chill slows movement by 30 percent for 2 seconds. Wraiths are immune to Chill.", "question": "Who is immune to chill?", "answer": "Wraiths and Brutes are both immune to Chill."},
+    {"id": "j11", "supported": true, "sources": "The Runner has 35 health and speed 160 and pays a bounty of 8 gold.", "question": "How fast is a Runner?", "answer": "The Runner moves at speed 160."},
+    {"id": "j12", "supported": false, "sources": "The Runner has 35 health and speed 160 and pays a bounty of 8 gold.", "question": "How fast is a Runner?", "answer": "The Runner moves at speed 160, which is the fastest enemy in most tower defense games."}
+  ]
+}

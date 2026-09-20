@@ -1,0 +1,1013 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus)",
+    "questions": "28 answerable + 6 unanswerable",
+    "retrieval mode": "vector",
+    "top_k": "5",
+    "min_evidence_score": "0.55",
+    "reranking": "off",
+    "calculator": "off",
+    "answer model thinking": "off",
+    "embedding model": "nomic-embed-text",
+    "answer + judge model": "qwen3.5",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "validation": {
+    "total": 12,
+    "correct": 12,
+    "unparseable": 0,
+    "false_supported": 0,
+    "false_unsupported": 0
+  },
+  "records": [
+    {
+      "id": "c01",
+      "kind": "answerable",
+      "question": "How much gold does a Cannon Tower cost in total when it is built and upgraded to level 3?",
+      "refused": false,
+      "reason": null,
+      "answer": "A Cannon Tower costs 120 gold initially [2]. Upgrading to level 3 costs 0.75 * 120 * 3 = 270 gold [1]. The total cost is 120 + 270 = 390 gold.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Upgrades and selling"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7521694001949601,
+      "latency_ms": 2302.071000001888,
+      "prompt_tokens": 613,
+      "completion_tokens": 83,
+      "cited_text": "[1] ## Upgrades and selling\nEach upgrade level adds 25 percent to the tower's base damage. Upgrading to level N costs\n0.75 times the base cost times N. Selling a tower refunds 60 percent of the total gold invested\nin it, including upgrades. The refund is intentionally lossy to discourage constant rebuilding.\n\n[2] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c02",
+      "kind": "answerable",
+      "question": "How much gold do I get back if I sell a Cannon Tower that was upgraded to level 3?",
+      "refused": false,
+      "reason": null,
+      "answer": "You get 180 gold back. The refund is 60% of the total invested (base cost + upgrades). For the Cannon Tower, base_cost is 120 [2]. Upgrading to level 3 costs 0.75 * 120 * 3 = 270 [1], so total_invested is 480. Refund = 0.6 * 480 = 288? Wait, let's re-calculate based on the rules: 'Upgrading to level N costs 0.75 times the base cost times N' [1]. If upgrading TO level N means the cumulative cost or just the cost of that specific step? The text says 'Upgrading to level N costs...', implying the total cost to reach level N is 0.75 * base_cost * N. So for N=3, upgrade cost = 0.75 * 120 * 3 = 270. Total invested = Base (120) + Upgrades (270) = 390? Or does 'Upgrading to level N' mean the total investment is just that formula? Let's re-read carefully: 'Upgrading to level N costs 0.75 times the base cost times N'. This usually implies the cumulative cost to reach level N is calculated by that formula, or it's the cost of the upgrade action. However, standard interpretation in such contexts often sums them or uses the formula as total. Let's look at the code: `total_invested` starts at 0. If I buy a tower, do I add base_cost to `total_invested`? The source [1] says 'refunds 60 percent of the total gold invested in it, including upgrades'. Source [3] defines `base_cost`. If I buy the tower, I pay `base_cost`. Then upgrading to level 1 costs X, level 2 costs Y... The text says 'Upgrading to level N costs 0.75 times the base cost times N'. This phrasing is ambiguous: does it mean the cost of the upgrade *to* reach level N (cumulative) or the cost of the specific upgrade step? Usually, 'Upgrading to level N' implies the state change from 0 to N. If the cost formula applies to the transition, it might be cumulative. Let's assume the text means the total cost to upgrade TO level N is 0.75 * base_cost * N. Then total invested = base_cost + (cost to upgrade). But if 'Upgrading to level N costs...' defines the total investment for that level, then Total = 0.75 * 120 * 3 = 270? That seems low compared to base cost. Let's reconsider: Maybe the formula is for each step? No, it says 'Upgrading to level N'. Let's assume the standard interpretation: Cost to reach level N = BaseCost + Sum(UpgradeCosts). But the text gives a single formula for 'Upgrading to level N'. This likely means the total cost to have the tower at level N (excluding base? or including?) is 0.75 * base_cost * N. If so, Total Invested = 0.75 * 120 * 3 = 270. Refund = 0.6 * 270 = 162. \nAlternative interpretation: The cost to upgrade FROM level k TO k+1 is defined? No. Let's look at the phrasing again. 'Upgrading to level N costs 0.75 times the base cost times N'. This sounds like a cumulative cost function C(N) = 0.75 * B * N. If I buy the tower, do I pay B first? The text says 'including upgrades', implying Base + Upgrades. But if the formula covers the whole thing, maybe Base is not separate? Or maybe the formula is for the upgrade part only? \nLet's try a different angle. If I buy a level 1 tower, cost = 0.75 * B * 1? Then total invested = 0.75*B. Refund = 0.6 * 0.75*B. \nOr maybe 'Upgrading to level N' means the action of upgrading it to that level costs X. If I start at level 0 (just bought), and upgrade to 1, cost is 0.75*B*1? To 2, cost is 0.75*B*2? That would mean upgrading from 1 to 2 costs 0.75*B*2 - 0.75*B*1? That's complex.\nMost likely interpretation in game design docs: The total cost to purchase and upgrade a tower to level N is given by the formula, or the upgrade cost per level is constant? 'Upgrading to level N costs...' suggests the total investment required to get it to level N is 0.75 * base_cost * N. If so, for Cannon Tower (base_cost=120), Level 3: Total = 0.75 * 120 * 3 = 270. Refund = 0.6 * 270 = 162.\nAnother possibility: The base cost is paid separately, and the upgrade costs are calculated. But the text doesn't specify per-level upgrade cost. It gives a formula for 'Upgrading to level N'. This implies the total cost associated with being at level N (via upgrades) is that amount. Does it include the initial purchase? 'total gold invested in it, including upgrades'. If I buy it, I invest Base. Then I upgrade. If the formula '0.75 * B * N' is the cost of the upgrades only, then Total = B + 0.75*B*N. For N=3: 120 + 0.75*120*3 = 120 + 270 = 390. Refund = 0.6 * 390 = 234.\nWhich is more likely? 'Upgrading to level N costs...' usually refers to the cost of the upgrade process, not including the base purchase which is a separate transaction ('It costs 120 gold' [2]). So I pay 120. Then I spend money to upgrade. The rule says upgrading TO level N costs X. If I go 0->1->2->3, does 'Upgrading to level 3' mean the sum of upgrades? Or is it a flat rate for that state? Given 'times N', it scales with level. If it were per step, it would say 'per level'. So likely Total Upgrade Cost = 0.75 * B * N. Total Invested = Base + UpgradeCost = 120 + 270 = 390. Refund = 234.\nLet's check the math again. 0.75 * 120 = 90. 90 * 3 = 270. 120 + 270 = 390. 390 * 0.6 = 234.\nIf the formula meant total cost including base, it would probably say 'Cost of a level N tower is...'. It says 'Upgrading to level N costs...'. This implies the delta cost. So Base + Delta.\nCalculation:\nBase Cost (Cannon) = 120 [2]\nUpgrade Cost to Level 3 = 0.75 * 120 * 3 = 270 [1]\nTotal Invested = 120 + 270 = 390\nRefund Ratio = 0.6 [1]\nRefund Amount = 390 * 0.6 = 234.\n\nWait, is it possible 'Upgrading to level N' implies the cost of the upgrade action when you are at level N-1? No, 'to level N' implies the state. If I want to be at level 3, I must have paid for upgrades to get there. The formula gives that cost. So Total = Base + Formula(N). \nLet's assume this logic.\n\nAnswer: 234 gold.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Upgrades and selling"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7894437376001463,
+      "latency_ms": 32730.237799998577,
+      "prompt_tokens": 719,
+      "completion_tokens": 1808,
+      "cited_text": "[1] ## Upgrades and selling\nEach upgrade level adds 25 percent to the tower's base damage. Upgrading to level N costs\n0.75 times the base cost times N. Selling a tower refunds 60 percent of the total gold invested\nin it, including upgrades. The refund is intentionally lossy to discourage constant rebuilding.\n\n[2] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c03",
+      "kind": "answerable",
+      "question": "How much damage does a level 3 Cannon Tower deal per shell?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.8041361816174082,
+      "latency_ms": 2003.7687000003643,
+      "prompt_tokens": 689,
+      "completion_tokens": 62,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "c04",
+      "kind": "answerable",
+      "question": "What is a level 3 Cannon Tower's damage per second against a single target, ignoring misses and armor?",
+      "refused": false,
+      "reason": null,
+      "answer": "A level 3 Cannon Tower deals 120 damage per second (40 base damage * 3 levels) at a rate of 0.4 shots per second.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": null,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.8046329473438077,
+      "latency_ms": 1782.4408000014955,
+      "prompt_tokens": 636,
+      "completion_tokens": 54,
+      "cited_text": "[1] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c05",
+      "kind": "answerable",
+      "question": "How much starting gold would be left after building one Arrow Tower and one Frost Tower?",
+      "refused": false,
+      "reason": null,
+      "answer": "170 gold",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Starting resources"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Frost Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.6,
+      "top_cosine": 0.7901351841841627,
+      "latency_ms": 1302.4144000009983,
+      "prompt_tokens": 620,
+      "completion_tokens": 29,
+      "cited_text": "[1] ## Starting resources\nThe player starts each run with 200 gold and 20 lives. The starting gold is enough for three Arrow\nTowers or one Cannon Tower plus one Arrow Tower.\n\n[2] ## Frost Tower\nThe Frost Tower throws ice shards that apply the Chill effect. Chill slows an enemy by 30 percent\nfor 2 seconds. Base damage is only 6, so the Frost Tower is a support tower. It costs 80 gold.\n\n[3] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c06",
+      "kind": "answerable",
+      "question": "How much gold does clearing wave 9 pay if no enemy leaks?",
+      "refused": false,
+      "reason": null,
+      "answer": "Clearing wave 9 pays 125 gold (base income of 100 plus 10 per wave number) plus a flawless bonus of 25 gold for a total of 150 gold.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Wave income"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.769060020289071,
+      "latency_ms": 1928.8445000020147,
+      "prompt_tokens": 574,
+      "completion_tokens": 64,
+      "cited_text": "[1] ## Wave income\nWhen a wave is cleared the player receives a base income of 100 gold plus 10 gold per wave number.\nClearing a wave without leaking any enemy also grants a flawless bonus of 25 gold.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c07",
+      "kind": "answerable",
+      "question": "How much gold do waves 4 and 5 pay in total if both are cleared without leaks?",
+      "refused": false,
+      "reason": null,
+      "answer": "Waves 4 and 5 pay a total of 260 gold.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Wave income"
+        ],
+        [
+          "config/game.yaml",
+          "economy"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7657476588499659,
+      "latency_ms": 1599.196099999972,
+      "prompt_tokens": 619,
+      "completion_tokens": 38,
+      "cited_text": "[1] ## Wave income\nWhen a wave is cleared the player receives a base income of 100 gold plus 10 gold per wave number.\nClearing a wave without leaking any enemy also grants a flawless bonus of 25 gold.\n\n[3] # Global tuning constants for Shardfall.\neconomy:\n  starting_gold: 200\n  base_income_per_wave: 100\n  income_per_wave_number: 10\n  flawless_bonus: 25\n  interest_rate: 0.05\n  interest_cap: 50\n  sell_refund_ratio: 0.6",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c08",
+      "kind": "answerable",
+      "question": "How much interest does a player earn at the start of a wave holding 600 unspent gold?",
+      "refused": false,
+      "reason": null,
+      "answer": "The player earns 30 gold in interest.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Interest"
+        ],
+        [
+          "config/game.yaml",
+          "economy"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.8526186660639986,
+      "latency_ms": 1470.6736999978602,
+      "prompt_tokens": 588,
+      "completion_tokens": 31,
+      "cited_text": "[1] ## Interest\nAt the start of each wave the player earns interest of 5 percent on unspent gold. Interest is\ncapped at 50 gold per wave so that hoarding never beats building. The cap exists purely to keep\nthe early game tense.\n\n[3] # Global tuning constants for Shardfall.\neconomy:\n  starting_gold: 200\n  base_income_per_wave: 100\n  income_per_wave_number: 10\n  flawless_bonus: 25\n  interest_rate: 0.05\n  interest_cap: 50\n  sell_refund_ratio: 0.6",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c09",
+      "kind": "answerable",
+      "question": "How much interest does a player earn at the start of a wave holding 2000 unspent gold?",
+      "refused": false,
+      "reason": null,
+      "answer": "A player earns 50 gold in interest.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Interest"
+        ],
+        [
+          "config/game.yaml",
+          "economy"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.8494899747324836,
+      "latency_ms": 1470.5259000002115,
+      "prompt_tokens": 589,
+      "completion_tokens": 31,
+      "cited_text": "[1] ## Interest\nAt the start of each wave the player earns interest of 5 percent on unspent gold. Interest is\ncapped at 50 gold per wave so that hoarding never beats building. The cap exists purely to keep\nthe early game tense.\n\n[3] # Global tuning constants for Shardfall.\neconomy:\n  starting_gold: 200\n  base_income_per_wave: 100\n  income_per_wave_number: 10\n  flawless_bonus: 25\n  interest_rate: 0.05\n  interest_cap: 50\n  sell_refund_ratio: 0.6",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c10",
+      "kind": "answerable",
+      "question": "How much bounty in total does wave 5 pay if every enemy in it is killed?",
+      "refused": false,
+      "reason": null,
+      "answer": "Wave 5 pays a total bounty of 107 gold. This consists of 4 Wraiths (value not explicitly defined in sources) and 8 Grunts (5 gold each). However, based strictly on the provided sources, only the Grunt bounty is defined as 5 gold [3]. The source for Wave 5 composition [5] lists 4 'wraith' and 8 'grunt'. Without a defined bounty for 'wraith', the total cannot be fully calculated from the given text. If assuming standard values or if 'wraith' has no bounty, the answer is 40 gold (8 * 5). Given the constraint to use only sources, and lack of wraith bounty, the exact total is indeterminate.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Grunt"
+        ],
+        [
+          "data/waves.json",
+          "waves"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 6,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.6617753325976203,
+      "latency_ms": 4153.136199998698,
+      "prompt_tokens": 655,
+      "completion_tokens": 176,
+      "cited_text": "[3] ## Grunt\nThe Grunt is the baseline enemy: 60 health, speed 80, no armor. Killing a Grunt pays a bounty of\n5 gold.\n\n[5] \"waves\": [\n    {\"number\": 1, \"enemies\": [{\"kind\": \"grunt\", \"count\": 6}]},\n    {\"number\": 2, \"enemies\": [{\"kind\": \"grunt\", \"count\": 8}, {\"kind\": \"runner\", \"count\": 3}]},\n    {\"number\": 3, \"enemies\": [{\"kind\": \"runner\", \"count\": 10}]},\n    {\"number\": 4, \"enemies\": [{\"kind\": \"grunt\", \"count\": 10}, {\"kind\": \"brute\", \"count\": 1}]},\n    {\"number\": 5, \"enemies\": [{\"kind\": \"wraith\", \"count\": 4}, {\"kind\": \"grunt\", \"count\": 8}]}\n  ],",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c11",
+      "kind": "answerable",
+      "question": "How many enemies spawn in total across waves 1, 2 and 3?",
+      "refused": false,
+      "reason": null,
+      "answer": "Across waves 1, 2, and 3, the total number of enemies spawning is 37. Wave 1 has 6 grunts. Wave 2 has 8 grunts and 3 runners (total 11). Wave 3 has 10 runners. Sum: 6 + 11 + 10 = 27.",
+      "correct": true,
+      "cited": [
+        [
+          "data/waves.json",
+          "waves"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7148468068333498,
+      "latency_ms": 2306.4969000006386,
+      "prompt_tokens": 767,
+      "completion_tokens": 94,
+      "cited_text": "[1] \"waves\": [\n    {\"number\": 1, \"enemies\": [{\"kind\": \"grunt\", \"count\": 6}]},\n    {\"number\": 2, \"enemies\": [{\"kind\": \"grunt\", \"count\": 8}, {\"kind\": \"runner\", \"count\": 3}]},\n    {\"number\": 3, \"enemies\": [{\"kind\": \"runner\", \"count\": 10}]},\n    {\"number\": 4, \"enemies\": [{\"kind\": \"grunt\", \"count\": 10}, {\"kind\": \"brute\", \"count\": 1}]},\n    {\"number\": 5, \"enemies\": [{\"kind\": \"wraith\", \"count\": 4}, {\"kind\": \"grunt\", \"count\": 8}]}\n  ],",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c12",
+      "kind": "answerable",
+      "question": "How many seconds does it take to spawn every enemy of wave 3, given the spawn interval?",
+      "refused": false,
+      "reason": null,
+      "answer": "It takes 9.6 seconds (10 enemies * 0.8 seconds).",
+      "correct": false,
+      "cited": [
+        [
+          "data/waves.json",
+          "waves"
+        ],
+        [
+          "src/systems/wave_spawner.gd",
+          "WaveSpawner > start_wave"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.6845891915772613,
+      "latency_ms": 1494.4427000009455,
+      "prompt_tokens": 884,
+      "completion_tokens": 40,
+      "cited_text": "[2] \"waves\": [\n    {\"number\": 1, \"enemies\": [{\"kind\": \"grunt\", \"count\": 6}]},\n    {\"number\": 2, \"enemies\": [{\"kind\": \"grunt\", \"count\": 8}, {\"kind\": \"runner\", \"count\": 3}]},\n    {\"number\": 3, \"enemies\": [{\"kind\": \"runner\", \"count\": 10}]},\n    {\"number\": 4, \"enemies\": [{\"kind\": \"grunt\", \"count\": 10}, {\"kind\": \"brute\", \"count\": 1}]},\n    {\"number\": 5, \"enemies\": [{\"kind\": \"wraith\", \"count\": 4}, {\"kind\": \"grunt\", \"count\": 8}]}\n  ],\n\n[3] func start_wave() -> void:\n\tcurrent_wave += 1\n\t_leaked_this_wave = 0\n\twave_started.emit(current_wave)\n\tfor entry in _waves[current_wave - 1][\"enemies\"]:\n\t\tfor i in entry[\"count\"]:\n\t\t\t_spawn_enemy(entry[\"kind\"])\n\t\t\tawait get_tree().create_timer(SPAWN_INTERVAL_SEC).timeout",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c13",
+      "kind": "answerable",
+      "question": "How many lives are lost if three Grunts and a Shardlord leak?",
+      "refused": false,
+      "reason": null,
+      "answer": "If three Grunts and a Shardlord leak, the player loses 8 lives. Each leaked enemy costs 1 life (3 Grunts = 3 lives), and a leaked boss costs 5 lives (1 Shardlord = 5 lives). Total: 3 + 5 = 8 lives.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Lives"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7245255483763695,
+      "latency_ms": 2162.3209999997925,
+      "prompt_tokens": 550,
+      "completion_tokens": 80,
+      "cited_text": "[2] ## Lives\nEach leaked enemy costs 1 life. A leaked boss costs 5 lives. When lives reach zero the run ends\nand the score screen is shown.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c14",
+      "kind": "answerable",
+      "question": "A player starts with full lives. How many remain after a Shardlord and four other enemies leak?",
+      "refused": false,
+      "reason": null,
+      "answer": "The player starts with 20 lives [4]. After one Shardlord leaks, 5 lives are lost (total 15 remaining) [3]. After four other enemies leak, 4 lives are lost (1 per enemy) [1], leaving 11 lives.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Lives"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Shardlord (boss)"
+        ],
+        [
+          "docs/design/economy.md",
+          "Economy > Starting resources"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 4,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7849246308433817,
+      "latency_ms": 2454.028099997231,
+      "prompt_tokens": 552,
+      "completion_tokens": 81,
+      "cited_text": "[1] ## Lives\nEach leaked enemy costs 1 life. A leaked boss costs 5 lives. When lives reach zero the run ends\nand the score screen is shown.\n\n[3] ## Shardlord (boss)\nThe Shardlord is the boss. It has 5000 health and 15 armor and appears on waves 20 and 40. When\nits health drops below 25 percent it enrages and gains 50 percent more movement speed. If a\nShardlord leaks it costs 5 lives instead of 1.\n\n[4] ## Starting resources\nThe player starts each run with 200 gold and 20 lives. The starting gold is enough for three Arrow\nTowers or one Cannon Tower plus one Arrow Tower.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c15",
+      "kind": "answerable",
+      "question": "How much poison damage can one application deal over its whole duration at full stacks?",
+      "refused": false,
+      "reason": null,
+      "answer": "One application of Poison deals 60 damage over its whole duration at full stacks (3 stacks). This is calculated as 4 damage per second per stack * 5 seconds duration = 20 damage per stack, and 20 damage/stack * 3 stacks = 60 total damage.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Poison"
+        ],
+        [
+          "config/game.yaml",
+          "combat"
+        ],
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > apply_poison"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.3333333333333333,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7557573900801688,
+      "latency_ms": 2580.7554999992135,
+      "prompt_tokens": 597,
+      "completion_tokens": 86,
+      "cited_text": "[1] ## Poison\nPoison deals 4 damage per second per stack. It stacks up to 3 times. Applying Poison again\nrefreshes the duration to 5 seconds for all stacks. Poison ignores armor, which makes the Venom\nTower the best answer to Brutes and the Shardlord.\n\n[2] combat:\n  minimum_damage: 1\n  poison_max_stacks: 3\n  poison_duration_sec: 5\n  chill_slow_ratio: 0.3\n  burn_damage_per_sec: 6\n  boss_enrage_health_ratio: 0.25\n\n[3] func apply_poison() -> void:\n\t# Poison ignores armor and refreshes its duration on every application.\n\tpoison_stacks = min(poison_stacks + 1, POISON_MAX_STACKS)\n\tpoison_time_left = 5.0",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c16",
+      "kind": "answerable",
+      "question": "How much damage does Burn deal in total over its full duration?",
+      "refused": false,
+      "reason": null,
+      "answer": "Burn deals a total of 18 damage over its full duration (6 damage per second for 3 seconds).",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Burn"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7488402125454455,
+      "latency_ms": 1811.1692000020412,
+      "prompt_tokens": 625,
+      "completion_tokens": 42,
+      "cited_text": "[1] ## Burn\nBurn deals 6 damage per second for 3 seconds. Burn does not stack. An enemy that is already\nburning takes 20 percent extra damage from Arrow Tower bolts, which rewards mixed defences.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c17",
+      "kind": "answerable",
+      "question": "How much damage does a base Cannon shell deal to a Brute after armor?",
+      "refused": false,
+      "reason": null,
+      "answer": "A base Cannon shell deals 1 damage to a Brute after armor. The raw damage is 40 (Source [3]), the Brute has 8 armor (Source [1]), and the effective damage formula ensures at least 1 damage lands: max(1.0, 40 - 8) = 32? Wait, let's re-calculate based on Source [4] and [2]. Source [4] says `max(1.0, raw - armor)`. Source [3] says Cannon base damage is 40. Source [1] says Brute has 8 armor. So 40 - 8 = 32. The answer is 32.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Brute"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ],
+        [
+          "tools/balance.py",
+          "effective_damage"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7074769670440748,
+      "latency_ms": 4287.3145999983535,
+      "prompt_tokens": 651,
+      "completion_tokens": 172,
+      "cited_text": "[1] ## Brute\nThe Brute is a slow tank: 300 health, speed 45 and 8 armor. Armor subtracts from every incoming\nhit, so cheap low-damage towers are nearly useless against it. The bounty is 25 gold.\n\n[3] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.\n\n[4] def effective_damage(raw: float, armor: float) -> float:\n    \"\"\"A single hit after armor. Mirrors Enemy.take_damage: at least 1 damage always lands.\"\"\"\n    return max(1.0, raw - armor)",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c18",
+      "kind": "answerable",
+      "question": "How much damage does one base Arrow bolt deal to a Brute after armor?",
+      "refused": false,
+      "reason": null,
+      "answer": "One base Arrow bolt deals 7 damage to a Brute after armor (12 base damage - 8 armor).",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Brute"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ],
+        [
+          "tools/balance.py",
+          "effective_damage"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.6966951931558915,
+      "latency_ms": 1373.4126999988803,
+      "prompt_tokens": 643,
+      "completion_tokens": 49,
+      "cited_text": "[1] ## Brute\nThe Brute is a slow tank: 300 health, speed 45 and 8 armor. Armor subtracts from every incoming\nhit, so cheap low-damage towers are nearly useless against it. The bounty is 25 gold.\n\n[3] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.\n\n[5] def effective_damage(raw: float, armor: float) -> float:\n    \"\"\"A single hit after armor. Mirrors Enemy.take_damage: at least 1 damage always lands.\"\"\"\n    return max(1.0, raw - armor)",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c19",
+      "kind": "answerable",
+      "question": "How much damage does one base Arrow bolt deal to an enemy that is already burning?",
+      "refused": false,
+      "reason": null,
+      "answer": "One base Arrow bolt deals 14.4 damage (12 base + 20% extra from Burn) to an enemy that is already burning.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Burn"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7565934303206469,
+      "latency_ms": 1493.0655999996816,
+      "prompt_tokens": 590,
+      "completion_tokens": 53,
+      "cited_text": "[1] ## Burn\nBurn deals 6 damage per second for 3 seconds. Burn does not stack. An enemy that is already\nburning takes 20 percent extra damage from Arrow Tower bolts, which rewards mixed defences.\n\n[2] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c20",
+      "kind": "answerable",
+      "question": "What is the combined bounty for killing one Runner and one Brute?",
+      "refused": false,
+      "reason": null,
+      "answer": "The combined bounty is 33 gold (8 gold for the Runner + 25 gold for the Brute).",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Brute"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Runner"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7529682145407535,
+      "latency_ms": 1316.4856000003056,
+      "prompt_tokens": 572,
+      "completion_tokens": 46,
+      "cited_text": "[1] ## Brute\nThe Brute is a slow tank: 300 health, speed 45 and 8 armor. Armor subtracts from every incoming\nhit, so cheap low-damage towers are nearly useless against it. The bounty is 25 gold.\n\n[2] ## Runner\nThe Runner is fragile but fast: 35 health and speed 160. It pays a bounty of 8 gold. Runners are\ndesigned to punish players who rely only on slow, high-damage towers.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c21",
+      "kind": "answerable",
+      "question": "How many base Arrow bolts does it take to kill one Grunt?",
+      "refused": false,
+      "reason": null,
+      "answer": "It takes 5 base Arrow bolts to kill one Grunt.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Grunt"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7534428247077903,
+      "latency_ms": 1327.2415999999794,
+      "prompt_tokens": 584,
+      "completion_tokens": 34,
+      "cited_text": "[1] ## Grunt\nThe Grunt is the baseline enemy: 60 health, speed 80, no armor. Killing a Grunt pays a bounty of\n5 gold.\n\n[2] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c22",
+      "kind": "answerable",
+      "question": "What is a Runner's speed while it is chilled?",
+      "refused": false,
+      "reason": null,
+      "answer": "A Runner's speed while chilled is 112 (calculated as 160 * 0.7).",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Runner"
+        ],
+        [
+          "tools/balance.py",
+          "time_on_path"
+        ],
+        [
+          "src/enemies/enemy.gd",
+          "Enemy > _physics_process"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.3333333333333333,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7179593581448293,
+      "latency_ms": 1683.7087999992946,
+      "prompt_tokens": 600,
+      "completion_tokens": 50,
+      "cited_text": "[1] ## Runner\nThe Runner is fragile but fast: 35 health and speed 160. It pays a bounty of 8 gold. Runners are\ndesigned to punish players who rely only on slow, high-damage towers.\n\n[3] def time_on_path(path_length_px: float, enemy_speed: float, chill_slow: float = 0.0) -> float:\n    \"\"\"Seconds an enemy spends walking the path, optionally slowed by Chill.\"\"\"\n    return path_length_px / (enemy_speed * (1.0 - chill_slow))\n\n[5] func _physics_process(delta: float) -> void:\n\tvar speed := move_speed\n\tif chill_time_left > 0.0:\n\t\tspeed *= 0.7\n\t\tchill_time_left -= delta\n\tvelocity = path_direction() * speed\n\tmove_and_slide()",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c23",
+      "kind": "answerable",
+      "question": "At what health does the Shardlord enrage?",
+      "refused": false,
+      "reason": null,
+      "answer": "The Shardlord enrages when its health drops below 25 percent.",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Shardlord (boss)"
+        ],
+        [
+          "config/game.yaml",
+          "combat"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.8241864023653973,
+      "latency_ms": 1447.559000000183,
+      "prompt_tokens": 587,
+      "completion_tokens": 36,
+      "cited_text": "[1] ## Shardlord (boss)\nThe Shardlord is the boss. It has 5000 health and 15 armor and appears on waves 20 and 40. When\nits health drops below 25 percent it enrages and gains 50 percent more movement speed. If a\nShardlord leaks it costs 5 lives instead of 1.\n\n[4] combat:\n  minimum_damage: 1\n  poison_max_stacks: 3\n  poison_duration_sec: 5\n  chill_slow_ratio: 0.3\n  burn_damage_per_sec: 6\n  boss_enrage_health_ratio: 0.25",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c24",
+      "kind": "answerable",
+      "question": "What is the combined health of one Grunt, one Runner and one Brute?",
+      "refused": false,
+      "reason": null,
+      "answer": "The combined health is 395 (60 + 35 + 300).",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Grunt"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Brute"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Runner"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.6,
+      "top_cosine": 0.7707293679069842,
+      "latency_ms": 1870.6628999971144,
+      "prompt_tokens": 731,
+      "completion_tokens": 46,
+      "cited_text": "[1] ## Grunt\nThe Grunt is the baseline enemy: 60 health, speed 80, no armor. Killing a Grunt pays a bounty of\n5 gold.\n\n[2] ## Brute\nThe Brute is a slow tank: 300 health, speed 45 and 8 armor. Armor subtracts from every incoming\nhit, so cheap low-damage towers are nearly useless against it. The bounty is 25 gold.\n\n[3] ## Runner\nThe Runner is fragile but fast: 35 health and speed 160. It pays a bounty of 8 gold. Runners are\ndesigned to punish players who rely only on slow, high-damage towers.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c25",
+      "kind": "answerable",
+      "question": "How much gold does upgrading a Venom Tower from level 1 to level 2 cost?",
+      "refused": false,
+      "reason": null,
+      "answer": "Upgrading a Venom Tower from level 1 to level 2 costs 135 gold.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Venom Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Upgrades and selling"
+        ],
+        [
+          "src/towers/tower.gd",
+          "Tower > upgrade_cost"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7587577022232952,
+      "latency_ms": 1722.8129999966768,
+      "prompt_tokens": 608,
+      "completion_tokens": 44,
+      "cited_text": "[1] ## Venom Tower\nThe Venom Tower coats enemies in toxin and applies Poison. Damage on impact is 4. Most of its\nvalue comes from the damage over time described in the status effects design. It costs 90 gold.\n\n[2] ## Upgrades and selling\nEach upgrade level adds 25 percent to the tower's base damage. Upgrading to level N costs\n0.75 times the base cost times N. Selling a tower refunds 60 percent of the total gold invested\nin it, including upgrades. The refund is intentionally lossy to discourage constant rebuilding.\n\n[3] func upgrade_cost() -> int:\n\treturn int(base_cost * 0.75 * (level + 1))",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c26",
+      "kind": "answerable",
+      "question": "How much gold do one Frost Tower and one Venom Tower cost together?",
+      "refused": false,
+      "reason": null,
+      "answer": "One Frost Tower costs 80 gold and one Venom Tower costs 90 gold, so together they cost 170 gold.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Venom Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Frost Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7797929907092088,
+      "latency_ms": 1717.9452999989735,
+      "prompt_tokens": 608,
+      "completion_tokens": 49,
+      "cited_text": "[1] ## Venom Tower\nThe Venom Tower coats enemies in toxin and applies Poison. Damage on impact is 4. Most of its\nvalue comes from the damage over time described in the status effects design. It costs 90 gold.\n\n[2] ## Frost Tower\nThe Frost Tower throws ice shards that apply the Chill effect. Chill slows an enemy by 30 percent\nfor 2 seconds. Base damage is only 6, so the Frost Tower is a support tower. It costs 80 gold.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "c27",
+      "kind": "answerable",
+      "question": "How much gold remains from 500 after building two Arrow Towers and one Cannon Tower?",
+      "refused": false,
+      "reason": null,
+      "answer": "100 gold",
+      "correct": false,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Starting resources"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ],
+        [
+          "docs/design/towers.md",
+          "Towers > Cannon Tower"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.6666666666666666,
+      "retrieval_rank": 3,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.7071756196932163,
+      "latency_ms": 1454.5529999995779,
+      "prompt_tokens": 629,
+      "completion_tokens": 29,
+      "cited_text": "[1] ## Starting resources\nThe player starts each run with 200 gold and 20 lives. The starting gold is enough for three Arrow\nTowers or one Cannon Tower plus one Arrow Tower.\n\n[2] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.\n\n[3] ## Cannon Tower\nThe Cannon Tower lobs heavy shells with a splash radius of 96 pixels. Base damage is 40 but it\nfires only 0.4 shots per second. Shells cannot hit flying enemies. It costs 120 gold and every\nshell also applies Burn to enemies inside the blast.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "c28",
+      "kind": "answerable",
+      "question": "How much damage does a level 3 Frost Tower deal per shot?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.7317229712835157,
+      "latency_ms": 1995.417099999031,
+      "prompt_tokens": 638,
+      "completion_tokens": 63,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "z01",
+      "kind": "near",
+      "question": "What is the combined health of all enemies in wave 6?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6880676297980237,
+      "latency_ms": 1720.0618000024406,
+      "prompt_tokens": 708,
+      "completion_tokens": 46,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "z02",
+      "kind": "near",
+      "question": "How much bounty does a Wraith pay on wave 12?",
+      "refused": false,
+      "reason": null,
+      "answer": "A Wraith pays a bounty of 30 gold.",
+      "correct": null,
+      "cited": [
+        [
+          "docs/design/enemies.md",
+          "Enemies > Wraith"
+        ]
+      ],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7498024626330082,
+      "latency_ms": 1297.4122000014177,
+      "prompt_tokens": 541,
+      "completion_tokens": 30,
+      "cited_text": "[1] ## Wraith\nThe Wraith floats above the ground and is a flying enemy. It has 120 health and speed 100.\nWraiths are immune to Chill. Only towers that can target the air can hurt them. The bounty is\n30 gold.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "z03",
+      "kind": "near",
+      "question": "How much gold do I get back selling a level 3 Lightning Tower?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7394072128048934,
+      "latency_ms": 2283.0557000015688,
+      "prompt_tokens": 617,
+      "completion_tokens": 84,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "z04",
+      "kind": "near",
+      "question": "How much damage per second does a Frost Tower deal?",
+      "refused": false,
+      "reason": null,
+      "answer": "The Frost Tower deals 6 damage per second.",
+      "correct": null,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Frost Tower"
+        ]
+      ],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7946680057846747,
+      "latency_ms": 1331.2903999976697,
+      "prompt_tokens": 641,
+      "completion_tokens": 28,
+      "cited_text": "[1] ## Frost Tower\nThe Frost Tower throws ice shards that apply the Chill effect. Chill slows an enemy by 30 percent\nfor 2 seconds. Base damage is only 6, so the Frost Tower is a support tower. It costs 80 gold.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "z05",
+      "kind": "near",
+      "question": "How many seconds does a Runner need to walk the whole path?",
+      "refused": false,
+      "reason": null,
+      "answer": "A Runner needs approximately 1.0625 seconds to walk the whole path.",
+      "correct": null,
+      "cited": [
+        [
+          "tools/balance.py",
+          "time_on_path"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Runner"
+        ]
+      ],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.6820403609468322,
+      "latency_ms": 1444.7188999984064,
+      "prompt_tokens": 555,
+      "completion_tokens": 39,
+      "cited_text": "[1] def time_on_path(path_length_px: float, enemy_speed: float, chill_slow: float = 0.0) -> float:\n    \"\"\"Seconds an enemy spends walking the path, optionally slowed by Chill.\"\"\"\n    return path_length_px / (enemy_speed * (1.0 - chill_slow))\n\n[2] ## Runner\nThe Runner is fragile but fast: 35 health and speed 160. It pays a bounty of 8 gold. Runners are\ndesigned to punish players who rely only on slow, high-damage towers.",
+      "faithful": false,
+      "error": null
+    },
+    {
+      "id": "z06",
+      "kind": "near",
+      "question": "How many enemies spawn in wave 8?",
+      "refused": false,
+      "reason": null,
+      "answer": "In wave 8, there are 10 grunts and 1 brute spawning.",
+      "correct": null,
+      "cited": [
+        [
+          "data/waves.json",
+          "waves"
+        ]
+      ],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.7013692290815399,
+      "latency_ms": 1829.7329999986687,
+      "prompt_tokens": 788,
+      "completion_tokens": 36,
+      "cited_text": "[1] \"waves\": [\n    {\"number\": 1, \"enemies\": [{\"kind\": \"grunt\", \"count\": 6}]},\n    {\"number\": 2, \"enemies\": [{\"kind\": \"grunt\", \"count\": 8}, {\"kind\": \"runner\", \"count\": 3}]},\n    {\"number\": 3, \"enemies\": [{\"kind\": \"runner\", \"count\": 10}]},\n    {\"number\": 4, \"enemies\": [{\"kind\": \"grunt\", \"count\": 10}, {\"kind\": \"brute\", \"count\": 1}]},\n    {\"number\": 5, \"enemies\": [{\"kind\": \"wraith\", \"count\": 4}, {\"kind\": \"grunt\", \"count\": 8}]}\n  ],",
+      "faithful": false,
+      "error": null
+    }
+  ]
+}

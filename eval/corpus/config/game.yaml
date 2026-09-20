@@ -1,0 +1,27 @@
+# Global tuning constants for Shardfall.
+economy:
+  starting_gold: 200
+  base_income_per_wave: 100
+  income_per_wave_number: 10
+  flawless_bonus: 25
+  interest_rate: 0.05
+  interest_cap: 50
+  sell_refund_ratio: 0.6
+
+combat:
+  minimum_damage: 1
+  poison_max_stacks: 3
+  poison_duration_sec: 5
+  chill_slow_ratio: 0.3
+  burn_damage_per_sec: 6
+  boss_enrage_health_ratio: 0.25
+
+waves:
+  wave_cooldown_sec: 12
+  spawn_interval_sec: 0.8
+  boss_leak_penalty: 5
+
+limits:
+  max_towers: 12
+  starting_lives: 20
+  max_tower_level: 3

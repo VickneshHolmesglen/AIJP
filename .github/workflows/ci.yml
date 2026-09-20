@@ -1,0 +1,185 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: these jobs only read the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Must match the uv release that produced uv.lock (also pinned in the Dockerfile).
+  UV_VERSION: "0.11.7"
+
+jobs:
+  quality:
+    name: Lint, types, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: aijp
+          POSTGRES_PASSWORD: aijp
+          POSTGRES_DB: aijp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aijp -d aijp_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      AIJP_TEST_DATABASE_URL: postgresql+psycopg://aijp:aijp@127.0.0.1:5432/aijp_test
+      AIJP_DATABASE_URL: postgresql+psycopg://aijp:aijp@127.0.0.1:5432/aijp_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: "3.11"
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run mypy app
+
+      - name: Tests
+        run: uv run pytest -q -rs --junitxml=junit.xml
+
+      # The integration tests skip themselves when Postgres is unreachable. That is convenient
+      # locally but would let CI go green while testing nothing, so any skip is a failure here.
+      - name: Fail if any test was skipped
+        run: |
+          python - <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          suite = ET.parse("junit.xml").getroot()
+          suite = suite if suite.tag == "testsuite" else suite[0]
+          tests, skipped = int(suite.get("tests")), int(suite.get("skipped"))
+          print(f"{tests} tests, {skipped} skipped")
+          if skipped or tests == 0:
+              sys.exit("Tests were skipped (is the database reachable?) or none ran")
+          PY
+
+  container:
+    name: Container builds and passes a smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start the stack (database + API)
+        run: docker compose up -d --build db api
+
+      - name: Wait for the API to become healthy
+        run: |
+          for i in $(seq 1 60); do
+            state=$(docker inspect --format '{{.State.Health.Status}}' "$(docker compose ps -q api)")
+            echo "api health: $state"
+            [ "$state" = "healthy" ] && exit 0
+            sleep 2
+          done
+          docker compose logs api
+          exit 1
+
+      - name: Smoke test (public endpoints)
+        run: |
+          set -euo pipefail
+          base=http://127.0.0.1:8000
+          curl -fsS "$base/health"
+          curl -fsS "$base/health/ready"
+          curl -fsS "$base/ui/" -o /dev/null
+          curl -fsS "$base/auth/config" | grep -q '"auth_enabled":true'
+          # Every response carries a request id.
+          # (A GET that dumps headers: `curl -I` sends HEAD, which the GET-only route refuses.)
+          curl -fsS -D - -o /dev/null "$base/health" | grep -qi '^x-request-id:'
+
+      - name: Database is at the latest migration
+        run: |
+          # Fresh database, so this proves the migrations build the whole schema from nothing
+          # (under the read-only, non-root container) and that startup applied them.
+          docker compose exec -T api python -m app.migrate check
+
+      - name: Smoke test (authentication and roles)
+        run: |
+          set -euo pipefail
+          base=http://127.0.0.1:8000
+          code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+          # Secure by default: without a key, everything but the probes and the UI is refused,
+          # including a write, which the gate rejects before reading its body.
+          [ "$(code "$base/documents")" = "401" ]
+          [ "$(code "$base/metrics")" = "401" ]
+          [ "$(code -X POST "$base/documents" -d x=1)" = "401" ]
+          # Keys are created with the CLI inside the running (read-only, non-root) container.
+          token=$(docker compose exec -T api python -m app.keys create --name ci --role approver --token-only | tr -d '\r\n')
+          auth="Authorization: Bearer $token"
+          curl -fsS -H "$auth" "$base/auth/me" | grep -q '"role":"approver"'
+          curl -fsS -H "$auth" "$base/metrics" | grep -q '^http_requests_total'
+          # /status reports Ollama as unreachable here (none in CI) but must still answer 200.
+          curl -fsS -H "$auth" "$base/status" | grep -q '"pgvector":true'
+          # A reader key can read but cannot write.
+          reader=$(docker compose exec -T api python -m app.keys create --name ci-reader --role reader --token-only | tr -d '\r\n')
+          [ "$(code -H "Authorization: Bearer $reader" "$base/documents")" = "200" ]
+          [ "$(code -X POST -H "Authorization: Bearer $reader" "$base/embeddings")" = "403" ]
+          # A revoked key stops working on the next request.
+          docker compose exec -T api python -m app.keys revoke ci-reader
+          [ "$(code -H "Authorization: Bearer $reader" "$base/documents")" = "401" ]
+
+      - name: Container security posture
+        run: |
+          set -euo pipefail
+          [ "$(docker compose exec -T api id -u)" != "0" ]                       # not root
+          ! docker compose exec -T api sh -c 'touch /srv/x' 2>/dev/null           # read-only fs
+          docker compose exec -T api sh -c 'grep -q "^CapEff:.0000000000000000" /proc/self/status'
+
+      - name: Every log line is JSON
+        run: |
+          docker compose logs api --no-log-prefix | python -c "
+          import json, sys
+          lines = [l for l in sys.stdin if l.strip()]
+          [json.loads(l) for l in lines]
+          print(len(lines), 'JSON log lines')"
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      # Audits exactly what ships: the locked runtime dependencies, not the dev tools.
+      - name: Audit locked runtime dependencies
+        run: |
+          uv export --frozen --no-dev --no-hashes --no-emit-project -o requirements-audit.txt
+          uvx pip-audit -r requirements-audit.txt --disable-pip --no-deps

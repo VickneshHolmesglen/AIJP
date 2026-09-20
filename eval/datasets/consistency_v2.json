@@ -1,0 +1,264 @@
+{
+  "description": "SECOND consistency set (v2). The corpus is eval/corpus with the eval/seeded_patches_v2 overlay: six NEW deliberate mismatches, all in places where a config value still agrees with the design so the code is the only witness (the trap that caught the v1 model twice). Written after the v1 results were known, by the AI assistant rather than an independent party; not used to tune anything. `consistent` claims are true of design and code; `unsupported` claims (half far off-topic, half on-topic near-misses) are addressed by neither.",
+  "patches_dir": "seeded_patches_v2",
+  "seeded_changes": [
+    {
+      "file": "config/game.yaml",
+      "change": "max_towers is 10; the design says at most 12."
+    },
+    {
+      "file": "config/game.yaml",
+      "change": "starting_lives is 25; the design says 20."
+    },
+    {
+      "file": "src/enemies/enemy.gd",
+      "change": "apply_chill sets chill_time_left = 3.0; the design says 2 seconds (config has no chill duration)."
+    },
+    {
+      "file": "src/enemies/enemy.gd",
+      "change": "chill speed multiplier is 0.6 (a 40 percent slow); the design says 30 percent (config chill_slow_ratio still says 0.3)."
+    },
+    {
+      "file": "src/towers/tower.gd",
+      "change": "MAX_LEVEL is 5; the design says level 3 (config max_tower_level still says 3)."
+    },
+    {
+      "file": "src/enemies/enemy.gd",
+      "change": "enrage triggers below 35 percent health; the design says 25 percent (config boss_enrage_health_ratio still says 0.25)."
+    }
+  ],
+  "claims": [
+    {
+      "id": "z1",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "The player may have at most 12 towers at once.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "z2",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "The player starts each run with 20 lives.",
+      "design": [
+        "docs/design/economy.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "z3",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "Chill lasts 2 seconds, and reapplying it only refreshes the timer.",
+      "design": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "z4",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "Chill slows movement by 30 percent.",
+      "design": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "z5",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "A tower can be upgraded to level 3 at most.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "src/towers/tower.gd"
+      ]
+    },
+    {
+      "id": "z6",
+      "kind": "seeded",
+      "expected": "potential_discrepancy",
+      "claim": "A boss enrages when its health drops below 25 percent.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "y1",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Arrow Towers can attack flying enemies such as Wraiths.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "src/towers/tower.gd"
+      ]
+    },
+    {
+      "id": "y2",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "A leaked boss costs 5 lives.",
+      "design": [
+        "docs/design/economy.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "y3",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Selling a tower refunds 60 percent of the gold invested.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "src/towers/tower.gd"
+      ]
+    },
+    {
+      "id": "y4",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Poison stacks up to 3 times.",
+      "design": [
+        "docs/design/status_effects.md"
+      ],
+      "implementation": [
+        "src/enemies/enemy.gd"
+      ]
+    },
+    {
+      "id": "y5",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Upgrading a tower to level N costs 0.75 times its base cost times N.",
+      "design": [
+        "docs/design/towers.md"
+      ],
+      "implementation": [
+        "src/towers/tower.gd"
+      ]
+    },
+    {
+      "id": "y6",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Interest is capped at 50 gold per wave.",
+      "design": [
+        "docs/design/economy.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "y7",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Wave income is 100 gold plus 10 gold per wave number.",
+      "design": [
+        "docs/design/economy.md"
+      ],
+      "implementation": [
+        "config/game.yaml"
+      ]
+    },
+    {
+      "id": "y8",
+      "kind": "consistent",
+      "expected": "consistent",
+      "claim": "Boss waves are 20 and 40.",
+      "design": [
+        "docs/design/enemies.md"
+      ],
+      "implementation": [
+        "data/waves.json"
+      ]
+    },
+    {
+      "id": "x1",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "The game has a built-in level editor.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "x2",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Each tower can be rotated by the player.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "x3",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Save files are compressed with gzip.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "x4",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "A hard mode doubles every enemy's health.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "x5",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Chill also reduces an enemy's armor.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "x6",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Cannon splash damage falls off with distance from the impact point.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "x7",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "Wraiths regenerate health over time.",
+      "design": [],
+      "implementation": []
+    },
+    {
+      "id": "x8",
+      "kind": "unsupported",
+      "expected": "insufficient_evidence",
+      "claim": "The Shardlord drops a rare item when it dies.",
+      "design": [],
+      "implementation": []
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "description": "Retrieval questions over the synthetic 'Shardfall' corpus in eval/corpus. Authored by hand BEFORE running any benchmark. A hit is a retrieved chunk whose document source_path equals `path` and, if given, whose section equals `section` (exact) or is `section_prefix` or nested under it (`section_prefix > ...`). Any listed expected source counts.",
+  "kinds": {
+    "paraphrase": "question uses different words than the source (semantic matching should help)",
+    "identifier": "question names an exact identifier/setting (lexical matching should help)",
+    "numeric": "asks for a specific number stated in the corpus",
+    "code_location": "asks where behaviour is implemented"
+  },
+  "questions": [
+    {"id": "p01", "kind": "paraphrase", "question": "How many times can venom effects pile up on one target?", "expected": [{"path": "docs/design/status_effects.md", "section_prefix": "Status Effects > Poison"}, {"path": "src/enemies/enemy.gd"}]},
+    {"id": "p02", "kind": "paraphrase", "question": "Which defensive structure is the cheapest way to deal with ghosts that float over the path?", "expected": [{"path": "docs/design/towers.md", "section_prefix": "Towers > Arrow Tower"}, {"path": "docs/design/enemies.md", "section_prefix": "Enemies > Wraith"}]},
+    {"id": "p03", "kind": "paraphrase", "question": "Why can't I just hoard money forever?", "expected": [{"path": "docs/design/economy.md", "section_prefix": "Economy > Interest"}]},
+    {"id": "p04", "kind": "paraphrase", "question": "What happens if the final villain gets past my defences?", "expected": [{"path": "docs/design/enemies.md", "section_prefix": "Enemies > Shardlord (boss)"}, {"path": "docs/design/economy.md", "section_prefix": "Economy > Lives"}]},
+    {"id": "p05", "kind": "paraphrase", "question": "Which enemy shrugs off cheap low-power turrets?", "expected": [{"path": "docs/design/enemies.md", "section_prefix": "Enemies > Brute"}]},
+    {"id": "p06", "kind": "paraphrase", "question": "Do cold effects and fire effects work together on the same target?", "expected": [{"path": "docs/design/status_effects.md", "section_prefix": "Status Effects > Interaction rules"}]},
+    {"id": "p07", "kind": "paraphrase", "question": "How much money do I get back when I demolish a defence?", "expected": [{"path": "docs/design/towers.md", "section_prefix": "Towers > Upgrades and selling"}, {"path": "src/towers/tower.gd"}, {"path": "config/game.yaml", "section_prefix": "economy"}]},
+    {"id": "p08", "kind": "paraphrase", "question": "How does the game persist player progress between sessions?", "expected": [{"path": "docs/architecture.md", "section_prefix": "Shardfall Architecture > Saving"}]},
+    {"id": "p09", "kind": "paraphrase", "question": "What do I earn for clearing a wave without letting anything through?", "expected": [{"path": "docs/design/economy.md", "section_prefix": "Economy > Wave income"}]},
+    {"id": "p10", "kind": "paraphrase", "question": "Which foe moves quickest but dies easily?", "expected": [{"path": "docs/design/enemies.md", "section_prefix": "Enemies > Runner"}]},
+
+    {"id": "i01", "kind": "identifier", "question": "What is WAVE_COOLDOWN_SEC?", "expected": [{"path": "src/systems/wave_spawner.gd"}, {"path": "config/game.yaml", "section_prefix": "waves"}]},
+    {"id": "i02", "kind": "identifier", "question": "What does the interest_cap setting do?", "expected": [{"path": "config/game.yaml", "section_prefix": "economy"}, {"path": "docs/design/economy.md", "section_prefix": "Economy > Interest"}]},
+    {"id": "i03", "kind": "identifier", "question": "Where is SELL_REFUND_RATIO defined?", "expected": [{"path": "src/towers/tower.gd"}]},
+    {"id": "i04", "kind": "identifier", "question": "What does GameState own?", "expected": [{"path": "docs/architecture.md", "section_prefix": "Shardfall Architecture > Global singletons"}]},
+    {"id": "i05", "kind": "identifier", "question": "What does SaveManager write to user://savegame.json?", "expected": [{"path": "docs/architecture.md", "section_prefix": "Shardfall Architecture > Saving"}]},
+    {"id": "i06", "kind": "identifier", "question": "What is EventBus used for?", "expected": [{"path": "docs/architecture.md", "section_prefix": "Shardfall Architecture > Global singletons"}]},
+    {"id": "i07", "kind": "identifier", "question": "What does dps_per_gold compute?", "expected": [{"path": "tools/balance.py", "section_prefix": "dps_per_gold"}]},
+    {"id": "i08", "kind": "identifier", "question": "What is HIT_EFFICIENCY?", "expected": [{"path": "tools/balance.py"}]},
+    {"id": "i09", "kind": "identifier", "question": "What does the _enrage function do?", "expected": [{"path": "src/enemies/enemy.gd", "section_prefix": "Enemy > _enrage"}]},
+    {"id": "i10", "kind": "identifier", "question": "What is boss_leak_penalty?", "expected": [{"path": "config/game.yaml", "section_prefix": "waves"}]},
+
+    {"id": "n01", "kind": "numeric", "question": "What is the base damage of the Cannon Tower?", "expected": [{"path": "docs/design/towers.md", "section_prefix": "Towers > Cannon Tower"}]},
+    {"id": "n02", "kind": "numeric", "question": "How much health does a Brute have?", "expected": [{"path": "docs/design/enemies.md", "section_prefix": "Enemies > Brute"}]},
+    {"id": "n03", "kind": "numeric", "question": "What is the splash radius of the Cannon Tower?", "expected": [{"path": "docs/design/towers.md", "section_prefix": "Towers > Cannon Tower"}]},
+    {"id": "n04", "kind": "numeric", "question": "How much gold does the player start with?", "expected": [{"path": "docs/design/economy.md", "section_prefix": "Economy > Starting resources"}, {"path": "config/game.yaml", "section_prefix": "economy"}]},
+    {"id": "n05", "kind": "numeric", "question": "How many lives does the player start with?", "expected": [{"path": "docs/design/economy.md", "section_prefix": "Economy > Starting resources"}, {"path": "config/game.yaml", "section_prefix": "limits"}]},
+    {"id": "n06", "kind": "numeric", "question": "What is the maximum number of towers allowed at once?", "expected": [{"path": "docs/design/towers.md", "section": "Towers"}, {"path": "config/game.yaml", "section_prefix": "limits"}]},
+    {"id": "n07", "kind": "numeric", "question": "How long does Burn last?", "expected": [{"path": "docs/design/status_effects.md", "section_prefix": "Status Effects > Burn"}]},
+    {"id": "n08", "kind": "numeric", "question": "How much does it cost to upgrade a tower to level 3?", "expected": [{"path": "docs/design/towers.md", "section_prefix": "Towers > Upgrades and selling"}, {"path": "src/towers/tower.gd", "section_prefix": "Tower > upgrade_cost"}]},
+    {"id": "n09", "kind": "numeric", "question": "What is the bounty for killing a Wraith?", "expected": [{"path": "docs/design/enemies.md", "section_prefix": "Enemies > Wraith"}]},
+
+    {"id": "c01", "kind": "code_location", "question": "Where is damage reduced by armor calculated?", "expected": [{"path": "src/enemies/enemy.gd", "section_prefix": "Enemy > take_damage"}, {"path": "tools/balance.py", "section_prefix": "effective_damage"}, {"path": "docs/architecture.md", "section_prefix": "Shardfall Architecture > Data flow of a hit"}]},
+    {"id": "c02", "kind": "code_location", "question": "Where do waves get loaded from disk?", "expected": [{"path": "src/systems/wave_spawner.gd", "section_prefix": "WaveSpawner > _load_waves"}]},
+    {"id": "c03", "kind": "code_location", "question": "Which code decides when a wave is cleared?", "expected": [{"path": "src/systems/wave_spawner.gd", "section_prefix": "WaveSpawner > _check_cleared"}]},
+    {"id": "c04", "kind": "code_location", "question": "How does a tower pick which enemy to shoot?", "expected": [{"path": "src/towers/tower.gd", "section_prefix": "Tower > find_target"}]},
+    {"id": "c05", "kind": "code_location", "question": "Where is tower upgrading implemented?", "expected": [{"path": "src/towers/tower.gd", "section_prefix": "Tower > upgrade"}]},
+    {"id": "c06", "kind": "code_location", "question": "Where is the poison effect applied to enemies?", "expected": [{"path": "src/enemies/enemy.gd", "section_prefix": "Enemy > apply_poison"}, {"path": "src/enemies/enemy.gd", "section_prefix": "Enemy > _process"}]},
+    {"id": "c07", "kind": "code_location", "question": "What code simulates whether a defence can survive a wave?", "expected": [{"path": "tools/balance.py", "section_prefix": "simulate_wave"}]},
+    {"id": "c08", "kind": "code_location", "question": "Where is the enrage behaviour for bosses implemented?", "expected": [{"path": "src/enemies/enemy.gd", "section_prefix": "Enemy > take_damage"}, {"path": "src/enemies/enemy.gd", "section_prefix": "Enemy > _enrage"}, {"path": "src/enemies/enemy.gd", "section_prefix": "Enemy > is_boss"}]}
+  ]
+}

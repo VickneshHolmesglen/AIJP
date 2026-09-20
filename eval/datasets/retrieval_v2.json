@@ -1,0 +1,495 @@
+{
+  "description": "SECOND, HARDER retrieval set (v2) over the same 'Shardfall' corpus in eval/corpus. Written AFTER the M14 reranker decision and after seeing the v1 results, by the AI assistant, not an independent party, so it targets the weaknesses v1 revealed (multi-hop, negation, derived numbers, low word overlap, code reasoning). It has not been used to tune anything. Questions with `require_all` are credited only at the rank by which every expected source has been retrieved.",
+  "kinds": {
+    "multi_hop": "needs facts from more than one chunk (often a computation)",
+    "negation": "the answer is 'no' or turns on 'not'",
+    "paraphrase_hard": "shares almost no words with the source",
+    "code_reasoning": "the behaviour must be read off the code",
+    "identifier": "names a config key that also has a design-doc description"
+  },
+  "questions": [
+    {
+      "id": "m01",
+      "kind": "multi_hop",
+      "question": "How much gold does upgrading a Cannon Tower to level 2 cost?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "m02",
+      "kind": "multi_hop",
+      "question": "How much damage does a fully upgraded Arrow Tower deal per shot?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "m03",
+      "kind": "multi_hop",
+      "question": "What is the total gold needed to build a Frost Tower and upgrade it all the way to level 3?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "m04",
+      "kind": "multi_hop",
+      "question": "If I sell a level 3 Arrow Tower, how much gold do I get back?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "m05",
+      "kind": "multi_hop",
+      "question": "Which tower is the best answer to the boss, and why?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ]
+    },
+    {
+      "id": "m06",
+      "kind": "multi_hop",
+      "question": "Can I use Frost Towers against the flying enemies?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ]
+    },
+    {
+      "id": "m07",
+      "kind": "multi_hop",
+      "question": "Will burning enemies take extra damage from my cheapest tower?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Burn"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "m08",
+      "kind": "multi_hop",
+      "question": "After a Cannon shell hits a chilled enemy, is that enemy still slowed?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Interaction rules"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "m09",
+      "kind": "multi_hop",
+      "question": "How much gold do the two cheapest tower types cost together?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "m10",
+      "kind": "multi_hop",
+      "question": "How much gold do waves 1 through 3 pay out in total if none leaks?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Wave income"
+        }
+      ]
+    },
+    {
+      "id": "m11",
+      "kind": "multi_hop",
+      "question": "What does clearing wave 7 without a leak pay?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Wave income"
+        }
+      ]
+    },
+    {
+      "id": "t01",
+      "kind": "negation",
+      "question": "Which towers cannot target flying enemies?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        }
+      ]
+    },
+    {
+      "id": "t02",
+      "kind": "negation",
+      "question": "Does Chill stack when it is applied repeatedly?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ]
+    },
+    {
+      "id": "t03",
+      "kind": "negation",
+      "question": "Does Burn stack?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Burn"
+        }
+      ]
+    },
+    {
+      "id": "t04",
+      "kind": "negation",
+      "question": "Is Poison reduced by an enemy's armor?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        },
+        {
+          "path": "src/enemies/enemy.gd",
+          "section_prefix": "Enemy > apply_poison"
+        }
+      ]
+    },
+    {
+      "id": "t05",
+      "kind": "negation",
+      "question": "Is there any enemy that can take no damage at all?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Armor and minimum damage"
+        },
+        {
+          "path": "src/enemies/enemy.gd",
+          "section_prefix": "Enemy > take_damage"
+        }
+      ]
+    },
+    {
+      "id": "h01",
+      "kind": "paraphrase_hard",
+      "question": "Which unit is worth the most loot when it dies?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ]
+    },
+    {
+      "id": "h02",
+      "kind": "paraphrase_hard",
+      "question": "What ends a run?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Lives"
+        }
+      ]
+    },
+    {
+      "id": "h03",
+      "kind": "paraphrase_hard",
+      "question": "How quickly does the game let me start the next round?",
+      "expected": [
+        {
+          "path": "config/game.yaml",
+          "section": "waves"
+        },
+        {
+          "path": "src/systems/wave_spawner.gd",
+          "section": "WaveSpawner > declarations: wave_started, wave_cleared, WAVE_COOLDOWN_SEC, SPAWN_INTERVAL_SEC, enemy_scenes, current_wave, _waves, _alive, _leaked_this_wave"
+        }
+      ]
+    },
+    {
+      "id": "h04",
+      "kind": "paraphrase_hard",
+      "question": "How frequently do individual monsters appear during a round?",
+      "expected": [
+        {
+          "path": "config/game.yaml",
+          "section": "waves"
+        },
+        {
+          "path": "src/systems/wave_spawner.gd",
+          "section": "WaveSpawner > declarations: wave_started, wave_cleared, WAVE_COOLDOWN_SEC, SPAWN_INTERVAL_SEC, enemy_scenes, current_wave, _waves, _alive, _leaked_this_wave"
+        }
+      ]
+    },
+    {
+      "id": "h05",
+      "kind": "paraphrase_hard",
+      "question": "Which file says how many monsters come in each round?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/architecture.md",
+          "section_prefix": "Shardfall Architecture > Project layout"
+        }
+      ]
+    },
+    {
+      "id": "h06",
+      "kind": "paraphrase_hard",
+      "question": "Which foe shows up on rounds 20 and 40?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        },
+        {
+          "path": "data/waves.json",
+          "section": "boss_waves"
+        }
+      ]
+    },
+    {
+      "id": "h07",
+      "kind": "paraphrase_hard",
+      "question": "What can I buy with my opening funds?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Starting resources"
+        }
+      ]
+    },
+    {
+      "id": "h08",
+      "kind": "paraphrase_hard",
+      "question": "How does landing a killing blow turn into money?",
+      "expected": [
+        {
+          "path": "docs/architecture.md",
+          "section_prefix": "Shardfall Architecture > Data flow of a hit"
+        }
+      ]
+    },
+    {
+      "id": "r01",
+      "kind": "code_reasoning",
+      "question": "What happens to an enemy's poison stacks when the poison timer runs out?",
+      "expected": [
+        {
+          "path": "src/enemies/enemy.gd",
+          "section_prefix": "Enemy > _process"
+        }
+      ]
+    },
+    {
+      "id": "r02",
+      "kind": "code_reasoning",
+      "question": "What value does a tower's total_invested start with?",
+      "expected": [
+        {
+          "path": "src/towers/tower.gd",
+          "section_prefix": "Tower > _ready"
+        }
+      ]
+    },
+    {
+      "id": "r03",
+      "kind": "code_reasoning",
+      "question": "What does upgrade() return when the tower is already at its maximum level?",
+      "expected": [
+        {
+          "path": "src/towers/tower.gd",
+          "section_prefix": "Tower > upgrade"
+        }
+      ]
+    },
+    {
+      "id": "r04",
+      "kind": "code_reasoning",
+      "question": "How does the code recognise that an enemy is a boss?",
+      "expected": [
+        {
+          "path": "src/enemies/enemy.gd",
+          "section_prefix": "Enemy > is_boss"
+        }
+      ]
+    },
+    {
+      "id": "r05",
+      "kind": "code_reasoning",
+      "question": "By how much does the code multiply an enemy's speed while it is chilled?",
+      "expected": [
+        {
+          "path": "src/enemies/enemy.gd",
+          "section_prefix": "Enemy > _physics_process"
+        }
+      ]
+    },
+    {
+      "id": "r06",
+      "kind": "code_reasoning",
+      "question": "What does WaveSpawner do once the last enemy of a wave is gone?",
+      "expected": [
+        {
+          "path": "src/systems/wave_spawner.gd",
+          "section_prefix": "WaveSpawner > _check_cleared"
+        }
+      ]
+    },
+    {
+      "id": "r07",
+      "kind": "code_reasoning",
+      "question": "How does the offline simulator work out the towers' combined damage output?",
+      "expected": [
+        {
+          "path": "tools/balance.py",
+          "section_prefix": "simulate_wave"
+        }
+      ]
+    },
+    {
+      "id": "d01",
+      "kind": "identifier",
+      "question": "What does the flawless_bonus setting give?",
+      "expected": [
+        {
+          "path": "config/game.yaml",
+          "section": "economy"
+        },
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Wave income"
+        }
+      ]
+    },
+    {
+      "id": "d02",
+      "kind": "identifier",
+      "question": "What is boss_enrage_health_ratio set to?",
+      "expected": [
+        {
+          "path": "config/game.yaml",
+          "section": "combat"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ]
+    },
+    {
+      "id": "d03",
+      "kind": "identifier",
+      "question": "What is max_tower_level?",
+      "expected": [
+        {
+          "path": "config/game.yaml",
+          "section": "limits"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section": "Towers"
+        }
+      ]
+    },
+    {
+      "id": "d04",
+      "kind": "identifier",
+      "question": "What is chill_slow_ratio?",
+      "expected": [
+        {
+          "path": "config/game.yaml",
+          "section": "combat"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ]
+    },
+    {
+      "id": "d05",
+      "kind": "identifier",
+      "question": "What is poison_duration_sec?",
+      "expected": [
+        {
+          "path": "config/game.yaml",
+          "section": "combat"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        }
+      ]
+    }
+  ]
+}

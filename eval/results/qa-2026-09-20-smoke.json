@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "date": "2026-09-20",
+    "corpus": "11 files, 73 chunks (eval/corpus)",
+    "questions": "3 answerable + 3 unanswerable",
+    "retrieval mode": "vector",
+    "top_k": "5",
+    "min_evidence_score": "0.5",
+    "embedding model": "nomic-embed-text",
+    "answer + judge model": "qwen3.5",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "validation": {
+    "total": 12,
+    "correct": 12,
+    "unparseable": 0,
+    "false_supported": 0,
+    "false_unsupported": 0
+  },
+  "records": [
+    {
+      "id": "p01",
+      "kind": "answerable",
+      "question": "How many times can venom effects pile up on one target?",
+      "refused": false,
+      "reason": null,
+      "answer": "Venom effects can pile up 3 times on one target.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/status_effects.md",
+          "Status Effects > Poison"
+        ],
+        [
+          "config/game.yaml",
+          "combat"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 0.5,
+      "retrieval_rank": 2,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.6872425320953555,
+      "latency_ms": 13107.105900000079,
+      "prompt_tokens": 550,
+      "completion_tokens": 34,
+      "cited_text": "[2] ## Poison\nPoison deals 4 damage per second per stack. It stacks up to 3 times. Applying Poison again\nrefreshes the duration to 5 seconds for all stacks. Poison ignores armor, which makes the Venom\nTower the best answer to Brutes and the Shardlord.\n\n[4] combat:\n  minimum_damage: 1\n  poison_max_stacks: 3\n  poison_duration_sec: 5\n  chill_slow_ratio: 0.3\n  burn_damage_per_sec: 6\n  boss_enrage_health_ratio: 0.25",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "p02",
+      "kind": "answerable",
+      "question": "Which defensive structure is the cheapest way to deal with ghosts that float over the path?",
+      "refused": false,
+      "reason": null,
+      "answer": "The Arrow Tower is the cheapest way to deal with flying enemies like Wraiths (ghosts), costing 50 gold.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/towers.md",
+          "Towers > Arrow Tower"
+        ],
+        [
+          "docs/design/enemies.md",
+          "Enemies > Wraith"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.4,
+      "top_cosine": 0.6202639303546502,
+      "latency_ms": 16551.009499999964,
+      "prompt_tokens": 648,
+      "completion_tokens": 47,
+      "cited_text": "[1] ## Arrow Tower\nThe Arrow Tower fires single bolts at the closest enemy. Base damage is 12 and the fire rate is\n1.5 shots per second. It costs 50 gold. Arrow bolts can hit flying enemies, which makes it the\ncheapest answer to Wraiths.\n\n[3] ## Wraith\nThe Wraith floats above the ground and is a flying enemy. It has 120 health and speed 100.\nWraiths are immune to Chill. Only towers that can target the air can hurt them. The bounty is\n30 gold.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "p03",
+      "kind": "answerable",
+      "question": "Why can't I just hoard money forever?",
+      "refused": false,
+      "reason": null,
+      "answer": "You cannot hoard money forever because interest is capped at 50 gold per wave to ensure that building is more beneficial than hoarding.",
+      "correct": true,
+      "cited": [
+        [
+          "docs/design/economy.md",
+          "Economy > Interest"
+        ]
+      ],
+      "citation_any": true,
+      "citation_precision": 1.0,
+      "retrieval_rank": 1,
+      "precision_at_k": 0.2,
+      "top_cosine": 0.5826840945138081,
+      "latency_ms": 15389.848900000288,
+      "prompt_tokens": 547,
+      "completion_tokens": 46,
+      "cited_text": "[1] ## Interest\nAt the start of each wave the player earns interest of 5 percent on unspent gold. Interest is\ncapped at 50 gold per wave so that hoarding never beats building. The cap exists purely to keep\nthe early game tense.",
+      "faithful": true,
+      "error": null
+    },
+    {
+      "id": "u01",
+      "kind": "far",
+      "question": "How does multiplayer matchmaking work?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.5366776396864046,
+      "latency_ms": 10731.293499999992,
+      "prompt_tokens": 690,
+      "completion_tokens": 17,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "u02",
+      "kind": "far",
+      "question": "Which database stores the online leaderboard?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.5375364538249757,
+      "latency_ms": 10209.479399999964,
+      "prompt_tokens": 610,
+      "completion_tokens": 17,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    },
+    {
+      "id": "u03",
+      "kind": "far",
+      "question": "How many hours of audio are in the soundtrack?",
+      "refused": true,
+      "reason": "model_declined",
+      "answer": null,
+      "correct": null,
+      "cited": [],
+      "citation_any": null,
+      "citation_precision": null,
+      "retrieval_rank": null,
+      "precision_at_k": null,
+      "top_cosine": 0.5273459986770498,
+      "latency_ms": 13136.346600000252,
+      "prompt_tokens": 506,
+      "completion_tokens": 37,
+      "cited_text": "",
+      "faithful": null,
+      "error": null
+    }
+  ]
+}

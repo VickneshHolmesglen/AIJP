@@ -1,0 +1,103 @@
+{
+  "description": "SECOND, HARDER judge-validation set (v2). `supported` is the ground truth: true only if EVERY claim in the answer is stated in, or follows by simple arithmetic from, the sources. Unfaithful answers here are subtle: a near-miss number, a swapped entity, an overreaching scope, a flipped negation, a wrong unit, an extra invented detail, an arithmetic slip. Faithful ones include derived numbers and negative answers. Written by the AI assistant after the v1 judge scored 12/12 on easy cases, to see whether that score survives harder ones.",
+  "cases": [
+    {
+      "id": "jh01",
+      "supported": true,
+      "sources": "Arrow Tower: base damage is 12 and the fire rate is 1.5 shots per second. It costs 50 gold. Each upgrade level adds 25 percent to the tower's base damage.",
+      "question": "What is an Arrow Tower's damage at level 2?",
+      "answer": "Level 2 adds 25 percent of the base 12 damage, so 15."
+    },
+    {
+      "id": "jh02",
+      "supported": false,
+      "sources": "Arrow Tower: base damage is 12 and the fire rate is 1.5 shots per second. It costs 50 gold. Each upgrade level adds 25 percent to the tower's base damage.",
+      "question": "What is an Arrow Tower's damage at level 2?",
+      "answer": "At level 2 an Arrow Tower deals 16 damage."
+    },
+    {
+      "id": "jh03",
+      "supported": false,
+      "sources": "Venom Tower: applies Poison, damage on impact is 4, it costs 90 gold. Frost Tower: applies Chill, base damage is only 6, it costs 80 gold.",
+      "question": "How much does the Venom Tower cost?",
+      "answer": "The Venom Tower costs 80 gold."
+    },
+    {
+      "id": "jh04",
+      "supported": false,
+      "sources": "Chill slows movement by 30 percent for 2 seconds. Chill does not stack; reapplying only refreshes the timer. Wraiths are immune.",
+      "question": "Which enemies are immune to Chill?",
+      "answer": "Wraiths and Runners are immune to Chill."
+    },
+    {
+      "id": "jh05",
+      "supported": false,
+      "sources": "Chill slows movement by 30 percent for 2 seconds. Chill does not stack; reapplying only refreshes the timer. Wraiths are immune.",
+      "question": "Does Chill stack?",
+      "answer": "Chill stacks up to two times."
+    },
+    {
+      "id": "jh06",
+      "supported": true,
+      "sources": "Each leaked enemy costs 1 life. A leaked boss costs 5 lives.",
+      "question": "How many lives do two leaked enemies and one leaked boss cost?",
+      "answer": "Together they cost 7 lives."
+    },
+    {
+      "id": "jh07",
+      "supported": false,
+      "sources": "Chill slows movement by 30 percent for 2 seconds. Chill does not stack; reapplying only refreshes the timer. Wraiths are immune.",
+      "question": "How strong and how long is Chill?",
+      "answer": "Chill slows movement by 30 percent for 3 seconds."
+    },
+    {
+      "id": "jh08",
+      "supported": false,
+      "sources": "At the start of each wave the player earns interest of 5 percent on unspent gold. Interest is capped at 50 gold per wave.",
+      "question": "How does interest work?",
+      "answer": "Interest is 5 percent, capped at 50 gold, and it is paid at the end of each wave."
+    },
+    {
+      "id": "jh09",
+      "supported": true,
+      "sources": "Brute: 300 health, speed 45 and 8 armor. The bounty is 25 gold.",
+      "question": "How much health does a Brute have?",
+      "answer": "A Brute has 300 health."
+    },
+    {
+      "id": "jh10",
+      "supported": false,
+      "sources": "The Shardlord is the boss. It has 5000 health and 15 armor and appears on waves 20 and 40.",
+      "question": "Tell me about the Shardlord.",
+      "answer": "The Shardlord has 5000 health and drops rare loot when defeated."
+    },
+    {
+      "id": "jh11",
+      "supported": true,
+      "sources": "Poison deals 4 damage per second per stack. It stacks up to 3 times.",
+      "question": "What is the most damage per second Poison can deal?",
+      "answer": "At 3 stacks it deals 12 damage per second."
+    },
+    {
+      "id": "jh12",
+      "supported": false,
+      "sources": "Poison deals 4 damage per second per stack. It stacks up to 3 times.",
+      "question": "What is the most damage per second Poison can deal?",
+      "answer": "At its maximum stacks it deals 16 damage per second."
+    },
+    {
+      "id": "jh13",
+      "supported": true,
+      "sources": "Chill slows movement by 30 percent for 2 seconds. Chill does not stack; reapplying only refreshes the timer. Wraiths are immune.",
+      "question": "Does Chill work on Wraiths?",
+      "answer": "No, Wraiths are immune to Chill."
+    },
+    {
+      "id": "jh14",
+      "supported": true,
+      "sources": "Arrow Tower: base damage is 12 and the fire rate is 1.5 shots per second. It costs 50 gold. Each upgrade level adds 25 percent to the tower's base damage. Arrow bolts can hit flying enemies.",
+      "question": "Which tower's shots can reach flying enemies?",
+      "answer": "The Arrow Tower's bolts can hit flying enemies."
+    }
+  ]
+}

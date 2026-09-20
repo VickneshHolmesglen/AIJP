@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "version": 2,
+    "description": "Wave definitions for Shardfall",
+    "spawn_gate": "north"
+  },
+  "waves": [
+    {"number": 1, "enemies": [{"kind": "grunt", "count": 6}]},
+    {"number": 2, "enemies": [{"kind": "grunt", "count": 8}, {"kind": "runner", "count": 3}]},
+    {"number": 3, "enemies": [{"kind": "runner", "count": 10}]},
+    {"number": 4, "enemies": [{"kind": "grunt", "count": 10}, {"kind": "brute", "count": 1}]},
+    {"number": 5, "enemies": [{"kind": "wraith", "count": 4}, {"kind": "grunt", "count": 8}]}
+  ],
+  "boss_waves": {
+    "20": "shardlord",
+    "40": "shardlord"
+  }
+}

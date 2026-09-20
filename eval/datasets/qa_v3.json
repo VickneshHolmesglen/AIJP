@@ -1,0 +1,207 @@
+{
+  "description": "Answer-level set (v3), paired with retrieval_v3.json. Each answer is one number, matched as a WHOLE number ('#N'); `derivations` (ignored by the runners) shows how each was computed from the corpus rules. `unanswerable` questions have no answer in the corpus.",
+  "answerable": {
+    "c01": [
+      [
+        "#570"
+      ]
+    ],
+    "c02": [
+      [
+        "#342"
+      ]
+    ],
+    "c03": [
+      [
+        "#60"
+      ]
+    ],
+    "c04": [
+      [
+        "#24"
+      ]
+    ],
+    "c05": [
+      [
+        "#70"
+      ]
+    ],
+    "c06": [
+      [
+        "#215"
+      ]
+    ],
+    "c07": [
+      [
+        "#340"
+      ]
+    ],
+    "c08": [
+      [
+        "#30"
+      ]
+    ],
+    "c09": [
+      [
+        "#50"
+      ]
+    ],
+    "c10": [
+      [
+        "#160"
+      ]
+    ],
+    "c11": [
+      [
+        "#27"
+      ]
+    ],
+    "c12": [
+      [
+        "#8"
+      ]
+    ],
+    "c13": [
+      [
+        "#8"
+      ]
+    ],
+    "c14": [
+      [
+        "#11"
+      ]
+    ],
+    "c15": [
+      [
+        "#60"
+      ]
+    ],
+    "c16": [
+      [
+        "#18"
+      ]
+    ],
+    "c17": [
+      [
+        "#32"
+      ]
+    ],
+    "c18": [
+      [
+        "#4"
+      ]
+    ],
+    "c19": [
+      [
+        "#14.4"
+      ]
+    ],
+    "c20": [
+      [
+        "#33"
+      ]
+    ],
+    "c21": [
+      [
+        "#5"
+      ]
+    ],
+    "c22": [
+      [
+        "#112"
+      ]
+    ],
+    "c23": [
+      [
+        "#1250"
+      ]
+    ],
+    "c24": [
+      [
+        "#395"
+      ]
+    ],
+    "c25": [
+      [
+        "#135"
+      ]
+    ],
+    "c26": [
+      [
+        "#170"
+      ]
+    ],
+    "c27": [
+      [
+        "#280"
+      ]
+    ],
+    "c28": [
+      [
+        "#9"
+      ]
+    ]
+  },
+  "derivations": {
+    "c01": "120 + 0.75*120*2 + 0.75*120*3 = 570",
+    "c02": "(120 + 0.75*120*2 + 0.75*120*3) * 0.6 = 342",
+    "c03": "40 * (1 + 0.25*2) = 60",
+    "c04": "40 * (1 + 0.25*2) * 0.4 = 24",
+    "c05": "200 - 50 - 80 = 70",
+    "c06": "100 + 10*9 + 25 = 215",
+    "c07": "(100 + 10*4 + 25) + (100 + 10*5 + 25) = 340",
+    "c08": "min(600 * 0.05, 50) = 30",
+    "c09": "min(2000 * 0.05, 50) = 50",
+    "c10": "4*30 + 8*5 = 160",
+    "c11": "6 + (8 + 3) + 10 = 27",
+    "c12": "10 * 0.8 = 8",
+    "c13": "3*1 + 5 = 8",
+    "c14": "20 - 5 - 4 = 11",
+    "c15": "4 * 3 * 5 = 60",
+    "c16": "6 * 3 = 18",
+    "c17": "max(1, 40 - 8) = 32",
+    "c18": "max(1, 12 - 8) = 4",
+    "c19": "12 * 1.2 = 14.4",
+    "c20": "8 + 25 = 33",
+    "c21": "60 / 12 = 5",
+    "c22": "160 * (1 - 0.3) = 112",
+    "c23": "5000 * 0.25 = 1250",
+    "c24": "60 + 35 + 300 = 395",
+    "c25": "0.75 * 90 * 2 = 135",
+    "c26": "80 + 90 = 170",
+    "c27": "500 - 2*50 - 120 = 280",
+    "c28": "6 * (1 + 0.25*2) = 9"
+  },
+  "unanswerable": [
+    {
+      "id": "z01",
+      "kind": "near",
+      "question": "What is the combined health of all enemies in wave 6?"
+    },
+    {
+      "id": "z02",
+      "kind": "near",
+      "question": "How much bounty does a Wraith pay on wave 12?"
+    },
+    {
+      "id": "z03",
+      "kind": "near",
+      "question": "How much gold do I get back selling a level 3 Lightning Tower?"
+    },
+    {
+      "id": "z04",
+      "kind": "near",
+      "question": "How much damage per second does a Frost Tower deal?"
+    },
+    {
+      "id": "z05",
+      "kind": "near",
+      "question": "How many seconds does a Runner need to walk the whole path?"
+    },
+    {
+      "id": "z06",
+      "kind": "near",
+      "question": "How many enemies spawn in wave 8?"
+    }
+  ]
+}

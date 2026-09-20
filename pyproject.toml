@@ -1,0 +1,48 @@
+[project]
+name = "project-intelligence-rag"
+version = "0.1.0"
+description = "Production-oriented RAG system that understands software project documentation and source code."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "pgvector>=0.3",
+    "pydantic-settings>=2.4",
+    "python-multipart>=0.0.9",
+    "pypdf>=5.0",
+    "httpx>=0.27",  # HTTP client for the Ollama embedding API
+    "mcp>=2.2.0",
+    "prometheus-client>=0.26.0",
+    "alembic>=1.20.0",  # versioned schema migrations; the standard tool for SQLAlchemy
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["integration: needs a running PostgreSQL with pgvector"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# The benchmark corpus is fixed input data; formatting it would change what is being measured.
+extend-exclude = ["eval/corpus"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]

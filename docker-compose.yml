@@ -1,0 +1,66 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: aijp
+      # Development default. Set POSTGRES_PASSWORD in a .env file (never commit it) for anything
+      # reachable by other people. See docs/deployment.md.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aijp}
+      POSTGRES_DB: aijp
+    # Bound to localhost only: the database must not be reachable from the network.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aijp -d aijp"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build: .
+    image: project-intelligence-api:local
+    environment:
+      AIJP_DATABASE_URL: postgresql+psycopg://aijp:${POSTGRES_PASSWORD:-aijp}@db:5432/aijp
+      # Ollama on the host by default (so it can use your GPU). To run Ollama in a container
+      # instead: AIJP_OLLAMA_BASE_URL=http://ollama:11434 docker compose --profile ollama up
+      AIJP_OLLAMA_BASE_URL: ${AIJP_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      AIJP_LOG_FORMAT: json
+    ports:
+      - "127.0.0.1:8000:8000"
+    # Docker Desktop provides host.docker.internal; this makes it work on Linux hosts too.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Defence in depth: the app writes nothing to disk, needs no privileges, and cannot gain any.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      # Evaluation reports shown on the Evaluation page (read-only).
+      - ./eval/results:/srv/eval/results:ro
+    restart: unless-stopped
+
+  # Optional: Ollama in a container for machines without a host install (CPU unless you add GPU
+  # settings; see docs/deployment.md). Pin OLLAMA_IMAGE to a tested tag for anything real.
+  ollama:
+    profiles: ["ollama"]
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  ollama_models:

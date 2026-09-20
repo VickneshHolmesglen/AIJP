@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Project Intelligence</title>
+    <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='3' fill='%23c2371a'/><text x='16' y='24' font-size='22' font-style='italic' font-family='Georgia,serif' text-anchor='middle' fill='white'>§</text></svg>" />
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <div id="auth-banner" class="auth-banner" role="alert" hidden></div>
+
+    <div class="shell">
+      <header class="spine">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">§</span>
+          <div class="brand-text">
+            <strong>Project Intelligence</strong>
+            <small>Grounded answers, cited sources</small>
+          </div>
+        </div>
+
+        <nav class="nav" id="nav" aria-label="Sections">
+          <a href="#/ask" data-route="ask"><span class="num">01</span><span>Ask</span></a>
+          <a href="#/search" data-route="search"><span class="num">02</span><span>Search</span></a>
+          <a href="#/verify" data-route="verify"><span class="num">03</span><span>Verify</span></a>
+          <a href="#/documents" data-route="documents"><span class="num">04</span><span>Documents</span></a>
+          <a href="#/evaluation" data-route="evaluation"><span class="num">05</span><span>Evaluation</span></a>
+          <a href="#/system" data-route="system"><span class="num">06</span><span>System</span></a>
+        </nav>
+
+        <div class="spine-foot" id="spine-foot" aria-label="Service status"></div>
+      </header>
+
+      <main id="main" tabindex="-1"></main>
+    </div>
+
+    <aside id="viewer" class="viewer" role="dialog" aria-modal="true" aria-labelledby="viewer-title" hidden>
+      <div class="viewer-backdrop" data-close></div>
+      <div class="viewer-panel">
+        <div class="viewer-head">
+          <div>
+            <h2 id="viewer-title">Source</h2>
+            <div class="sub" id="viewer-sub"></div>
+          </div>
+          <button class="btn btn-small" type="button" id="viewer-close">Close (Esc)</button>
+        </div>
+        <div class="viewer-body" id="viewer-body"></div>
+      </div>
+    </aside>
+
+    <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>
