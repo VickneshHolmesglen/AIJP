@@ -47,7 +47,10 @@ class ActionConflictError(ActionError):
 
 def _create_task(session: Session, action: AgentAction) -> dict[str, Any]:
     payload = action.payload
+    run = session.get(AgentRun, action.run_id)
+    assert run is not None  # an action cannot exist without its run (foreign key)
     task = Task(
+        project_id=run.project_id,  # a task lives in the project whose claim produced it
         title=str(payload["title"])[:_MAX_TITLE],
         description=str(payload["description"]),
         evidence=list(payload["evidence"]),

@@ -31,12 +31,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
-from app import providers, qa, retrieval, services, symbols
+from app import projects, providers, qa, retrieval, services, symbols
 from app.config import Settings, get_settings
 from app.db import get_engine
 from app.embeddings import EmbeddingError, EmbeddingProvider
 from app.llm import LLMError, LLMProvider
-from app.models import Chunk, Document
+from app.models import Chunk
 from app.presenters import to_ask_response, to_citation, to_document_out, to_search_hits
 from app.schemas import (
     AskResponse,
@@ -125,6 +125,15 @@ class ProjectTools:
                 facts,
             )
 
+    def _project_id(self, session: Session) -> uuid.UUID:
+        """The project this MCP server is configured for (AIJP_MCP_PROJECT). The server is local
+        stdio with the trust of whoever launches it, so it serves one project chosen by the
+        launcher rather than taking a project from the (untrusted) model."""
+        project = projects.resolve(session, self._settings.mcp_project)
+        if project is None:
+            raise ToolError("The configured project does not exist.")
+        return project.id
+
     def _search(
         self,
         tool: str,
@@ -143,6 +152,7 @@ class ProjectTools:
                 pool=self._settings.retrieval_pool,
                 rrf_k=self._settings.rrf_k,
                 file_types=file_types,
+                project_id=self._project_id(session),
             )
             return SearchResponse(query=query, hits=to_search_hits(hits))
 
@@ -170,13 +180,14 @@ class ProjectTools:
                 mode=self._settings.retrieval_mode,
                 pool=self._settings.retrieval_pool,
                 rrf_k=self._settings.rrf_k,
+                project_id=self._project_id(session),
                 calculator=self._settings.ask_calculator,
             )
             return to_ask_response(result)
 
     def list_documents(self, limit: int, offset: int) -> DocumentList:
         with self._call("list_documents", limit=limit, offset=offset) as session:
-            rows, total = services.list_documents(session, limit, offset)
+            rows, total = services.list_documents(session, self._project_id(session), limit, offset)
             items = [to_document_out(doc, n) for doc, n in rows]
             return DocumentList(items=items, total=total, limit=limit, offset=offset)
 
@@ -186,7 +197,7 @@ class ProjectTools:
         with self._call(
             "get_document", chunk_offset=chunk_offset, max_chunks=max_chunks
         ) as session:
-            doc = session.get(Document, document_id)
+            doc = services.get_document(session, document_id, self._project_id(session))
             if doc is None:
                 raise ToolError("Document not found.")
             total = services.chunk_count(session, document_id)
@@ -209,7 +220,7 @@ class ProjectTools:
     def find_symbol(self, name: str, limit: int) -> SymbolMatches:
         """Where a function, class, signal or variable is defined, in Python and GDScript files."""
         with self._call("find_symbol", name_chars=len(name), limit=limit) as session:
-            hits = symbols.find_symbols(session, name, limit)
+            hits = symbols.find_symbols(session, name, limit, project_id=self._project_id(session))
             return SymbolMatches(
                 name=name,
                 matches=[
@@ -225,7 +236,8 @@ class ProjectTools:
 
     def get_project_status(self) -> SystemStatus:
         with self._call("get_project_status") as session:
-            return build_status(session, self._settings, self._probe)
+            project = projects.resolve(session, self._settings.mcp_project)
+            return build_status(session, self._settings, self._probe, project)
 
 
 def build_server(tools: ProjectTools) -> MCPServer:

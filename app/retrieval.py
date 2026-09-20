@@ -54,9 +54,18 @@ def reciprocal_rank_fusion(rankings: Sequence[Sequence[T]], k: int = 60) -> dict
 
 
 def _scope(
-    stmt: Select[Any], document_id: uuid.UUID | None, file_types: Sequence[str] | None
+    stmt: Select[Any],
+    project_id: uuid.UUID | None,
+    document_id: uuid.UUID | None,
+    file_types: Sequence[str] | None,
 ) -> Select[Any]:
-    """Optional filters shared by every retriever, applied in SQL so top-k stays a true top-k."""
+    """Filters shared by every retriever, applied in SQL so top-k stays a true top-k.
+
+    `project_id` is what keeps one project's text out of another's results. Every caller must
+    pass it explicitly (there is no default): None means "all projects" and is only for tools that
+    deliberately span them, such as the evaluation runners over one scratch database."""
+    if project_id is not None:
+        stmt = stmt.where(Document.project_id == project_id)
     if document_id is not None:
         stmt = stmt.where(Chunk.document_id == document_id)
     if file_types:
@@ -70,6 +79,8 @@ def vector_search(
     limit: int,
     document_id: uuid.UUID | None = None,
     file_types: Sequence[str] | None = None,
+    *,
+    project_id: uuid.UUID | None,
 ) -> list[Hit]:
     distance = Chunk.embedding.cosine_distance(query_vector)
     stmt = (
@@ -79,7 +90,7 @@ def vector_search(
         .order_by(distance)
         .limit(limit)
     )
-    stmt = _scope(stmt, document_id, file_types)
+    stmt = _scope(stmt, project_id, document_id, file_types)
     return [Hit(c, d, float(cos), float(cos)) for c, d, cos in session.execute(stmt).all()]
 
 
@@ -90,6 +101,8 @@ def lexical_search(
     limit: int,
     document_id: uuid.UUID | None = None,
     file_types: Sequence[str] | None = None,
+    *,
+    project_id: uuid.UUID | None,
 ) -> list[Hit]:
     """Full-text search. Query terms are OR-ed (plainto_tsquery ANDs them, which would make a
     natural-language question match nothing); ts_rank_cd then favours chunks matching more terms."""
@@ -107,7 +120,7 @@ def lexical_search(
         .order_by(rank.desc(), Chunk.id)
         .limit(limit)
     )
-    stmt = _scope(stmt, document_id, file_types)
+    stmt = _scope(stmt, project_id, document_id, file_types)
     return [
         Hit(c, d, float(r), float(cos) if cos is not None else None)
         for c, d, r, cos in session.execute(stmt).all()
@@ -123,9 +136,15 @@ def hybrid_search(
     rrf_k: int,
     document_id: uuid.UUID | None = None,
     file_types: Sequence[str] | None = None,
+    *,
+    project_id: uuid.UUID | None,
 ) -> list[Hit]:
-    vector_hits = vector_search(session, query_vector, pool, document_id, file_types)
-    lexical_hits = lexical_search(session, query, query_vector, pool, document_id, file_types)
+    vector_hits = vector_search(
+        session, query_vector, pool, document_id, file_types, project_id=project_id
+    )
+    lexical_hits = lexical_search(
+        session, query, query_vector, pool, document_id, file_types, project_id=project_id
+    )
     fused = reciprocal_rank_fusion(
         [[h.chunk.id for h in vector_hits], [h.chunk.id for h in lexical_hits]], rrf_k
     )
@@ -145,14 +164,27 @@ def search(
     rrf_k: int = 60,
     document_id: uuid.UUID | None = None,
     file_types: Sequence[str] | None = None,
+    project_id: uuid.UUID | None,
 ) -> list[Hit]:
     """Top-k chunks for `query`, best first. May raise EmbeddingError (vector/hybrid/lexical all
     embed the query, since the gate needs each hit's cosine)."""
     (query_vector,) = embedder.embed([query])
     if mode == "vector":
-        return vector_search(session, query_vector, top_k, document_id, file_types)
+        return vector_search(
+            session, query_vector, top_k, document_id, file_types, project_id=project_id
+        )
     if mode == "lexical":
-        return lexical_search(session, query, query_vector, top_k, document_id, file_types)
+        return lexical_search(
+            session, query, query_vector, top_k, document_id, file_types, project_id=project_id
+        )
     return hybrid_search(
-        session, query, query_vector, top_k, max(pool, top_k), rrf_k, document_id, file_types
+        session,
+        query,
+        query_vector,
+        top_k,
+        max(pool, top_k),
+        rrf_k,
+        document_id,
+        file_types,
+        project_id=project_id,
     )

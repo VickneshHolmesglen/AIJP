@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     # "per_source": the model states a stance for EVERY source and code decides, so one agreeing
     # config value cannot hide code that disagrees. See eval/results/consistency-v3-*.md.
     consistency_judge: Literal["verdict", "per_source"] = "verdict"
+    # The MCP server (local stdio) serves ONE project, chosen by whoever launches it. It never
+    # takes a project from the model, which reads untrusted document text.
+    mcp_project: str = "default"
     # Raw cosine similarity below which we refuse without calling the LLM. Chosen from the
     # threshold table in eval/results/qa-2026-09-20.md (nomic-embed-text, 48 questions): at 0.55
     # every answerable question still passed and 25% of unanswerable ones were blocked. That

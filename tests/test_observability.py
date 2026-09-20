@@ -255,3 +255,12 @@ def test_the_container_log_config_is_valid_and_uses_the_json_formatter() -> None
 def test_json_formatter_drops_uvicorns_ansi_colour_duplicate() -> None:
     line = JsonFormatter().format(_record("Started", color_message="\x1b[36mStarted\x1b[0m"))
     assert "color_message" not in json.loads(line) and "\x1b" not in line
+
+
+@pytest.mark.parametrize("bad", [b"abcdefgh\n", b"abcdefgh\r\n", b"abcdefgh\nX-Injected: 1"])
+def test_a_request_id_with_a_trailing_newline_is_rejected(bad: bytes) -> None:
+    """`$` matches before a final newline, so `re.match(r"^...$")` used to accept 'abcdefgh\\n'."""
+    from app.observability import _request_id
+
+    replaced = _request_id({"headers": [(b"x-request-id", bad)]})
+    assert re.fullmatch(r"[0-9a-f]{32}", replaced)

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import metrics, qa
+from app.api.scope import ProjectDep
 from app.api.search import EmbedderDep, LLMDep
 from app.api.search import get_llm as get_llm  # re-exported: tests override it from here
 from app.auth import RequireReader
@@ -28,6 +29,7 @@ def ask(
     settings: SettingsDep,
     embedder: EmbedderDep,
     llm: LLMDep,
+    project: ProjectDep,
 ) -> AskResponse:
     try:
         result = qa.ask(
@@ -41,6 +43,7 @@ def ask(
             pool=settings.retrieval_pool,
             rrf_k=settings.rrf_k,
             document_id=body.document_id,
+            project_id=project.id,
             reranker=LLMReranker(llm) if settings.rerank_enabled else None,
             rerank_pool=settings.rerank_pool,
             calculator=settings.ask_calculator,

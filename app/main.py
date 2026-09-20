@@ -10,7 +10,17 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from starlette.responses import Response
 from starlette.types import Scope
 
-from app.api import agent, ask, auth, documents, evaluation, health, search, system
+from app.api import (
+    agent,
+    ask,
+    auth,
+    documents,
+    evaluation,
+    health,
+    projects,
+    search,
+    system,
+)
 from app.auth import RequestGateMiddleware, RequireReader, warn_if_auth_disabled
 from app.config import get_settings
 from app.db import get_engine, init_db
@@ -51,6 +61,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Project Intelligence RAG", version="0.1.0", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(projects.router)
 app.include_router(system.router)
 app.include_router(documents.router)
 app.include_router(search.router)

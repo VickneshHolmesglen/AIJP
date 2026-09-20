@@ -20,6 +20,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app import projects
 from app.audit import record_event
 from app.auth import Principal, Role, create_key, revoke_keys
 from app.db import get_engine, init_db
@@ -37,8 +38,18 @@ def _fmt(when: datetime | None) -> str:
 
 def cmd_create(session: Session, args: argparse.Namespace) -> int:
     expires = datetime.now(UTC) + timedelta(days=args.expires_days) if args.expires_days else None
+    project_id = None
+    if args.project:
+        project = projects.resolve(session, args.project)
+        if project is None:
+            print(
+                f"error: no project '{args.project}' (create it: python -m app.projects)",
+                file=sys.stderr,
+            )
+            return 1
+        project_id = project.id
     try:
-        key, token = create_key(session, args.name, Role[args.role], expires)
+        key, token = create_key(session, args.name, Role[args.role], expires, project_id)
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -49,12 +60,14 @@ def cmd_create(session: Session, args: argparse.Namespace) -> int:
         key.key_prefix,
         name=key.name,
         role=key.role,
+        project=args.project or "(all)",
         expires=_fmt(expires),
     )
     if args.token_only:
         print(token)
     else:
-        print(f"Created a {key.role} key for '{key.name}' (prefix {key.key_prefix}).")
+        scope = f"project '{args.project}'" if args.project else "every project"
+        print(f"Created a {key.role} key for '{key.name}' (prefix {key.key_prefix}), for {scope}.")
         print("Copy the token now. It is stored only as a hash and cannot be shown again:\n")
         print(f"  {token}\n")
         print("Use it as:  Authorization: Bearer <token>   (the web UI asks for it at sign-in)")
@@ -67,7 +80,11 @@ def cmd_list(session: Session, args: argparse.Namespace) -> int:
         print("No keys. Create one with:  python -m app.keys create --name NAME --role approver")
         return 0
     now = datetime.now(UTC)
-    print(f"{'PREFIX':<10}{'NAME':<24}{'ROLE':<10}{'STATUS':<9}{'EXPIRES':<18}LAST USED")
+    slugs = {p.id: p.slug for p in projects.list_projects(session)}
+    print(
+        f"{'PREFIX':<10}{'NAME':<24}{'ROLE':<10}{'PROJECT':<16}{'STATUS':<9}"
+        f"{'EXPIRES':<18}LAST USED"
+    )
     for k in keys:
         status = (
             "revoked"
@@ -77,7 +94,8 @@ def cmd_list(session: Session, args: argparse.Namespace) -> int:
             else "active"
         )
         print(
-            f"{k.key_prefix:<10}{k.name[:22]:<24}{k.role:<10}{status:<9}"
+            f"{k.key_prefix:<10}{k.name[:22]:<24}{k.role:<10}"
+            f"{(slugs.get(k.project_id, '?') if k.project_id else '(all)'):<16}{status:<9}"
             f"{_fmt(k.expires_at):<18}{_fmt(k.last_used_at)}"
         )
     return 0
@@ -102,6 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     create.add_argument("--name", required=True, help="the person or service this key identifies")
     create.add_argument("--role", required=True, choices=[r.name for r in Role])
     create.add_argument("--expires-days", type=int, help="expire after this many days")
+    create.add_argument("--project", help="confine the key to this project (default: all)")
     create.add_argument("--token-only", action="store_true", help="print only the token (scripts)")
     create.set_defaults(func=cmd_create)
 

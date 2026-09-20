@@ -111,7 +111,10 @@ jobs:
           curl -fsS "$base/auth/config" | grep -q '"auth_enabled":true'
           # Every response carries a request id.
           # (A GET that dumps headers: `curl -I` sends HEAD, which the GET-only route refuses.)
-          curl -fsS -D - -o /dev/null "$base/health" | grep -qi '^x-request-id:'
+          # (Captured first: `grep -q` exits at the first match and closes the pipe while curl is
+          # still writing, which fails the step under pipefail.)
+          headers=$(curl -fsS -D - -o /dev/null "$base/health")
+          echo "$headers" | grep -qi '^x-request-id:'
 
       - name: Database is at the latest migration
         run: |
@@ -140,6 +143,15 @@ jobs:
           reader=$(docker compose exec -T api python -m app.keys create --name ci-reader --role reader --token-only | tr -d '\r\n')
           [ "$(code -H "Authorization: Bearer $reader" "$base/documents")" = "200" ]
           [ "$(code -X POST -H "Authorization: Bearer $reader" "$base/embeddings")" = "403" ]
+          # Projects: a key confined to one project cannot reach another and cannot tell it exists.
+          docker compose exec -T api python -m app.projects create --slug ci-a --name "CI A"
+          docker compose exec -T api python -m app.projects create --slug ci-b --name "CI B"
+          scoped=$(docker compose exec -T api python -m app.keys create --name ci-scoped --role editor --project ci-a --token-only | tr -d '\r\n')
+          [ "$(code -H "Authorization: Bearer $scoped" "$base/documents")" = "200" ]
+          [ "$(code -H "Authorization: Bearer $scoped" "$base/documents?project=ci-b")" = "404" ]
+          [ "$(code -H "Authorization: Bearer $scoped" "$base/documents?project=nonexistent")" = "404" ]
+          [ "$(code -X POST -H "Authorization: Bearer $scoped" -H 'Content-Type: application/json' -d '{"slug":"x","name":"X"}' "$base/projects")" = "403" ]
+          curl -fsS -H "$auth" "$base/projects" | grep -q '"slug":"ci-b"'
           # A revoked key stops working on the next request.
           docker compose exec -T api python -m app.keys revoke ci-reader
           [ "$(code -H "Authorization: Bearer $reader" "$base/documents")" = "401" ]

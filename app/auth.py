@@ -64,6 +64,11 @@ class Principal:
     role: Role
     key_id: uuid.UUID | None
     key_prefix: str | None
+    # None: the key may use every project. Otherwise it is confined to this one.
+    project_id: uuid.UUID | None = None
+
+    def can_access(self, project_id: uuid.UUID) -> bool:
+        return self.project_id is None or self.project_id == project_id
 
 
 # Used when authentication is disabled: everything is allowed, and the audit trail says so.
@@ -85,7 +90,7 @@ def generate_token() -> tuple[str, str, str]:
 
 
 def parse_token(token: str) -> tuple[str, str] | None:
-    match = _TOKEN.match(token)
+    match = _TOKEN.fullmatch(token)
     return (match.group(1), match.group(2)) if match else None
 
 
@@ -105,7 +110,11 @@ def _valid_name(name: str) -> str:
 
 
 def create_key(
-    session: Session, name: str, role: Role, expires_at: datetime | None = None
+    session: Session,
+    name: str,
+    role: Role,
+    expires_at: datetime | None = None,
+    project_id: uuid.UUID | None = None,
 ) -> tuple[ApiKey, str]:
     """Create a key and return it with its one-time token. Names are unique among active keys, so
     an audit entry naming 'alice' always means one credential holder."""
@@ -122,6 +131,7 @@ def create_key(
                 key_prefix=prefix,
                 key_hash=key_hash,
                 expires_at=expires_at,
+                project_id=project_id,
             )
             session.add(key)
             session.commit()
@@ -176,7 +186,7 @@ def authenticate(session: Session, token: str | None, now: datetime | None = Non
     if key.last_used_at is None or now - key.last_used_at > _LAST_USED_GRANULARITY:
         key.last_used_at = now
         session.commit()
-    return Principal(key.name, Role[key.role], key.id, key.key_prefix)
+    return Principal(key.name, Role[key.role], key.id, key.key_prefix, key.project_id)
 
 
 # ------------------------------------------------------------------ FastAPI dependencies

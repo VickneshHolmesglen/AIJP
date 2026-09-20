@@ -26,7 +26,7 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
-from app import services
+from app import projects, services
 from app.agent.consistency import run_consistency_check
 from app.config import Settings
 from app.db import init_db
@@ -279,13 +279,16 @@ def main() -> None:
         services.embed_pending_chunks(session, embedder, settings.embed_batch_size)
         n_chunks = session.scalar(select(func.count()).select_from(Chunk)) or 0
         check_labels(session, claims)
+        project_id = projects.get_or_create_default(session).id
         print(f"Ingested {n_files} files ({len(patched)} patched), {n_chunks} chunks.")
 
         records = []
         for n, claim in enumerate(claims, start=1):
             rec = Record(claim["id"], claim["kind"], claim["claim"], claim["expected"])
             start = time.perf_counter()
-            run = run_consistency_check(session, embedder, llm, settings, claim["claim"])
+            run = run_consistency_check(
+                session, embedder, llm, settings, claim["claim"], project_id=project_id
+            )
             rec.latency_ms = (time.perf_counter() - start) * 1000
             evaluate(rec, claim, to_run_detail(run))
             secs = rec.latency_ms / 1000

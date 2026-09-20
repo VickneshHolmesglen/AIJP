@@ -8,9 +8,10 @@ from sqlalchemy.orm import Session
 from app import metrics
 from app.agent import actions
 from app.agent.consistency import run_consistency_check
+from app.api.scope import ProjectDep
 from app.api.search import EmbedderDep, LLMDep
 from app.audit import record_event
-from app.auth import ApproverDep, EditorDep, Principal, RequireReader
+from app.auth import ApproverDep, EditorDep, Principal, ReaderDep, RequireReader
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.models import AgentAction, AgentRun, Task
@@ -38,6 +39,7 @@ def create_consistency_check(
     embedder: EmbedderDep,
     llm: LLMDep,
     principal: EditorDep,
+    project: ProjectDep,
 ) -> RunDetail:
     """Run the design-vs-code check and return the persisted run with its full audit trail.
 
@@ -45,11 +47,23 @@ def create_consistency_check(
     happen), because the record itself is the audit trail. A potential discrepancy comes back
     `awaiting_approval` with a DRAFT action; nothing is created until it is approved."""
     run = run_consistency_check(
-        session, embedder, llm, settings, body.claim, requested_by=principal.name
+        session,
+        embedder,
+        llm,
+        settings,
+        body.claim,
+        project_id=project.id,
+        requested_by=principal.name,
     )
     metrics.record_agent_run(run)
     record_event(
-        session, principal, "agent.check", str(run.id), status=run.status, verdict=run.verdict
+        session,
+        principal,
+        "agent.check",
+        str(run.id),
+        project=project.slug,
+        status=run.status,
+        verdict=run.verdict,
     )
     return to_run_detail(run)
 
@@ -57,12 +71,19 @@ def create_consistency_check(
 @router.get("/runs", response_model=RunList, dependencies=[RequireReader])
 def list_runs(
     session: SessionDep,
+    project: ProjectDep,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> RunList:
-    total = session.scalar(select(func.count()).select_from(AgentRun)) or 0
+    total = (
+        session.scalar(
+            select(func.count()).select_from(AgentRun).where(AgentRun.project_id == project.id)
+        )
+        or 0
+    )
     runs = session.scalars(
         select(AgentRun)
+        .where(AgentRun.project_id == project.id)
         .order_by(AgentRun.created_at.desc(), AgentRun.id)
         .limit(limit)
         .offset(offset)
@@ -70,10 +91,10 @@ def list_runs(
     return RunList(items=[to_run_summary(r) for r in runs], total=total, limit=limit, offset=offset)
 
 
-@router.get("/runs/{run_id}", response_model=RunDetail, dependencies=[RequireReader])
-def get_run(run_id: uuid.UUID, session: SessionDep) -> RunDetail:
+@router.get("/runs/{run_id}", response_model=RunDetail)
+def get_run(run_id: uuid.UUID, session: SessionDep, principal: ReaderDep) -> RunDetail:
     run = session.get(AgentRun, run_id)
-    if run is None:
+    if run is None or not principal.can_access(run.project_id):
         raise HTTPException(status_code=404, detail="Run not found")
     return to_run_detail(run)
 
@@ -81,6 +102,12 @@ def get_run(run_id: uuid.UUID, session: SessionDep) -> RunDetail:
 def _decide(
     session: Session, action_id: uuid.UUID, approve: bool, principal: Principal
 ) -> AgentAction:
+    # Authorise by the action's own project BEFORE touching it: a key confined to one project must
+    # not be able to approve (or even confirm the existence of) another project's action.
+    owner = session.get(AgentAction, action_id)
+    run = session.get(AgentRun, owner.run_id) if owner is not None else None
+    if run is None or not principal.can_access(run.project_id):
+        raise HTTPException(status_code=404, detail="Action not found")
     try:
         action = actions.decide(session, action_id, approve, actor=principal.name)
     except actions.ActionNotFoundError:
@@ -116,6 +143,12 @@ def reject_action(action_id: uuid.UUID, session: SessionDep, principal: Approver
 
 
 @router.get("/tasks", response_model=TaskList, dependencies=[RequireReader])
-def list_tasks(session: SessionDep) -> TaskList:
-    tasks = list(session.scalars(select(Task).order_by(Task.created_at.desc(), Task.id)))
+def list_tasks(session: SessionDep, project: ProjectDep) -> TaskList:
+    tasks = list(
+        session.scalars(
+            select(Task)
+            .where(Task.project_id == project.id)
+            .order_by(Task.created_at.desc(), Task.id)
+        )
+    )
     return TaskList(items=[TaskOut.model_validate(t) for t in tasks], total=len(tasks))

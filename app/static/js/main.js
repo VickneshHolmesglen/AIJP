@@ -1,4 +1,4 @@
-import { api, auth } from "./api.js";
+import { api, auth, project } from "./api.js";
 import { $, h } from "./dom.js";
 import { initViewer, openSource } from "./viewer.js";
 import { mountAsk } from "./views/ask.js";
@@ -25,6 +25,7 @@ const ctx = {
   state: { askHistory: [] }, // survives navigation, lost on reload (nothing is persisted)
   authEnabled: true, // from /auth/config; the server enforces, this only shapes the UI
   me: null, // { name, role, key_prefix } once signed in
+  projects: [], // the projects this key may use (the server decides), from GET /projects
   loginNotice: null,
   openSource,
 
@@ -66,9 +67,19 @@ const ctx = {
     await afterSignIn();
   },
 
+  /** Switch project: everything on screen belongs to one project, so reload the view. */
+  async switchProject(slug) {
+    project.set(slug);
+    this.state.askHistory = [];
+    renderSpineStatus();
+    await route();
+    this.refreshStatus().catch(() => {});
+  },
+
   signOut() {
     auth.clear();
     this.me = null;
+    this.projects = [];
     this.status = null;
     this.state.askHistory = [];
     renderSpineStatus();
@@ -102,6 +113,7 @@ function renderSpineStatus() {
     );
   }
   if (ctx.authEnabled && !ctx.me) return; // nothing to report until signed in
+  if (ctx.projects.length) foot.append(projectPicker());
   const s = ctx.status;
   if (!s) {
     foot.append(line(false, "API unreachable"));
@@ -113,6 +125,33 @@ function renderSpineStatus() {
     line(modelsOk, `ollama · ${s.ollama.reachable ? (modelsOk ? "ready" : "model missing") : "down"}`),
     line(s.database.pending_chunks === 0, s.database.pending_chunks ? `${s.database.pending_chunks} to embed` : "all embedded"),
   );
+}
+
+/** The project switcher. A key confined to one project sees just that one, as plain text. */
+function projectPicker() {
+  const current = project.get();
+  if (ctx.projects.length === 1) {
+    return h("div", { class: "project-pick" }, h("span", {}, "Project"), h("strong", {}, ctx.projects[0].name));
+  }
+  const select = h(
+    "select",
+    { id: "project-select", "aria-label": "Project", onChange: (e) => ctx.switchProject(e.target.value) },
+    ctx.projects.map((p) => h("option", { value: p.slug, selected: p.slug === current }, p.name)),
+  );
+  return h("label", { class: "project-pick" }, h("span", {}, "Project"), select);
+}
+
+/** Load the projects this key may use and settle on one (the remembered one, else the first). */
+async function loadProjects() {
+  try {
+    ctx.projects = await api.projects();
+  } catch {
+    ctx.projects = [];
+  }
+  const slugs = ctx.projects.map((p) => p.slug);
+  const wanted = project.get() ?? project.remembered();
+  const chosen = slugs.includes(wanted) ? wanted : (slugs.includes("default") ? "default" : slugs[0] ?? null);
+  project.set(chosen);
 }
 
 function parseHash() {
@@ -148,11 +187,13 @@ async function route() {
 }
 
 async function afterSignIn() {
+  if (!ctx.authEnabled || ctx.me) await loadProjects();
   renderSpineStatus();
   // Mount first, refresh status in the background. Waiting for /status (which probes Ollama and
   // can take a couple of seconds) before mounting made sign-in feel stuck, and let a delayed
   // mount replace a page the user had already started working in, wiping its state.
   await route();
+  if (ctx.authEnabled && !ctx.me) return; // signed out: nothing to ask about yet
   ctx.refreshStatus().catch(() => {
     /* the spine shows "API unreachable"; views report their own errors */
   });

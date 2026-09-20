@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app import projects
 from app.agent import actions
 from app.agent.consistency import (
     DISCLAIMER,
@@ -305,7 +306,10 @@ def test_unknown_action_id_is_404(env) -> None:
 def test_action_kinds_outside_the_registry_are_never_executed(env, db_engine) -> None:
     with Session(db_engine) as session:
         run = AgentRun(
-            workflow="consistency_check", input={"claim": "x"}, status="awaiting_approval"
+            project_id=projects.get_or_create_default(session).id,
+            workflow="consistency_check",
+            input={"claim": "x"},
+            status="awaiting_approval",
         )
         session.add(run)
         session.flush()

@@ -173,7 +173,7 @@ def run_calculations(raw: str, answer: str) -> tuple[str, tuple[Calculation, ...
         if not isinstance(item, dict):
             return None
         cid, expression = item.get("id"), item.get("expression")
-        if not isinstance(cid, str) or not _CALC_ID.match(cid) or cid in values:
+        if not isinstance(cid, str) or not _CALC_ID.fullmatch(cid) or cid in values:
             return None
         if not isinstance(expression, str):
             return None
@@ -236,6 +236,7 @@ def ask(
     pool: int = 20,
     rrf_k: int = 60,
     document_id: UUID | None = None,
+    project_id: UUID | None,
     reranker: Reranker | None = None,
     rerank_pool: int = 10,
     calculator: bool = False,
@@ -251,6 +252,7 @@ def ask(
         pool=pool,
         rrf_k=rrf_k,
         document_id=document_id,
+        project_id=project_id,
     )
     # The gate always looks at what plain retrieval would have returned, so switching reranking on
     # or off never changes WHICH questions are refused for lack of evidence, only the source order.

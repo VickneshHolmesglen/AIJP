@@ -1518,3 +1518,35 @@ body.is-locked .spine-foot {
 .calc { margin: 0.9rem 0 0.4rem; }
 .calc-steps { list-style: none; margin: 0.35rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
 .calc-steps code { font-family: var(--mono, ui-monospace, monospace); font-size: 0.86em; overflow-wrap: anywhere; }
+
+/* Project switcher in the sidebar footer. */
+.project-pick {
+  display: grid;
+  gap: 0.25rem;
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.3rem;
+  border-bottom: 1px solid var(--rule);
+}
+.project-pick span {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.project-pick strong {
+  font-family: var(--serif);
+  font-weight: 500;
+  color: var(--ink);
+  word-break: break-word;
+}
+.project-pick select {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: var(--paper-2, var(--paper));
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.4rem;
+  max-width: 100%;
+}

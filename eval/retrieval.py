@@ -21,7 +21,7 @@ from sqlalchemy import create_engine, func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
-from app import retrieval, services
+from app import projects, retrieval, services
 from app.config import Settings
 from app.db import init_db
 from app.embeddings import OllamaEmbedder
@@ -66,12 +66,14 @@ def ingest_corpus(session: Session, corpus: Path, settings: Settings) -> int:
     for table in reversed(Base.metadata.sorted_tables):
         session.execute(table.delete())
     session.commit()
+    project_id = projects.get_or_create_default(session).id  # scratch DB: exactly one project
     count = 0
     for file in sorted(p for p in corpus.rglob("*") if p.is_file()):
         rel = file.relative_to(corpus).as_posix()
         try:
             services.ingest_document(
                 session,
+                project_id=project_id,
                 raw_filename=file.name,
                 content=file.read_bytes(),
                 source_path=rel,
@@ -125,6 +127,7 @@ def run_mode(
             top_k=top_k,
             pool=settings.retrieval_pool,
             rrf_k=settings.rrf_k,
+            project_id=None,  # the scratch database holds a single project
         )
         latencies.append((time.perf_counter() - start) * 1000)
         got = [(h.document.source_path, h.chunk.section) for h in hits]

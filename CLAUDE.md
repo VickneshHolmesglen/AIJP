@@ -10,6 +10,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - `uv run uvicorn app.main:app --reload` — run the API (docs at /docs); applies migrations at start
 - `uv run alembic revision --autogenerate -m "..."` — new migration after a model change (then read
   and edit the file); `uv run python -m app.migrate current|check|upgrade`
+- `uv run python -m app.projects create|list|delete` — projects; `python -m app.keys create --project SLUG` confines a key
 - `uv run pytest` — tests; DB integration tests skip automatically if Postgres is down
 - `uv run ruff check . && uv run ruff format . && uv run mypy app` — lint, format, types
 - `uv run python -m eval.consistency` — design-vs-code check on the seeded corpus (16 claims,
@@ -54,7 +55,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 476
+  DONE. Ruff, mypy pass. Tests: 526
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -119,8 +120,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   NOT built (no real backing yet): find_design_requirement, generate_project_report.
 - M8 UI: `/ui/` (see Layout). Views: Ask (footnote chips always shown, even if the model places no
   inline [n]), Search (mode compare), Documents (files/folder upload, embed banner), Evaluation
-  (renders eval/results/*.md), System (/status). NOT built: "Projects" (no project concept in the
-  schema; needs a migration, which Alembic (M13) now makes routine).
+  (renders eval/results/*.md), System (/status). Projects were added in M20.
 - M5 design: `app/ingestion/code_loaders.py` (registered in `loaders.LOADERS`): Python via stdlib
   `ast` (parse only, never executed), GDScript via an indentation-aware line scanner (approximate,
   no parser), YAML by top-level key (line scan, no parser), JSON by top-level key (validated with
@@ -314,6 +314,43 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   through and blocks 13/20 unsupported; 0.65: 32/40 and 18/20; 0.55: 40/40 and 6/20. The v1-only
   "4/4 blocked" was luck (on-topic near-misses score high). The M10 report was REGENERATED at 0.60
   (v1: 4/6 seeded found, 0/6 false alarms, 6/6 confirmed, 4/4 undecided).
+- M20 (NOT in the handoff doc; user chose multi-project support). Model: `projects(id, slug
+  unique, name)`; `project_id` NOT NULL on documents / agent_runs / tasks; `api_keys.project_id`
+  NULLABLE (NULL = every project); unique(sha256) became unique(project_id, sha256) so one file can
+  live in two projects. Migration `0002_projects.py` is a real DATA migration (default project,
+  backfill, then NOT NULL + FKs, ON DELETE CASCADE everywhere, INCLUDING keys: a deletion must never
+  widen a scoped key to all projects). ISOLATION BY CONSTRUCTION: `retrieval.*`, `symbols.
+  find_symbols`, `qa.ask`, `services.*` take a REQUIRED `project_id` (None = "all", explicit, used
+  only by the single-project eval scratch DBs), so mypy lists every unscoped call site. API:
+  `app/api/scope.py` `ProjectDep` resolves `?project=<slug>` AND authorises it in ONE place (a
+  confined key defaults to its own project; wrong project == unauthorised project == same 404).
+  By-id routes (document/run/action) authorise by the caller's own scope, not the query param.
+  `app/projects.py` (domain + CLI create|list|delete --yes), `app/api/projects.py` (GET list;
+  POST create = unscoped approver only), `keys create --project`, `AIJP_MCP_PROJECT` (MCP serves one
+  launcher-chosen project; the model never picks). `default` is created on demand. UI: switcher in
+  the sidebar (`api.js` `project`, adds `?project=` except /auth /projects /health /eval), a
+  confined key sees its project name instead of a dropdown. Audit detail carries `project`.
+  TESTS: `tests/test_projects.py` (41: every read/write path across a boundary, both key kinds,
+  CLIs, cascade, MCP) + 4 new migration tests (backfill, per-project uniqueness, guarded
+  downgrade, real legacy adoption); MUTATION-VERIFIED: 13 enforcement points removed one at a time,
+  every one caught (`scratchpad/mutate_projects.py` idea: break, run test_projects, restore).
+  VERIFIED for real: 0002 on a DB holding the real embedded corpus (identical text+vector md5, all
+  in default, HNSW/FTS kept); real stack with two projects and real models; Playwright session
+  switching projects and as a confined key; CI container job (now includes project checks).
+  BUGS FOUND ALONG THE WAY (all fixed): (1) THE ROUTE-GUARD TEST IN test_auth.py WAS VACUOUS: newer
+  FastAPI hides included routers behind `_IncludedRouter` objects with path '', so `for route in
+  app.routes` saw none of the API and the guard passed while checking nothing (possibly since M12).
+  Now `all_routes()` walks `original_router` + `include_context.prefix`, with a non-vacuity test
+  (>=20 routes, known routes present) and a check that a newly added route is seen. (2) `re.match(
+  r"^..$")` accepts a trailing newline ("a\n"): slug validation, the API-key format, the calculator
+  id and the X-Request-ID check all switched to `fullmatch` (request id + slug have tests). (3) the CI
+  public-endpoints step piped curl into `grep -q` (exit 23 under pipefail when grep closes early):
+  headers are captured first. (4) the UI probed /status while signed out (a needless 401).
+  Gotchas: in Git Bash `MSYS_NO_PATHCONV=1` (needed for `docker run --tmpfs /tmp`) breaks curl's
+  `-o /dev/null` (exit 23): unset it for the CI-step emulation; heredocs also collapse `\\r\\n` in
+  YAML/Python written through Bash, so patch those with the Edit tool or chr(92).
+  NOT verified: GitHub Actions itself (still not pushed). NOT built: per-project roles/members,
+  moving a document between projects, project rename, an HTTP delete (CLI only, on purpose).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -322,7 +359,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
-  (3) multi-project support (a migration now); (4) an actual cloud deployment (needs an account and
+  (3) per-project roles or moving documents between projects if users need them; (4) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import metrics, providers, retrieval, services
+from app.api.scope import ProjectDep
 from app.audit import record_event
 from app.auth import EditorDep, RequireReader
 from app.config import Settings, get_settings
@@ -39,15 +40,21 @@ LLMDep = Annotated[LLMProvider, Depends(get_llm)]
 
 @router.post("/embeddings", response_model=EmbedResponse)
 def embed_pending(
-    session: SessionDep, settings: SettingsDep, embedder: EmbedderDep, principal: EditorDep
+    session: SessionDep,
+    settings: SettingsDep,
+    embedder: EmbedderDep,
+    principal: EditorDep,
+    project: ProjectDep,
 ) -> EmbedResponse:
-    """Embed every chunk that does not have a vector yet."""
+    """Embed every chunk of THIS project that does not have a vector yet."""
     try:
-        count = services.embed_pending_chunks(session, embedder, settings.embed_batch_size)
+        count = services.embed_pending_chunks(
+            session, embedder, settings.embed_batch_size, project_id=project.id
+        )
     except EmbeddingError as exc:
         metrics.record_dependency_error("embedding")
         raise HTTPException(status_code=503, detail=str(exc)) from None
-    record_event(session, principal, "embeddings.run", None, embedded=count)
+    record_event(session, principal, "embeddings.run", None, project=project.slug, embedded=count)
     return EmbedResponse(embedded=count)
 
 
@@ -58,6 +65,7 @@ def search(
     settings: SettingsDep,
     embedder: EmbedderDep,
     llm: LLMDep,
+    project: ProjectDep,
 ) -> SearchResponse:
     reranking = settings.rerank_enabled
     try:
@@ -70,6 +78,7 @@ def search(
             pool=settings.retrieval_pool,
             rrf_k=settings.rrf_k,
             document_id=body.document_id,
+            project_id=project.id,
         )
         if reranking:
             hits, ok = rerank_candidates(

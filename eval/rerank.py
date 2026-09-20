@@ -103,6 +103,7 @@ def run(
                 top_k=POOL,
                 pool=settings.retrieval_pool,
                 rrf_k=settings.rrf_k,
+                project_id=None,  # the scratch database holds a single project
             )
             base_ms.append((time.perf_counter() - t0) * 1000)
             t1 = time.perf_counter()

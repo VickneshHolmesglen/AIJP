@@ -71,6 +71,18 @@ uv run python -m app.keys create --name me --role approver                     #
 curl -H "Authorization: Bearer aijp_..." http://127.0.0.1:8000/documents
 ```
 
+Several bodies of documents can live side by side as **projects**: nothing one project stores
+ever appears in another's searches, answers, runs or tasks. Create one and confine a key to it:
+
+```bash
+docker compose exec api python -m app.projects create --slug shardfall --name "Shardfall"
+docker compose exec api python -m app.keys create --name alice --role editor --project shardfall
+curl -H "Authorization: Bearer aijp_..." "http://127.0.0.1:8000/documents?project=shardfall"
+```
+
+A confined key defaults to its own project; a key for all projects picks one per request with
+`?project=<slug>` (default project: `default`), and the web UI has a project switcher.
+
 The web UI asks for the key on first load. For a throwaway local run, `AIJP_AUTH_ENABLED=false`
 turns it off (with a startup warning and a banner in the UI). See [docs/deployment.md](docs/deployment.md)
 for configuration, security checklist, monitoring and alerts, backup and restore, CI, a cloud
@@ -162,9 +174,10 @@ Interfaces: HTTP API + web UI (app/api, app/static) and MCP server (app/mcp_serv
 ## Known limitations
 
 - Scanned (image-only) PDFs are rejected; OCR is out of scope
-- Migrations are Alembic (applied at startup, see docs/deployment.md), but only the baseline
-  exists and there is no rollback plan beyond a backup. There is no "project" concept yet (one
-  shared corpus); adding it is now a migration rather than a rewrite
+- Migrations are Alembic (applied at startup, see docs/deployment.md); there is no rollback plan
+  beyond a backup. Projects isolate documents, searches, answers, runs, tasks and (optionally) API
+  keys, but a project has no members or per-project roles: a key is either confined to one
+  project or can use all of them, and deleting a project (CLI only) removes everything in it
 - Authentication is API keys managed by CLI: no users, SSO, per-project permissions or key-rotation
   UI. Keys are not rate-limited (do that at the proxy). The MCP server is local stdio and bypasses
   API auth, so it inherits the trust of whoever launches it
@@ -200,6 +213,6 @@ Done: 1-2 ingestion, 3 embeddings + search, 4 grounded Q&A, 5 source code, 6 hyb
 and accountability, 13 database migrations (Alembic), 14 reranking (built and measured; off by
 default because the end-to-end eval did not justify it), 15 a harder second evaluation set with
 confidence intervals and paired significance tests, 16 a calculator and a thinking mode, measured
-on a held-out set (calculator rejected, thinking kept as an option). Open follow-ups:
+on a held-out set (calculator rejected, thinking kept as an option). 17 multi-project support. Open follow-ups:
 a cheaper way to get the benefit of thinking, a consistency judge that does not trust a config value over the code, recalibrating the
-consistency gate on both question sets, multi-project support, and an actual cloud deployment.
+consistency gate on both question sets, and an actual cloud deployment.

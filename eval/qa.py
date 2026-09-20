@@ -105,6 +105,7 @@ def run_question(
                 mode=mode,
                 pool=settings.retrieval_pool,
                 rrf_k=settings.rrf_k,
+                project_id=None,  # the scratch database holds a single project
                 reranker=LLMReranker(llm) if settings.rerank_enabled else None,
                 rerank_pool=settings.rerank_pool,
                 calculator=settings.ask_calculator,
@@ -352,6 +353,7 @@ def main() -> None:
                     top_k=10,
                     pool=settings.retrieval_pool,
                     rrf_k=settings.rrf_k,
+                    project_id=None,
                 )
                 got = [(h.document.source_path, h.chunk.section) for h in hits]
                 rec.retrieval_rank = rank_of_question(got, rq)

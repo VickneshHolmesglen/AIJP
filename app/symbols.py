@@ -5,6 +5,7 @@ the section path the loaders record ("Enemy > take_damage"), not by parsing code
 """
 
 import re
+import uuid
 from dataclasses import dataclass
 from typing import Literal
 
@@ -51,16 +52,21 @@ def like_escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def find_symbols(session: Session, name: str, limit: int) -> list[SymbolHit]:
+def find_symbols(
+    session: Session, name: str, limit: int, *, project_id: uuid.UUID | None
+) -> list[SymbolHit]:
     """Definitions first, then grouped-declaration mentions; otherwise path/line order."""
-    rows = session.execute(
+    stmt = (
         select(Chunk, Document)
         .join(Document, Document.id == Chunk.document_id)
         .where(Document.file_type.in_(CODE_FILE_TYPES))
         .where(Chunk.section.like(f"%{like_escape(name)}%", escape="\\"))
         .order_by(Document.source_path, Chunk.chunk_index)
         .limit(_CANDIDATE_LIMIT)  # SQL narrows candidates; exact segment matching happens below
-    ).all()
+    )
+    if project_id is not None:  # the project boundary: another project's code is never returned
+        stmt = stmt.where(Document.project_id == project_id)
+    rows = session.execute(stmt).all()
     hits = [
         SymbolHit(kind, chunk, doc)
         for chunk, doc in rows

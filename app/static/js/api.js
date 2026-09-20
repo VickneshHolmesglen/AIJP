@@ -52,7 +52,42 @@ export const auth = {
   },
 };
 
+// The project the user is working in. It is a slug (not a secret), so remembering it in
+// localStorage is a per-viewer convenience; the server decides what the key may actually reach.
+const PROJECT_KEY = "aijp.project";
+let currentProject = null;
+
+export const project = {
+  get() {
+    return currentProject;
+  },
+  set(slug) {
+    currentProject = slug;
+    try {
+      if (slug) localStorage.setItem(PROJECT_KEY, slug);
+    } catch {
+      /* storage unavailable: the choice just lasts until reload */
+    }
+  },
+  remembered() {
+    try {
+      return localStorage.getItem(PROJECT_KEY);
+    } catch {
+      return null;
+    }
+  },
+};
+
+// Endpoints that are about the caller or the service, not about one project's data.
+const UNSCOPED = ["/auth/", "/projects", "/health", "/eval/"];
+
+function scoped(path) {
+  if (!currentProject || UNSCOPED.some((prefix) => path.startsWith(prefix))) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}project=${encodeURIComponent(currentProject)}`;
+}
+
 async function request(path, options = {}) {
+  path = scoped(path);
   const headers = new Headers(options.headers);
   if (apiKey) headers.set("Authorization", `Bearer ${apiKey}`);
   let response;
@@ -70,7 +105,7 @@ async function request(path, options = {}) {
     /* non-JSON error body */
   }
   if (!response.ok) {
-    if (response.status === 401 && apiKey && path !== "/auth/me") auth.onUnauthorized?.();
+    if (response.status === 401 && apiKey && !path.startsWith("/auth/me")) auth.onUnauthorized?.();
     throw new ApiError(response.status, body?.detail ?? response.statusText);
   }
   return body;
@@ -86,6 +121,7 @@ const json = (payload, signal) => ({
 export const api = {
   authConfig: () => request("/auth/config"),
   me: () => request("/auth/me"),
+  projects: () => request("/projects"),
   status: () => request("/status"),
   ask: (question, signal) => request("/ask", json({ question }, signal)),
   search: (query, mode, topK) => request("/search", json({ query, mode, top_k: topK })),

@@ -90,6 +90,19 @@ class AnswerSource(BaseModel):
     citation: Citation
 
 
+class ProjectOut(BaseModel):
+    id: uuid.UUID
+    slug: str
+    name: str
+    created_at: datetime
+    documents: int = 0
+
+
+class ProjectCreate(BaseModel):
+    slug: str = Field(min_length=1, max_length=40)
+    name: str = Field(min_length=1, max_length=100)
+
+
 class Usage(BaseModel):
     prompt_tokens: int
     completion_tokens: int
@@ -178,6 +191,7 @@ class ConfigView(BaseModel):
 
 
 class SystemStatus(BaseModel):
+    project: str | None = None  # the project the document counts describe
     database: DatabaseStatus
     ollama: OllamaStatus
     config: ConfigView

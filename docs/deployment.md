@@ -66,6 +66,7 @@ variable; `.env.example` lists them all. Compose reads a `.env` file next to `do
 | `AIJP_RETRIEVAL_MODE` | `vector` | `hybrid` did not beat it on the benchmark |
 | `AIJP_LLM_THINK` | `false` | The answer model reasons before replying. Pooled over 64 held-out and dev questions it got 46 right versus 40 (p=0.07), at about 6x the median latency (1.7 s to 9.9 s). Its extra tokens are not in `llm_tokens_total`. Allow for p95 latencies of 30-40 s in any proxy timeout |
 | `AIJP_ASK_CALCULATOR` | `false` | The model writes arithmetic and the server computes it. **Not recommended**: with `qwen3.5` it made answers much worse on the held-out set (5/28 vs 15/28 correct) because the model does not reliably follow the protocol; it may suit a stronger model. See `eval/results/compare-calc-*.md` |
+| `AIJP_MCP_PROJECT` | `default` | The one project the local MCP server serves. Chosen by whoever launches it; the model never picks a project |
 | `AIJP_RERANK_ENABLED` / `AIJP_RERANK_POOL` | `false` / `10` | One extra model call per `/ask` or `/search` that reorders the top candidates. See `eval/results/rerank-*.md` before enabling; it adds latency and its own model tokens (not in `llm_tokens_total`) |
 | `AIJP_MAX_UPLOAD_BYTES` | 10 MiB | Rejected before parsing |
 | `AIJP_LOG_LEVEL` / `AIJP_LOG_FORMAT` | `INFO` / `plain` | The container sets `json` |
@@ -91,6 +92,25 @@ docker compose exec api python -m app.keys create --name grafana --role reader -
 docker compose exec api python -m app.keys list
 docker compose exec api python -m app.keys revoke alice                            # effective on the next request
 ```
+
+**Projects.** Documents, chunks, agent runs and tasks each belong to one project, and every
+retrieval is filtered by project in SQL, so one project's text cannot reach another's search
+results, prompts, answers, runs or counts. A request names its project with `?project=<slug>`
+(default: `default`). A key created with `--project` is confined to it and defaults to it; a key
+without is unscoped and may use every project. A wrong project and a project the key may not use
+give the same 404, so a confined key cannot probe which projects exist.
+
+```bash
+docker compose exec api python -m app.projects create --slug shardfall --name "Shardfall"
+docker compose exec api python -m app.projects list
+docker compose exec api python -m app.keys create --name alice --role editor --project shardfall
+docker compose exec api python -m app.projects delete shardfall --yes   # removes EVERYTHING in it
+```
+
+Only an unscoped approver key can create a project over the API (`POST /projects`); deleting one
+is CLI-only and cascades to its documents, runs, tasks and confined keys (a key is never widened
+to all projects by a deletion). Project roles are not per-project: a key has one role everywhere it
+can go. Back up before deleting.
 
 Only a SHA-256 of the secret is stored, so a lost key cannot be recovered, only replaced (rotate by
 creating a new key, switching clients, then revoking the old one). Prometheus must scrape `/metrics`
@@ -233,6 +253,10 @@ docker compose exec api python -m app.migrate upgrade   # what startup does
   migrated schema with the models). To write one: edit `app/models.py`, then
   `uv run alembic revision --autogenerate -m "what changed"`, **read and edit the generated
   file** (autogenerate misses renames and data moves), and run `uv run pytest`.
+- Revision `0002` (projects) is a DATA migration: it creates a `default` project, moves every
+  existing document, run and task into it, then replaces the global unique(sha256) with
+  unique(project_id, sha256). Existing keys stay unscoped. **Back up first** (`pg_dump`, above).
+  Downgrading is refused while the same file exists in two projects.
 - The embedding dimension is read from settings when the baseline runs. Changing it later is a
   data migration (new column, re-embed, swap), not an automatic one.
 
@@ -353,7 +377,7 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 - Every log line is JSON, and the request id links the request line to the Ollama calls it made.
 - The MCP server runs over stdio inside the container with all seven tools.
 - The CI job commands run locally, including the skip guard, which passes with a healthy database
-  (476 tests, 0 skipped) and fails when the database is unreachable (skips).
+  (526 tests, 0 skipped) and fails when the database is unreachable (skips).
 - **From a fresh `git clone` of the commit** (no `.venv`, no caches, only tracked files): the
   locked install, `ruff format --check`, `ruff check`, `mypy`, all 457 tests with the skip guard
   taken verbatim from `ci.yml`, the image build, the container under the compose hardening (uid
@@ -364,6 +388,14 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
   before parsing), role checks (reader gets 403 on writes), a revoked key stops working on the next
   request, and the same steps as the CI auth smoke test pass in the container. A real browser
   session was driven through sign-in as reader and as approver.
+- Projects, against the real stack with real models: the same question about the same file path
+  answered from each project's own text (`PINEAPPLE-42` versus `ZUCCHINI-7`), a confined key
+  refused with an identical 404 for another project and for a nonexistent one, its uploads into
+  another project refused, another project's document not readable or deletable by id, and a
+  browser session switching projects and signing in with a confined key.
+- The `0002` migration on a database holding the real embedded corpus (73 chunks): text and
+  vectors have an identical fingerprint before and after, every document lands in the default
+  project, vector search still works, and the HNSW and full-text indexes are intact.
 - `pip-audit` reports no known vulnerabilities in the 50 locked runtime packages, as of the run.
 
 **Not** verified:

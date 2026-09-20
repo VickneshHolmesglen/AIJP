@@ -17,6 +17,7 @@ for a potential discrepancy, a DRAFT action that a human must approve.
 
 import json
 import logging
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -330,6 +331,7 @@ def _search_side(
     claim: str,
     file_types: tuple[str, ...],
     side: Literal["design", "implementation"],
+    project_id: uuid.UUID,
 ) -> list[Evidence]:
     prefix = "D" if side == "design" else "C"
     hits = retrieval.search(
@@ -341,6 +343,7 @@ def _search_side(
         pool=settings.retrieval_pool,
         rrf_k=settings.rrf_k,
         file_types=file_types,
+        project_id=project_id,
     )
     return [
         Evidence(f"{prefix}{i}", side, "search", h.chunk, h.document, h.score, h.cosine)
@@ -362,12 +365,18 @@ def run_consistency_check(
     llm: LLMProvider,
     settings: Settings,
     claim: str,
+    *,
+    project_id: uuid.UUID,
     requested_by: str | None = None,
 ) -> AgentRun:
     """Execute the workflow and return the persisted run. Expected failures (Ollama or the model
     unavailable) end the run as `failed` with the audit trail intact rather than raising."""
     run = AgentRun(
-        workflow=WORKFLOW, input={"claim": claim}, status="running", requested_by=requested_by
+        project_id=project_id,
+        workflow=WORKFLOW,
+        input={"claim": claim},
+        status="running",
+        requested_by=requested_by,
     )
     session.add(run)
     session.commit()
@@ -397,7 +406,9 @@ def _run(
     evidence: list[Evidence] = []
 
     with rec.step("search_design", claim_chars=len(claim), file_types=list(DESIGN_TYPES)) as step:
-        design = _search_side(session, embedder, settings, claim, DESIGN_TYPES, "design")
+        design = _search_side(
+            session, embedder, settings, claim, DESIGN_TYPES, "design", run.project_id
+        )
         evidence += design
         step.output = {"passages": [evidence_summary(e) for e in design]}
 
@@ -405,7 +416,13 @@ def _run(
         "search_implementation", claim_chars=len(claim), file_types=list(IMPLEMENTATION_TYPES)
     ) as step:
         implementation = _search_side(
-            session, embedder, settings, claim, IMPLEMENTATION_TYPES, "implementation"
+            session,
+            embedder,
+            settings,
+            claim,
+            IMPLEMENTATION_TYPES,
+            "implementation",
+            run.project_id,
         )
         evidence += implementation
         step.output = {"passages": [evidence_summary(e) for e in implementation]}
@@ -419,7 +436,7 @@ def _run(
             have = {e.chunk.id for e in implementation}
             n = len(implementation)
             for name in identifiers:
-                for hit in symbols.find_symbols(session, name, limit=2):
+                for hit in symbols.find_symbols(session, name, limit=2, project_id=run.project_id):
                     if hit.chunk.id in have:
                         continue
                     have.add(hit.chunk.id)

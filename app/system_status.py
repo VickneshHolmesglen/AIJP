@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.config import Settings
-from app.models import Chunk, Document
+from app.models import Chunk, Document, Project
 from app.schemas import (
     ConfigView,
     DatabaseStatus,
@@ -45,14 +45,25 @@ def probe_ollama(settings: Settings) -> OllamaStatus:
     )
 
 
-def build_status(session: Session, settings: Settings, probe: OllamaProbe) -> SystemStatus:
+def build_status(
+    session: Session,
+    settings: Settings,
+    probe: OllamaProbe,
+    project: Project | None = None,
+) -> SystemStatus:
     """Database counts, Ollama reachability and non-secret config. Failures are reported in the
     result rather than raised. Never includes the database URL."""
     try:
         pgvector = bool(session.scalar(text("SELECT 1 FROM pg_extension WHERE extname = 'vector'")))
-        documents = session.scalar(select(func.count()).select_from(Document)) or 0
-        chunks = session.scalar(select(func.count()).select_from(Chunk)) or 0
-        embedded = session.scalar(select(func.count()).where(Chunk.embedding.is_not(None))) or 0
+        in_project = [] if project is None else [Document.project_id == project.id]
+        documents = (
+            session.scalar(select(func.count()).select_from(Document).where(*in_project)) or 0
+        )
+        chunk_rows = (
+            select(func.count()).select_from(Chunk).join(Document, Document.id == Chunk.document_id)
+        )
+        chunks = session.scalar(chunk_rows.where(*in_project)) or 0
+        embedded = session.scalar(chunk_rows.where(Chunk.embedding.is_not(None), *in_project)) or 0
         database = DatabaseStatus(
             reachable=True,
             pgvector=pgvector,
@@ -71,6 +82,7 @@ def build_status(session: Session, settings: Settings, probe: OllamaProbe) -> Sy
             pending_chunks=0,
         )
     return SystemStatus(
+        project=project.slug if project is not None else None,
         database=database,
         ollama=probe(settings),
         config=ConfigView(

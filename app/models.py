@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -14,17 +14,35 @@ class Base(DeclarativeBase):
     pass
 
 
-class Document(Base):
-    __tablename__ = "documents"
+class Project(Base):
+    """A separate body of documents (one software project). Everything a user can search, ask about
+    or check belongs to exactly one project, and nothing is ever retrieved across projects."""
+
+    __tablename__ = "projects"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    # URL-safe short name used in requests (`?project=<slug>`); unique and never reused for another.
+    slug: Mapped[str] = mapped_column(String(40), unique=True)
+    name: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Document(Base):
+    __tablename__ = "documents"
+    # The same file may be ingested into two projects, but only once per project.
+    __table_args__ = (UniqueConstraint("project_id", "sha256", name="uq_documents_project_sha256"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
     filename: Mapped[str] = mapped_column(String(255))
     # Path of the file inside the indexed project; used verbatim in citations.
     source_path: Mapped[str] = mapped_column(String(1024))
     file_type: Mapped[str] = mapped_column(String(16))
     size_bytes: Mapped[int] = mapped_column(Integer)
-    # Content hash: detects duplicate ingestion.
-    sha256: Mapped[str] = mapped_column(String(64), unique=True)
+    # Content hash: detects duplicate ingestion within a project.
+    sha256: Mapped[str] = mapped_column(String(64))
     title: Mapped[str | None] = mapped_column(String(512))
     page_count: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -67,6 +85,9 @@ class AgentRun(Base):
     __tablename__ = "agent_runs"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
     workflow: Mapped[str] = mapped_column(String(64))
     input: Mapped[dict[str, Any]] = mapped_column(JSONB)
     # running | awaiting_approval | completed | failed
@@ -134,6 +155,9 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     evidence: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)  # citations, no document text
@@ -159,6 +183,11 @@ class ApiKey(Base):
     role: Mapped[str] = mapped_column(String(16))  # reader | editor | approver
     key_prefix: Mapped[str] = mapped_column(String(8), unique=True)
     key_hash: Mapped[str] = mapped_column(String(64))
+    # NULL: the key may use every project. Set: it can only ever see and change that project.
+    # CASCADE, not SET NULL: deleting a project must remove its keys, never widen them to all.
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

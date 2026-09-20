@@ -175,6 +175,8 @@ def test_last_used_is_updated_but_not_on_every_request(db, keys) -> None:
 DOC_ID = str(uuid.uuid4())
 ENDPOINTS = [
     ("GET", "/auth/me", None, None, Role.reader),
+    ("GET", "/projects", None, None, Role.reader),
+    ("POST", "/projects", {"slug": "team-a", "name": "Team A"}, None, Role.approver),
     ("GET", "/status", None, None, Role.reader),
     ("GET", "/metrics", None, None, Role.reader),
     ("GET", "/documents", None, None, Role.reader),
@@ -239,26 +241,51 @@ def test_health_probes_docs_and_the_static_ui_stay_public(secured, path) -> None
     assert secured.get(path).status_code == 200
 
 
+def all_routes(routes=None, prefix: str = "") -> list[tuple[str, str]]:
+    """Every (method, path) the app serves, INCLUDING routers added with include_router.
+
+    FastAPI wraps an included router in an `_IncludedRouter` whose own `path` is empty, so walking
+    `app.routes` naively sees none of the API. This looks inside the wrappers (and any nesting)."""
+    found: list[tuple[str, str]] = []
+    for route in app.routes if routes is None else routes:
+        original = getattr(route, "original_router", None)
+        if original is not None:
+            context = getattr(route, "include_context", None)
+            inner = prefix + (getattr(context, "prefix", "") or "")
+            found += all_routes(original.routes, inner)
+        elif getattr(route, "methods", None):
+            found += [
+                (method, prefix + route.path) for method in route.methods - {"HEAD", "OPTIONS"}
+            ]
+    return found
+
+
+def test_the_route_walker_really_sees_the_api() -> None:
+    """The guard below is only worth anything if it looks at real routes. It once passed while
+    checking nothing, because included routers hide behind a wrapper with an empty path."""
+    routes = all_routes()
+    assert len(routes) >= 20
+    assert ("POST", "/documents") in routes and ("GET", "/projects") in routes
+    assert ("GET", "/metrics") in routes  # a route registered directly on the app
+
+
 @pytest.mark.integration
 def test_every_registered_route_is_either_public_or_in_the_role_table(secured) -> None:
     """A new endpoint must be added to ENDPOINTS or PUBLIC, so it cannot ship unprotected by
     accident: the table above is the single source of truth this test holds the app to."""
-    known = {(m, re.sub(r"\{[^}]+\}", "X", p)) for m, p, *_ in ENDPOINTS}
-    public = {re.sub(r"\{[^}]+\}", "X", p) for p in PUBLIC} | {"/", "/ui", "/redoc"}
-    for route in app.routes:
-        methods = getattr(route, "methods", None)
-        path = getattr(route, "path", "")
-        if not methods:  # mounts (static files)
-            continue
-        norm = re.sub(r"\{[^}]+\}", "X", path)
-        for method in methods - {"HEAD", "OPTIONS"}:
-            normalised = {
-                (m, re.sub(r"\{[^}]+\}", "X", p.replace(DOC_ID, "X"))) for m, p, *_ in ENDPOINTS
-            }
-            assert (
-                (method, norm) in normalised or norm in public or path in ("/docs/oauth2-redirect",)
-            ), f"{method} {path} is neither in the role table nor declared public"
-    assert known  # the table is not empty
+
+    def norm(path: str) -> str:
+        """Templates and the concrete ids used in the table both become X."""
+        return re.sub(r"\{[^}]+\}", "X", path.replace(DOC_ID, "X").replace("qa-2026-01-01", "X"))
+
+    known = {(m, norm(p)) for m, p, *_ in ENDPOINTS}
+    public = {norm(p) for p in PUBLIC} | {"/", "/ui", "/redoc", "/docs/oauth2-redirect"}
+    unguarded = [
+        f"{method} {path}"
+        for method, path in all_routes()
+        if (method, norm(path)) not in known and norm(path) not in public
+    ]
+    assert not unguarded, f"neither in the role table nor declared public: {unguarded}"
 
 
 @pytest.mark.integration

@@ -66,7 +66,7 @@ def _request_id(scope: Scope) -> str:
     for name, value in headers:
         if name == b"x-request-id":
             candidate = value.decode("latin-1")
-            if _SAFE_REQUEST_ID.match(candidate):
+            if _SAFE_REQUEST_ID.fullmatch(candidate):
                 return candidate
     return uuid.uuid4().hex
 
