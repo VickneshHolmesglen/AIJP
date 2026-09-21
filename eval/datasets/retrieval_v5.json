@@ -71,7 +71,7 @@
     {
       "id": "c05",
       "kind": "computation",
-      "question": "How much damage does a level 3 Frost Tower deal per shot?",
+      "question": "How much damage does one shard from a level 2 Frost Tower deal?",
       "expected": [
         {
           "path": "docs/design/towers.md",
@@ -394,7 +394,7 @@
     {
       "id": "d09",
       "kind": "lookup",
-      "question": "How much gold does the player start with?",
+      "question": "What is the amount of gold each run begins with?",
       "expected": [
         {
           "path": "docs/design/economy.md",
