@@ -64,7 +64,7 @@ variable; `.env.example` lists them all. Compose reads a `.env` file next to `do
 | `AIJP_CONSISTENCY_MIN_COSINE` | `0.60` | Gate for the consistency check. Pooled over 60 claims it lets 39/40 claims with evidence through and blocks 13/20 unsupported ones (`eval/results/gate-sweep-consistency-*.md`); 0.65 loses 20% of real claims |
 | `AIJP_CONSISTENCY_JUDGE` | `verdict` | `per_source` makes the model judge each source separately and code decide (any contradicting code source means a discrepancy). Held-out: 20/22 vs 17/22; pooled 53/60 vs 49/60 (p=0.22, not significant); about +1 s per check |
 | `AIJP_RETRIEVAL_MODE` | `vector` | `hybrid` did not beat it on the benchmark |
-| `AIJP_LLM_ESCALATION` | `derived` | Answer without thinking first; re-ask WITH thinking only when the answer contains a number that is not in the cited passages or the question. Pooled over 94 questions: 57 -> 69 correct, 12 gained / 0 lost, refusals unchanged. `off` disables it, `always` re-checks every answer (about 5x latency, not recommended). Numeric questions then take about 7-25 s (p95 22-44 s) and use about 65% more tokens; plain lookups are unaffected |
+| `AIJP_LLM_ESCALATION` | `derived` | Answer without thinking first; re-ask WITH thinking only when the answer contains a number that is not in the cited passages or the question. Pooled over 94 questions: 57 -> 69 correct, 12 gained / 0 lost, refusals unchanged. `off` disables it, `always` re-checks every answer (about 5x latency, not recommended). Two more modes are opt-in and less tested: `classify` (also re-check when a cheap extra model call says the question needs a calculation: on the v5 test set 26 of 34 correct against 24 for `derived` and 21 for `off`, no wasted re-checks on lookups, but one set only and the difference from `derived` is not statistically significant) and `cue` (also re-check when the question contains arithmetic words such as total or after: it wasted re-checks on 3 of 14 lookups, so `classify` is preferred). Numeric questions then take about 7-25 s (p95 22-44 s) and use about 65% more tokens; plain lookups are unaffected |
 | `AIJP_LLM_ESCALATION_TOKENS` / `AIJP_LLM_ESCALATION_TIMEOUT_SECONDS` | `1500` / `45` | Caps on the thinking re-check. A token cap is not a time cap (on a loaded GPU 1,500 tokens took ~195 s), so both apply; hitting either keeps the first answer. Allow for about 50 s worst case in any proxy timeout on `/ask` |
 | `AIJP_LLM_THINK` | `false` | The answer model reasons before replying. Pooled over 64 held-out and dev questions it got 46 right versus 40 (p=0.07), at about 6x the median latency (1.7 s to 9.9 s). Its extra tokens are not in `llm_tokens_total`. Allow for p95 latencies of 30-40 s in any proxy timeout |
 | `AIJP_ASK_CALCULATOR` | `false` | The model writes arithmetic and the server computes it. **Not recommended**: with `qwen3.5` it made answers much worse on the held-out set (5/28 vs 15/28 correct) because the model does not reliably follow the protocol; it may suit a stronger model. See `eval/results/compare-calc-*.md` |
@@ -380,7 +380,7 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 - Every log line is JSON, and the request id links the request line to the Ollama calls it made.
 - The MCP server runs over stdio inside the container with all seven tools.
 - The CI job commands run locally, including the skip guard, which passes with a healthy database
-  (542 tests, 0 skipped) and fails when the database is unreachable (skips).
+  (565 tests, 0 skipped) and fails when the database is unreachable (skips).
 - **From a fresh `git clone` of the commit** (no `.venv`, no caches, only tracked files): the
   locked install, `ruff format --check`, `ruff check`, `mypy`, all 457 tests with the skip guard
   taken verbatim from `ci.yml`, the image build, the container under the compose hardening (uid
@@ -407,6 +407,8 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 - `pip-audit` reports no known vulnerabilities in the 50 locked runtime packages, as of the run.
 
 **Not** verified:
+
+- The `classify` and `cue` escalation modes beyond one held-out set (v5) and one non-independent one (v4); the planned replication on the other sets was not run.
 
 - The GitHub Actions workflow has never run on GitHub (its steps were reproduced locally, and
   `actionlint` is clean, but the Ubuntu runners themselves are untested).

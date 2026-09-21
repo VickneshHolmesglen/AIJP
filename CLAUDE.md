@@ -55,7 +55,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 542
+  DONE. Ruff, mypy pass. Tests: 565
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -382,6 +382,42 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   one scripted model); `eval.qa` baselines MUST now set AIJP_LLM_ESCALATION=off explicitly (filenames
   carry `-escalate-<mode>` so runs cannot be confused); `eval/results/qa-*` before M21 were baselines.
   `Answer.escalated`, `eval/qa.py` report row "answers re-checked with thinking".
+- M22 (NOT in the handoff doc; user chose "escalation blind spot (v5 eval)"). PARTLY FINISHED: the
+  user stopped the work at the replication stage. DEFAULT UNCHANGED (`derived`); two new opt-in
+  modes exist. Goal: M21's `derived` trigger misses computational questions whose WRONG first answer
+  quotes a source number (v4 k06/k11/k12). Built in `qa.ask`: mode `cue` = derived OR the question
+  contains arithmetic cue words (`_ARITHMETIC_CUES`: total, combined, after, per second, percent(age),
+  times, more, less, remain, left, extra, increase, lose, earned, refund, "in N seconds"...); mode
+  `classify` = derived OR a cheap NON-thinking call (`CLASSIFIER_SYSTEM`, `_needs_calculation`) says
+  the question needs a calculation. Both apply only when the first answer contains a number (citation
+  markers like [1] excluded: a test caught the bug where they were counted). A failed or garbled
+  classifier means "no" (never slower or riskier). `EscalationMode` type in config; classifier tokens
+  are added to usage. Tests: 35 in tests/test_escalation.py incl. the regexes on lookup wording, the
+  classifier failure paths; MUTATION-CHECKED (one survivor, the classifier LLMError path, got a test).
+  PROTOCOL: v5 (`{retrieval,qa}_v5.json`: 20 computational questions whose tempting wrong answer is a
+  source number + 14 lookups, 8 phrased "how much/how many") was COMMITTED BEFORE the triggers (git
+  7a5f053; 2 duplicated questions reworded in 5d8c7b7 before any run); the cue regex and classifier
+  prompt were FROZEN before v5 ran and not tuned on it. Each arm run once.
+  RESULTS on held-out v5 (34 answerable; baseline = AIJP_LLM_ESCALATION=off): baseline 21; derived 24
+  (+3/0); cue 25 (+4/0); classify 26 (+5/0, p=0.062); always-capped 26 (+5/0, p=0.062).
+  Computational 7 / 10 / 11 / 12 / 12 of 20. Lookups escalated (WASTED thinking): derived 0, cue 3
+  (d05 "times", d06 "per second", d12 "percentage": the cue words are too broad, as predicted),
+  classify 0, always 14. Median latency 1.1 / 1.2 / 1.8 / 1.6 / 5.7 s; tokens/query 632 / 868 / 1012 /
+  1041 / 1342. So `classify` REACHED THE ALWAYS-THINK CEILING with no waste and about 1/3 of its
+  latency. derived -> classify: +2/0 (p=0.5, not significant). On v4 (dev for this feature: its misses
+  inspired the triggers, so NOT independent): derived 23 -> classify 26, 16 escalations, all on
+  computational questions.
+  NOT DONE (stopped by the user): replication of `classify` on v3 and v2 (v4 finished, v3/v2 runs were
+  killed and left no files); no default change (evidence: one held-out set, p=0.062, replication
+  missing; the user was not asked). The 8 computational questions all arms still get wrong (c01 c02
+  c05 c12 c14 c15 c17 c18) fail even with always-thinking, so they are NOT a trigger problem: candidates
+  are the 1500-token cap (4 fallbacks per thinking arm), retrieval of waves.json for the bounty
+  questions, or model ability. Not investigated.
+  PROCESS NOTES: (1) the GPU was shared with a game (Diablo IV) for part of the session: generation
+  was 4-20 tokens/s vs ~70 idle. After the game exited Ollama needed a few warm calls to recover
+  (measure with eval_count/eval_duration from /api/chat, not wall clock). The v5 runs were started
+  only after speed recovered (~74 tok/s); (2) a commit went through with a failing test because
+  `pytest | tail` hides the exit code: use `pytest -q; echo $?` or `set -o pipefail` before committing.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -390,7 +426,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
-  (3) per-project roles or moving documents between projects if users need them; (4) a way to catch computational questions whose wrong first answer quotes source numbers (escalation's blind spot); (5) an actual cloud deployment (needs an account and
+  (3) per-project roles or moving documents between projects if users need them; (4) finish M22: replicate `classify` on v3/v2, then ask the user whether it should replace `derived` (it costs one extra cheap call and needs no thinking on lookups), and look at why 8 computational questions fail even with always-thinking; (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 

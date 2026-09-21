@@ -1,0 +1,99 @@
+# Answer-quality evaluation
+
+- date: 2026-09-21
+- corpus: 11 files, 73 chunks (eval/corpus)
+- questions: 34 answerable + 6 unanswerable
+- retrieval mode: vector
+- top_k: 5
+- min_evidence_score: 0.55
+- reranking: off
+- calculator: off
+- answer model thinking: off
+- escalation: cue (thinking re-check capped at 1500 tokens, first answer kept on failure)
+- embedding model: nomic-embed-text
+- answer + judge model: qwen3.5
+- platform: Windows-10-10.0.19045-SP0
+
+## Answerable questions
+
+| metric | value |
+|---|---|
+| retrieval recall@1 | 55.9% |
+| retrieval recall@3 | 82.4% |
+| retrieval recall@5 | 85.3% |
+| retrieval precision@5 (mean) | 26.5% |
+| answered (not refused) | 94.1% (32/34, 95% CI 81-98%) |
+| false refusals | 5.9% (2/34, 95% CI 2-19%) |
+| correct overall (a refusal counts as wrong) | 73.5% (25/34, 95% CI 57-85%) |
+| correct when answered | 78.1% (25/32, 95% CI 61-89%) |
+| citation accuracy (a cited source is correct) | 100.0% (32/32, 95% CI 89-100%) |
+| citation precision (mean share of cited sources that are correct) | 73.2% |
+
+False-refusal reasons: model_declined = 2
+
+## Unanswerable questions (correct behaviour = refuse)
+
+| set | refused | answered anyway |
+|---|---|---|
+| all | 100.0% (6/6, 95% CI 61-100%) | 0.0% (0/6, 95% CI 0-39%) |
+| far (off-topic) | 100.0% (2/2, 95% CI 34-100%) | 0.0% (0/2, 95% CI 0-66%) |
+| near (on-topic, fact absent) | 100.0% (4/4, 95% CI 51-100%) | 0.0% (0/4, 95% CI 0-49%) |
+
+Refusal layer: model_declined = 6
+
+## Faithfulness (LLM judge)
+
+| metric | value |
+|---|---|
+| answers judged | 32 of 32 answered |
+| supported by their cited sources | 87.5% (28/32, 95% CI 72-95%) |
+| **unsupported answer rate** | 12.5% (4/32, 95% CI 5-28%) |
+
+Judge validated on 12 hand-labelled cases: accuracy 100.0% (12/12); approved an unfaithful answer 0x, rejected a faithful one 0x, unparseable 0x.
+
+Answers the judge marked unsupported:
+
+- `c02` (answerable): All Runners of wave 3 pay a total of 240 gold when killed.
+- `c09` (answerable): One Cannon shell deals 40 damage and one Arrow bolt deals 12 damage to a Grunt together, for a total of 52 damage. The Grunt has no armor [1], so the full base damage applies per source [5].
+- `c14` (answerable): Killing every enemy in wave 1 pays a total bounty of 60 gold (assuming only Grunts are present as they are the baseline enemy with 5 gold bounty each, and no other specific enemies are defined for wave 1 in the provided sources).
+- `c17` (answerable): Waves 1 and 2 pay a combined total of 230 gold. Wave 1 pays 110 gold (100 base + 10 for wave number) plus a flawless bonus of 25 gold. Wave 2 pays 120 gold (100 base + 20 for wave number) plus a flawless bonus of 25 gold.
+
+## Latency, tokens, cost
+
+| metric | value |
+|---|---|
+| median latency (retrieval + generation) | 1.7 s |
+| p95 latency | 21.9 s |
+| queries that called the LLM | 100.0% (40/40, 95% CI 91-100%) |
+| answers re-checked with thinking | 47.5% (19/40, 95% CI 33-63%): 15 used, 4 fell back to the first answer |
+| mean prompt tokens per LLM call | 813 |
+| mean completion tokens per LLM call | 199 |
+| mean tokens per query (all queries) | 1012 |
+| estimated cost per query | $0.0000 |
+
+Token counts are as reported by Ollama. Cost = tokens x configured prices ($0.0/1M input, $0.0/1M output). The default of 0 reflects a local model: $0.0000 means 'free to run locally', not 'cheap in production'.
+
+## Evidence-gate calibration
+
+The gate alone: refuse when the best chunk cosine is below the threshold. Shows what each candidate threshold would let through / block, before the LLM's own judgement.
+
+| threshold | answerable let through | unanswerable blocked |
+|---|---|---|
+| 0.30 | 100.0% | 0.0% |
+| 0.35 | 100.0% | 0.0% |
+| 0.40 | 100.0% | 0.0% |
+| 0.45 | 100.0% | 0.0% |
+| 0.50 | 100.0% | 0.0% |
+| 0.55 | 100.0% | 0.0%  <- current default |
+| 0.60 | 100.0% | 0.0% |
+| 0.65 | 100.0% | 0.0% |
+| 0.70 | 91.2% | 33.3% |
+| 0.75 | 61.8% | 50.0% |
+| 0.80 | 23.5% | 83.3% |
+
+## Caveats
+
+- 34 answerable + 6 unanswerable questions over a small synthetic corpus written by the project author; treat small differences as noise.
+- Correctness is a keyword check (required facts present), not a judgement of prose.
+- Faithfulness is judged by the same local model that answers; see the judge validation.
+- Generation uses temperature 0, but local inference is not guaranteed bit-identical.

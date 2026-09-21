@@ -5,6 +5,8 @@ from typing import Literal
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+EscalationMode = Literal["off", "derived", "cue", "classify", "always"]
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="AIJP_", extra="ignore")
@@ -30,12 +32,15 @@ class Settings(BaseSettings):
     llm_think: bool = False
     # Escalation (app/qa.py): answer normally first, then re-ask WITH thinking only when it pays.
     # "off"; "derived": the first answer contains a number that is not in the cited passages or the
-    # question (a computed number, where non-thinking answers go wrong); "always": every answer.
+    # question (a computed number, where non-thinking answers go wrong); "cue": that, OR the
+    # question contains arithmetic cue words; "classify": that, OR a cheap non-thinking call
+    # says the question needs a calculation; "always": every answer. Cue and classify also
+    # require the first answer to contain a number.
     # The thinking call is capped at `llm_escalation_tokens` and falls back to the first answer if
     # it is cut off or fails. DEFAULT "derived" (user decision after eval/results/
     # compare-escalation-*.md: 57 -> 69 of 94 correct, 12 gained / 0 lost, refusals unchanged).
     # Evaluation baselines must now set AIJP_LLM_ESCALATION=off explicitly.
-    llm_escalation: Literal["off", "derived", "always"] = "derived"
+    llm_escalation: EscalationMode = "derived"
     llm_escalation_tokens: int = 1500
     # A token cap is not a time cap: on a loaded machine 1,500 tokens took ~195 s. The re-check
     # also has a wall-clock limit, after which the first answer is returned. (A safety net, set

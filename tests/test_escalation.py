@@ -226,3 +226,135 @@ def test_a_slow_thinking_call_times_out_into_a_llm_error_so_the_first_answer_can
     with pytest.raises(LLMError):
         ollama(handler, think=True, max_tokens=1500).generate("s", "u")
     assert Settings.model_fields["llm_escalation_timeout_seconds"].default == 45.0
+
+
+# ------------------------------------------------------------------ M22: question-based triggers
+
+CUE_QUESTION = "what is the total cost of the cannon"  # 'total' is an arithmetic cue
+LOOKUP_QUESTION = "how much does the cannon cost"  # a lookup: no cue
+
+
+def ask_question(client, question: str) -> dict:
+    return client.post("/ask", json={"question": question}).json()
+
+
+class Sequence:
+    """A first-pass model that answers differently on each call (answer, then classifier...)."""
+
+    def __init__(self, *replies) -> None:
+        self.replies, self.calls = list(replies), []
+
+    def generate(self, system: str, user: str) -> Completion:
+        self.calls.append((system, user))
+        reply = self.replies[min(len(self.calls), len(self.replies)) - 1]
+        if isinstance(reply, Exception):
+            raise reply
+        text = reply if isinstance(reply, str) else json.dumps(reply)
+        return Completion(text, prompt_tokens=100, completion_tokens=10)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What is the total cost?",
+        "How much damage after armor?",
+        "How much damage per second?",
+        "What percentage of health is removed?",
+        "How many bolts in 10 seconds?",
+        "How much gold is left?",
+        "How much more does it deal?",
+        "By how much does it increase?",
+    ],
+)
+def test_the_arithmetic_cue_words_match(question: str) -> None:
+    from app.qa import _ARITHMETIC_CUES
+
+    assert _ARITHMETIC_CUES.search(question)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How much does a Cannon Tower cost?",
+        "How many towers can the player have at most?",
+        "What is the Cannon Tower's splash radius?",
+        "Which enemy type is immune to Chill?",
+        "How much health does the Shardlord have?",
+    ],
+)
+def test_plain_lookup_wording_does_not_match_the_cues(question: str) -> None:
+    from app.qa import _ARITHMETIC_CUES
+
+    assert not _ARITHMETIC_CUES.search(question)
+
+
+@pytest.mark.integration
+def test_cue_mode_escalates_a_quoted_number_when_the_question_asks_for_arithmetic(client, stack):
+    second = Second(answer("The total cost is 120 gold [1]."))
+    stack(answer("The total is 120 gold [1]."), second, mode="cue")  # 120 IS in the passage
+    body = ask_question(client, CUE_QUESTION)
+    assert body["escalated"] == "used" and len(second.calls) == 1
+
+
+@pytest.mark.integration
+def test_cue_mode_leaves_lookups_alone_and_needs_a_number_in_the_answer(client, stack):
+    second = Second(answer("unused"))
+    stack(answer("The Cannon costs 120 gold [1]."), second, mode="cue")
+    assert ask_question(client, LOOKUP_QUESTION)["escalated"] is None
+    stack(answer("It is described in the tower notes [1]."), second, mode="cue")
+    assert ask_question(client, CUE_QUESTION)["escalated"] is None  # cue word, but no number
+    assert second.calls == []
+
+
+@pytest.mark.integration
+def test_classify_mode_asks_a_cheap_question_and_escalates_on_yes(client, stack):
+    second = Second(answer("The total cost is 300 gold [1]."))
+    first = Sequence(answer("The Cannon costs 120 gold [1]."), {"calculation": True})
+    stack(first.replies[0], second, mode="classify")
+    from app.api.ask import get_llm
+
+    app.dependency_overrides[get_llm] = lambda: first
+    body = ask_question(client, LOOKUP_QUESTION)
+    assert body["escalated"] == "used" and len(first.calls) == 2  # answer, then the classifier
+    assert "calculation" in first.calls[1][0]
+    assert body["usage"]["prompt_tokens"] == 100 + 100 + 200  # first, classifier, thinking pass
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "verdict", [{"calculation": False}, "not json at all", {"calculation": "yes"}]
+)
+def test_classify_mode_does_nothing_on_no_or_a_broken_classifier(client, stack, verdict):
+    second = Second(answer("unused"))
+    first = Sequence(answer("The Cannon costs 120 gold [1]."), verdict)
+    stack(first.replies[0], second, mode="classify")
+    from app.api.ask import get_llm
+
+    app.dependency_overrides[get_llm] = lambda: first
+    body = ask_question(client, LOOKUP_QUESTION)
+    assert body["escalated"] is None and second.calls == []
+    assert body["answer"] == "The Cannon costs 120 gold [1]."  # a failed classifier changes nothing
+
+
+@pytest.mark.integration
+def test_classify_mode_skips_the_classifier_when_the_derived_rule_already_fired(client, stack):
+    second = Second(answer("Upgrading to level 2 costs 180 gold [1]."))
+    first = Sequence(answer("Upgrading to level 2 costs 160 gold [1]."), {"calculation": True})
+    stack(first.replies[0], second, mode="classify")
+    from app.api.ask import get_llm
+
+    app.dependency_overrides[get_llm] = lambda: first
+    assert ask(client)["escalated"] == "used" and len(first.calls) == 1  # no extra call
+
+
+@pytest.mark.integration
+def test_classify_mode_survives_the_classifier_being_unavailable(client, stack):
+    second = Second(answer("unused"))
+    first = Sequence(answer("The Cannon costs 120 gold [1]."), LLMError("classifier down"))
+    stack(first.replies[0], second, mode="classify")
+    from app.api.ask import get_llm
+
+    app.dependency_overrides[get_llm] = lambda: first
+    body = ask_question(client, LOOKUP_QUESTION)
+    assert body["escalated"] is None and second.calls == []
+    assert body["refused"] is False and body["answer"] == "The Cannon costs 120 gold [1]."
