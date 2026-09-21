@@ -21,7 +21,7 @@ def load(name: str) -> dict:
     return json.loads((DATASETS / name).read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("suffix", ["", "_v2", "_v3", "_v4"])
+@pytest.mark.parametrize("suffix", ["", "_v2", "_v3", "_v4", "_v5"])
 def test_retrieval_and_qa_sets_are_consistent(suffix: str) -> None:
     retrieval, qa = load(f"retrieval{suffix}.json"), load(f"qa{suffix}.json")
     ids = [q["id"] for q in retrieval["questions"]]
@@ -137,3 +137,23 @@ def test_v4_test_set_is_new_and_mixes_computation_with_plain_lookups() -> None:
     qa = load("qa_v4.json")
     computed = set(qa["derivations"]) & {q["id"] for q in v4 if q["kind"] == "computation"}
     assert computed == {q["id"] for q in v4 if q["kind"] == "computation"}
+
+
+def test_v5_test_set_is_new_and_has_lookalike_lookups_to_expose_wasted_escalation() -> None:
+    earlier = {
+        q["question"].lower()
+        for name in (
+            "retrieval.json",
+            "retrieval_v2.json",
+            "retrieval_v3.json",
+            "retrieval_v4.json",
+        )
+        for q in load(name)["questions"]
+    }
+    v5 = load("retrieval_v5.json")["questions"]
+    assert not earlier & {q["question"].lower() for q in v5}
+    kinds = [q["kind"] for q in v5]
+    assert kinds.count("computation") >= 15 and kinds.count("lookup") >= 10
+    lookups = [q["question"].lower() for q in v5 if q["kind"] == "lookup"]
+    # A trigger that fires on quantity WORDING must be tested against lookups that use it.
+    assert sum(("how much" in q or "how many" in q) for q in lookups) >= 6

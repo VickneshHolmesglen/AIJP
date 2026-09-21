@@ -1,0 +1,465 @@
+{
+  "description": "HELD-OUT TEST set (v5) for Milestone 22. 20 computational questions whose tempting wrong answer is a number stated in the sources, and 14 lookups (many phrased like quantity questions). Written BEFORE any new escalation trigger and never used for tuning. By the AI assistant, not an independent party.",
+  "kinds": {
+    "computation": "the answer is a number derived from stated facts",
+    "lookup": "the answer is a value stated in the sources; no calculation needed"
+  },
+  "questions": [
+    {
+      "id": "c01",
+      "kind": "computation",
+      "question": "How much bounty does clearing wave 2 pay if every enemy is killed?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c02",
+      "kind": "computation",
+      "question": "How much gold do all the Runners of wave 3 pay when they are killed?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c03",
+      "kind": "computation",
+      "question": "How much interest does the player earn on 300 unspent gold?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Interest"
+        }
+      ]
+    },
+    {
+      "id": "c04",
+      "kind": "computation",
+      "question": "How much damage does one Arrow bolt deal to a Brute after its armor?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c05",
+      "kind": "computation",
+      "question": "How much damage does a level 3 Frost Tower deal per shot?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c06",
+      "kind": "computation",
+      "question": "What percentage of a Grunt's health does one base Arrow bolt remove?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c07",
+      "kind": "computation",
+      "question": "How many seconds does an Arrow Tower need to fire 6 bolts?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        }
+      ]
+    },
+    {
+      "id": "c08",
+      "kind": "computation",
+      "question": "How many shells does a Cannon Tower fire in 10 seconds?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        }
+      ]
+    },
+    {
+      "id": "c09",
+      "kind": "computation",
+      "question": "How much damage do one Cannon shell and one Arrow bolt deal to a Grunt together?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c10",
+      "kind": "computation",
+      "question": "How much gold is refunded for selling a Venom Tower that was never upgraded?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Venom Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c11",
+      "kind": "computation",
+      "question": "How much starting gold is left after building two Arrow Towers?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Starting resources"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c12",
+      "kind": "computation",
+      "question": "By how much does burning increase the damage of one Arrow bolt?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Burn"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c13",
+      "kind": "computation",
+      "question": "How much more damage per second does Burn deal than a single Poison stack?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Burn"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c14",
+      "kind": "computation",
+      "question": "How much bounty does killing every enemy of wave 1 pay?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c15",
+      "kind": "computation",
+      "question": "How much movement speed does a Runner lose while chilled?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c16",
+      "kind": "computation",
+      "question": "How many lives are lost if four Runners leak?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Lives"
+        }
+      ]
+    },
+    {
+      "id": "c17",
+      "kind": "computation",
+      "question": "How much gold do waves 1 and 2 pay together when neither leaks?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Wave income"
+        }
+      ]
+    },
+    {
+      "id": "c18",
+      "kind": "computation",
+      "question": "What impact damage does a level 2 Venom Tower deal?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Venom Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c19",
+      "kind": "computation",
+      "question": "How much bounty do a Brute and a Wraith pay together?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "c20",
+      "kind": "computation",
+      "question": "How much health does a Shardlord have left at the point it enrages?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ]
+    },
+    {
+      "id": "d01",
+      "kind": "lookup",
+      "question": "How much does a Cannon Tower cost?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        }
+      ]
+    },
+    {
+      "id": "d02",
+      "kind": "lookup",
+      "question": "How many towers can the player have at most?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section": "Towers"
+        }
+      ]
+    },
+    {
+      "id": "d03",
+      "kind": "lookup",
+      "question": "How much health does the Shardlord have?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ]
+    },
+    {
+      "id": "d04",
+      "kind": "lookup",
+      "question": "How much armor does a Brute have?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        }
+      ]
+    },
+    {
+      "id": "d05",
+      "kind": "lookup",
+      "question": "How many times can Poison stack?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        }
+      ]
+    },
+    {
+      "id": "d06",
+      "kind": "lookup",
+      "question": "How much damage per second does Burn deal?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Burn"
+        }
+      ]
+    },
+    {
+      "id": "d07",
+      "kind": "lookup",
+      "question": "How fast is a Runner?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        }
+      ]
+    },
+    {
+      "id": "d08",
+      "kind": "lookup",
+      "question": "What is the Cannon Tower's splash radius?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        }
+      ]
+    },
+    {
+      "id": "d09",
+      "kind": "lookup",
+      "question": "How much gold does the player start with?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Starting resources"
+        }
+      ]
+    },
+    {
+      "id": "d10",
+      "kind": "lookup",
+      "question": "How many lives does a leaked boss cost?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Lives"
+        }
+      ]
+    },
+    {
+      "id": "d11",
+      "kind": "lookup",
+      "question": "How long does each Poison application last?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        }
+      ]
+    },
+    {
+      "id": "d12",
+      "kind": "lookup",
+      "question": "By what percentage does Chill slow movement?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ]
+    },
+    {
+      "id": "d13",
+      "kind": "lookup",
+      "question": "What bounty does a Wraith pay?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ]
+    },
+    {
+      "id": "d14",
+      "kind": "lookup",
+      "question": "Which enemy type is immune to Chill?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ]
+    }
+  ]
+}
