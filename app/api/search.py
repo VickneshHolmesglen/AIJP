@@ -38,6 +38,14 @@ def get_llm() -> LLMProvider:
 LLMDep = Annotated[LLMProvider, Depends(get_llm)]
 
 
+def get_escalation_llm() -> LLMProvider | None:
+    """Dependency seam: the capped thinking model, or None when escalation is off."""
+    return providers.escalation_llm()
+
+
+EscalationLLMDep = Annotated[LLMProvider | None, Depends(get_escalation_llm)]
+
+
 @router.post("/embeddings", response_model=EmbedResponse)
 def embed_pending(
     session: SessionDep,

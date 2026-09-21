@@ -35,6 +35,11 @@ RERANKS = Counter(
     "Reranker calls by outcome: ok, or fallback (it failed and retrieval order was kept).",
     ["outcome"],
 )
+ESCALATIONS = Counter(
+    "escalation_total",
+    "Answers re-checked with the thinking model, by outcome (used, fallback).",
+    ["outcome"],
+)
 LLM_TOKENS = Counter(
     "llm_tokens_total", "Tokens reported by the language model provider.", ["kind", "source"]
 )
@@ -86,6 +91,8 @@ def record_ask(result: Answer) -> None:
     ).inc()
     if result.reranked is not None:
         record_rerank(result.reranked)
+    if result.escalated is not None:
+        ESCALATIONS.labels(outcome=result.escalated).inc()
     LLM_TOKENS.labels(kind="prompt", source="ask").inc(result.prompt_tokens)
     LLM_TOKENS.labels(kind="completion", source="ask").inc(result.completion_tokens)
 

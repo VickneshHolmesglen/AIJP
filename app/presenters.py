@@ -69,6 +69,7 @@ def to_ask_response(result: Answer) -> AskResponse:
             for e in result.sources
         ],
         top_score=result.top_score,
+        escalated=result.escalated,
         calculations=[
             CalculationOut(id=c.id, expression=c.expression, result=c.result)
             for c in result.calculations

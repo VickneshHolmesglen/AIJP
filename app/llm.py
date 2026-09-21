@@ -14,6 +14,9 @@ class Completion:
     # Token counts as reported by the provider (None if it did not report them). Never estimated.
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
+    # True when the provider stopped because it hit the token cap, not because the model finished.
+    # Whatever text came back may be a fragment: callers must not trust it.
+    truncated: bool = False
 
 
 class LLMProvider(Protocol):
@@ -30,11 +33,15 @@ class OllamaLLM:
         timeout: float = 180.0,
         client: httpx.Client | None = None,
         think: bool = False,
+        max_tokens: int | None = None,
     ) -> None:
         self._client = client or httpx.Client(base_url=base_url, timeout=timeout)
         self._model = model
         # Reasoning models can "think" before answering: slower and costlier, and off by default.
         self._think = think
+        # A hard cap on generated tokens (thinking included). Unbounded thinking is unpredictable:
+        # one probe ran 11,027 tokens / 160 s on a single question. None: no cap.
+        self._max_tokens = max_tokens
 
     def generate(self, system: str, user: str) -> Completion:
         payload = {
@@ -45,7 +52,10 @@ class OllamaLLM:
             # Reasoning models otherwise spend the budget on hidden thinking; low temperature keeps
             # answers reproducible enough to evaluate.
             "think": self._think,
-            "options": {"temperature": 0},
+            "options": {
+                "temperature": 0,
+                **({"num_predict": self._max_tokens} if self._max_tokens else {}),
+            },
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -64,6 +74,7 @@ class OllamaLLM:
             raise LLMError("Ollama returned an empty completion")
         return Completion(
             content,
+            truncated=body.get("done_reason") == "length",
             prompt_tokens=_count(body.get("prompt_eval_count")),
             completion_tokens=_count(body.get("eval_count")),
         )

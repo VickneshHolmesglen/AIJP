@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app import metrics, qa
 from app.api.scope import ProjectDep
-from app.api.search import EmbedderDep, LLMDep
+from app.api.search import EmbedderDep, EscalationLLMDep, LLMDep
 from app.api.search import get_llm as get_llm  # re-exported: tests override it from here
 from app.auth import RequireReader
 from app.config import Settings, get_settings
@@ -30,6 +30,7 @@ def ask(
     embedder: EmbedderDep,
     llm: LLMDep,
     project: ProjectDep,
+    escalation_llm: EscalationLLMDep,
 ) -> AskResponse:
     try:
         result = qa.ask(
@@ -47,6 +48,8 @@ def ask(
             reranker=LLMReranker(llm) if settings.rerank_enabled else None,
             rerank_pool=settings.rerank_pool,
             calculator=settings.ask_calculator,
+            escalation=settings.llm_escalation,
+            escalation_llm=escalation_llm,
         )
     except EmbeddingError as exc:
         metrics.record_dependency_error("embedding")

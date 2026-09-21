@@ -182,6 +182,8 @@ class ProjectTools:
                 rrf_k=self._settings.rrf_k,
                 project_id=self._project_id(session),
                 calculator=self._settings.ask_calculator,
+                escalation=self._settings.llm_escalation,
+                escalation_llm=providers.escalation_llm(),
             )
             return to_ask_response(result)
 

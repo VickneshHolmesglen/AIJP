@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app import retrieval
 from app.calc import CalcError, evaluate, format_number
 from app.embeddings import EmbeddingProvider
-from app.llm import LLMProvider
+from app.llm import LLMError, LLMProvider
 from app.models import Chunk, Document
 from app.rerank import Reranker, rerank_candidates
 
@@ -98,6 +98,9 @@ class Answer:
     # retrieval order was kept.
     reranked: bool | None = None
     calculations: tuple[Calculation, ...] = ()
+    # None: escalation did not apply. "used": a second, thinking answer replaced the first.
+    # "fallback": it was tried but failed or was cut off, so the first answer stands.
+    escalated: Literal["used", "fallback"] | None = None
 
 
 def best_cosine(evidence: list[Evidence]) -> float | None:
@@ -220,6 +223,31 @@ def ungrounded_numbers(
     return sorted({m for m in _NUMBER.findall(shown) if _numbers(m) and not _numbers(m) <= allowed})
 
 
+def _escalate(
+    llm: LLMProvider, user: str, by_ref: dict[int, "Evidence"]
+) -> tuple[str, list["Evidence"], RefusalReason | None, tuple[int, int]] | None:
+    """Re-ask the same question with the (capped, thinking) model. Returns the new
+    (answer text, cited sources, refusal reason or None, (prompt, completion) tokens), or None when
+    the attempt failed or was cut off, in which case the caller keeps the first answer.
+
+    The second answer goes through exactly the same checks as the first: a citation that does not
+    map to a retrieved source is dropped, and an answer nobody can verify is refused."""
+    try:
+        completion = llm.generate(SYSTEM_PROMPT, user)
+    except LLMError:
+        return None
+    if completion.truncated:  # cut off at the token cap: the text is a fragment, never trust it
+        return None
+    used = (completion.prompt_tokens or 0, completion.completion_tokens or 0)
+    answerable, text, refs = _parse(completion.text)
+    if not answerable or not text:
+        return "", [], "model_declined", used
+    cited = [by_ref[r] for r in dict.fromkeys(refs) if r in by_ref]
+    if not cited:
+        return "", [], "uncited_answer", used
+    return text, cited, None, used
+
+
 def _evidence(hits: list[retrieval.Hit]) -> list[Evidence]:
     return [Evidence(i, h.chunk, h.document, h.score, h.cosine) for i, h in enumerate(hits, 1)]
 
@@ -240,6 +268,8 @@ def ask(
     reranker: Reranker | None = None,
     rerank_pool: int = 10,
     calculator: bool = False,
+    escalation: Literal["off", "derived", "always"] = "off",
+    escalation_llm: LLMProvider | None = None,
 ) -> Answer:
     """Retrieve -> (rerank) -> gate -> generate -> verify citations.
     Raises EmbeddingError / LLMError."""
@@ -282,6 +312,31 @@ def ask(
     if not cited:
         # An answer nobody can verify is worse than no answer.
         return Answer(True, None, "uncited_answer", [], top_score, reranked=reranked, **tokens)
+    escalated: Literal["used", "fallback"] | None = None
+    if escalation != "off" and escalation_llm is not None and not calculator:
+        needs = escalation == "always" or bool(
+            ungrounded_numbers(text, question, "\n".join(e.chunk.content for e in cited), ())
+        )
+        if needs:
+            second = _escalate(escalation_llm, user, by_ref)
+            if second is None:
+                escalated = "fallback"
+            else:
+                escalated = "used"
+                text, cited, refused_second, extra = second
+                tokens["prompt_tokens"] += extra[0]
+                tokens["completion_tokens"] += extra[1]
+                if refused_second is not None:
+                    return Answer(
+                        True,
+                        None,
+                        refused_second,
+                        [],
+                        top_score,
+                        reranked=reranked,
+                        escalated=escalated,
+                        **tokens,
+                    )
     calculations: tuple[Calculation, ...] = ()
     if calculator:
         computed = run_calculations(completion.text, text)
@@ -296,5 +351,13 @@ def ask(
                 True, None, "ungrounded_number", [], top_score, reranked=reranked, **tokens
             )
     return Answer(
-        False, text, None, cited, top_score, reranked=reranked, calculations=calculations, **tokens
+        False,
+        text,
+        None,
+        cited,
+        top_score,
+        reranked=reranked,
+        calculations=calculations,
+        escalated=escalated,
+        **tokens,
     )

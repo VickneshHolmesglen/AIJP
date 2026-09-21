@@ -199,7 +199,7 @@ Interfaces: HTTP API + web UI (app/api, app/static) and MCP server (app/mcp_serv
   Two fixes were built and measured on a held-out set: a server-side calculator (opt-in,
   `AIJP_ASK_CALCULATOR`) made answers much WORSE (the local model does not reliably delegate its
   arithmetic), while letting the model think first (opt-in, `AIJP_LLM_THINK`) helped (40 -> 46 of
-  64 correct pooled, p=0.07) at about 6x the latency. Both are off by default
+  64 correct pooled, p=0.07) at about 6x the latency. The calculator is off by default. A cheaper form of thinking is ON by default: the answer is first produced without it, and only an answer containing a computed number (one not in the cited passages) is re-asked with a capped thinking pass, keeping the first answer if that fails or times out (pooled over 94 questions: 57 -> 69 correct, 12 gained and 0 lost, with unchanged refusals; plain lookups cost nothing extra)
 - Source-code chunking is symbol-level, not AST-aware; the GDScript scanner is approximate
 - The consistency check only sees retrieved passages. It can miss a mismatch when the model
   compares values badly, and a constant that is defined but no longer used looks "consistent" to
@@ -213,6 +213,8 @@ Done: 1-2 ingestion, 3 embeddings + search, 4 grounded Q&A, 5 source code, 6 hyb
 and accountability, 13 database migrations (Alembic), 14 reranking (built and measured; off by
 default because the end-to-end eval did not justify it), 15 a harder second evaluation set with
 confidence intervals and paired significance tests, 16 a calculator and a thinking mode, measured
-on a held-out set (calculator rejected, thinking kept as an option). 17 multi-project support. Open follow-ups:
+on a held-out set (calculator rejected, thinking kept as an option). 19 an opt-in per-source consistency
+judge, 20 multi-project support, 21 capped thinking that only re-checks computed numbers (on by
+default). Open follow-ups:
 a cheaper way to get the benefit of thinking, a consistency judge that does not trust a config value over the code, recalibrating the
 consistency gate on both question sets, and an actual cloud deployment.

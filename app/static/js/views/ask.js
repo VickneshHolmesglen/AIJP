@@ -70,6 +70,7 @@ function meta(res, ms) {
   const bits = [`${(ms / 1000).toFixed(1)} s`];
   if (tokens) bits.push(`${tokens} tokens`);
   if (res.top_score !== null) bits.push(`best cosine ${score(res.top_score)}`);
+  if (res.escalated === "used") bits.push("re-checked with reasoning");
   return h("span", { class: "meta" }, bits.join(" · "));
 }
 

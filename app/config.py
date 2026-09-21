@@ -28,6 +28,19 @@ class Settings(BaseSettings):
     llm_model: str = "qwen3.5"
     # Let the ANSWER model reason before it replies (slower; see eval/results/qa-*-think.md).
     llm_think: bool = False
+    # Escalation (app/qa.py): answer normally first, then re-ask WITH thinking only when it pays.
+    # "off"; "derived": the first answer contains a number that is not in the cited passages or the
+    # question (a computed number, where non-thinking answers go wrong); "always": every answer.
+    # The thinking call is capped at `llm_escalation_tokens` and falls back to the first answer if
+    # it is cut off or fails. DEFAULT "derived" (user decision after eval/results/
+    # compare-escalation-*.md: 57 -> 69 of 94 correct, 12 gained / 0 lost, refusals unchanged).
+    # Evaluation baselines must now set AIJP_LLM_ESCALATION=off explicitly.
+    llm_escalation: Literal["off", "derived", "always"] = "derived"
+    llm_escalation_tokens: int = 1500
+    # A token cap is not a time cap: on a loaded machine 1,500 tokens took ~195 s. The re-check
+    # also has a wall-clock limit, after which the first answer is returned. (A safety net, set
+    # above the ~25 s worst case measured on an idle machine, so it did not affect the results.)
+    llm_escalation_timeout_seconds: float = 45.0
     # Where the evaluation runners write reports; the UI lists and serves them read-only.
     eval_results_dir: Path = Path(__file__).resolve().parents[1] / "eval" / "results"
     ask_top_k: int = 5

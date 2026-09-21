@@ -4,6 +4,9 @@ from collections.abc import Iterator
 # Milestone 12 made authentication default-on. The older suites exercise endpoint behaviour, not
 # access control, so they run with it off; tests/test_auth.py switches it on per test.
 os.environ.setdefault("AIJP_AUTH_ENABLED", "false")
+# Escalation is on by default in production; the older suites use one scripted model and must not
+# reach a real Ollama for a second, thinking call. tests/test_escalation.py turns it on per test.
+os.environ.setdefault("AIJP_LLM_ESCALATION", "off")
 
 import pytest
 from fastapi.testclient import TestClient

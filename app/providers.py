@@ -21,6 +21,21 @@ def embedder() -> OllamaEmbedder:
 
 
 @lru_cache
+def escalation_llm() -> OllamaLLM | None:
+    """The capped, thinking model used to re-check some answers; None when escalation is off."""
+    settings = get_settings()
+    if settings.llm_escalation == "off":
+        return None
+    return OllamaLLM(
+        settings.ollama_base_url,
+        settings.llm_model,
+        think=True,
+        max_tokens=settings.llm_escalation_tokens,
+        timeout=settings.llm_escalation_timeout_seconds,
+    )
+
+
+@lru_cache
 def llm() -> OllamaLLM:
     settings = get_settings()
     return OllamaLLM(settings.ollama_base_url, settings.llm_model, think=settings.llm_think)

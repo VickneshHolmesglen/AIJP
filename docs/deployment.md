@@ -64,6 +64,8 @@ variable; `.env.example` lists them all. Compose reads a `.env` file next to `do
 | `AIJP_CONSISTENCY_MIN_COSINE` | `0.60` | Gate for the consistency check. Pooled over 60 claims it lets 39/40 claims with evidence through and blocks 13/20 unsupported ones (`eval/results/gate-sweep-consistency-*.md`); 0.65 loses 20% of real claims |
 | `AIJP_CONSISTENCY_JUDGE` | `verdict` | `per_source` makes the model judge each source separately and code decide (any contradicting code source means a discrepancy). Held-out: 20/22 vs 17/22; pooled 53/60 vs 49/60 (p=0.22, not significant); about +1 s per check |
 | `AIJP_RETRIEVAL_MODE` | `vector` | `hybrid` did not beat it on the benchmark |
+| `AIJP_LLM_ESCALATION` | `derived` | Answer without thinking first; re-ask WITH thinking only when the answer contains a number that is not in the cited passages or the question. Pooled over 94 questions: 57 -> 69 correct, 12 gained / 0 lost, refusals unchanged. `off` disables it, `always` re-checks every answer (about 5x latency, not recommended). Numeric questions then take about 7-25 s (p95 22-44 s) and use about 65% more tokens; plain lookups are unaffected |
+| `AIJP_LLM_ESCALATION_TOKENS` / `AIJP_LLM_ESCALATION_TIMEOUT_SECONDS` | `1500` / `45` | Caps on the thinking re-check. A token cap is not a time cap (on a loaded GPU 1,500 tokens took ~195 s), so both apply; hitting either keeps the first answer. Allow for about 50 s worst case in any proxy timeout on `/ask` |
 | `AIJP_LLM_THINK` | `false` | The answer model reasons before replying. Pooled over 64 held-out and dev questions it got 46 right versus 40 (p=0.07), at about 6x the median latency (1.7 s to 9.9 s). Its extra tokens are not in `llm_tokens_total`. Allow for p95 latencies of 30-40 s in any proxy timeout |
 | `AIJP_ASK_CALCULATOR` | `false` | The model writes arithmetic and the server computes it. **Not recommended**: with `qwen3.5` it made answers much worse on the held-out set (5/28 vs 15/28 correct) because the model does not reliably follow the protocol; it may suit a stronger model. See `eval/results/compare-calc-*.md` |
 | `AIJP_MCP_PROJECT` | `default` | The one project the local MCP server serves. Chosen by whoever launches it; the model never picks a project |
@@ -160,6 +162,7 @@ Labels are always small fixed sets (route *templates*, refusal reasons, verdicts
 | `ask_outcomes_total` | outcome, reason | Answered vs refused, and why (`insufficient_evidence`, `model_declined`, `uncited_answer`) |
 | `llm_tokens_total` | kind, source | Prompt and completion tokens, for `ask` and `agent` |
 | `dependency_errors_total` | dependency | Embedding or LLM failures (each also returns 503) |
+| `escalation_total` | outcome (`used`, `fallback`) | Answers re-checked with thinking. A rising `fallback` share means the re-check is being cut off (slow GPU, contention) and numeric answers are silently back to the first, weaker answer |
 | `rerank_total` | outcome (`ok`, `fallback`) | Reranker calls; a rising `fallback` share means the model is returning unusable grades and search is silently back to plain retrieval order |
 | `agent_runs_total` | workflow, verdict | Consistency-check outcomes (or `failed`) |
 | `agent_actions_total` | kind, status | Human decisions on drafted actions |
@@ -377,7 +380,7 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 - Every log line is JSON, and the request id links the request line to the Ollama calls it made.
 - The MCP server runs over stdio inside the container with all seven tools.
 - The CI job commands run locally, including the skip guard, which passes with a healthy database
-  (526 tests, 0 skipped) and fails when the database is unreachable (skips).
+  (542 tests, 0 skipped) and fails when the database is unreachable (skips).
 - **From a fresh `git clone` of the commit** (no `.venv`, no caches, only tracked files): the
   locked install, `ruff format --check`, `ruff check`, `mypy`, all 457 tests with the skip guard
   taken verbatim from `ci.yml`, the image build, the container under the compose hardening (uid
@@ -396,6 +399,11 @@ Verified on this machine (Windows, Docker Desktop, real Ollama models):
 - The `0002` migration on a database holding the real embedded corpus (73 chunks): text and
   vectors have an identical fingerprint before and after, every document lands in the default
   project, vector search still works, and the HNSW and full-text indexes are intact.
+- Escalation, real stack and real models: a numeric question and two plain lookups (only the numeric one
+  attempted a re-check); the token cap stops generation exactly at the cap; on a GPU shared with a
+  game the re-check timed out after 45 s (total 50.8 s instead of 160 s) and the correct first answer
+  was returned. Latency figures elsewhere were measured on an idle machine and will be worse under
+  load.
 - `pip-audit` reports no known vulnerabilities in the 50 locked runtime packages, as of the run.
 
 **Not** verified:

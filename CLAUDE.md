@@ -55,7 +55,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 526
+  DONE. Ruff, mypy pass. Tests: 542
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -351,6 +351,37 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   YAML/Python written through Bash, so patch those with the Edit tool or chr(92).
   NOT verified: GitHub Actions itself (still not pushed). NOT built: per-project roles/members,
   moving a document between projects, project rename, an HTTP delete (CLI only, on purpose).
+- M21 (NOT in the handoff doc; user chose "cheaper thinking (v4 eval)"). RESULT: escalation ON BY
+  DEFAULT (`AIJP_LLM_ESCALATION=derived`, USER DECISION). How it works (`qa.ask`, `_escalate`): the
+  first answer is produced without thinking; if it contains a number that is not in the cited
+  passages or the question (`ungrounded_numbers`, reused from M16) it is re-asked with a THINKING
+  model capped at 1500 tokens (`llm_escalation_tokens`) and 45 s (`llm_escalation_timeout_seconds`);
+  the second answer replaces the first and faces the SAME citation checks; if it is truncated
+  (`Completion.truncated`, from Ollama's done_reason "length"), errors or times out, the FIRST answer
+  stands (`escalated: "fallback"`). Modes off | derived | always. Response field `escalated`, metric
+  `escalation_total{outcome}`, UI note "re-checked with reasoning". `OllamaLLM(max_tokens, timeout)`.
+  PROTOCOL: v4 (`{retrieval,qa}_v4.json`: 18 computational + 12 plain lookups + 8 unanswerable) was
+  COMMITTED BEFORE the feature (git 42f99cb); arms run once each; then replicated on v2 and v3.
+  Design constraint found first: qwen3.5 IGNORES thinking levels (think low/medium/True are
+  identical, 11,027 tokens / 161 s on one probe), so the only "budget" is a token cap.
+  RESULTS (answerable correct): held-out v4 (30): baseline 17, derived 23 (6 gained/0 lost,
+  p=0.031), always-capped 26 (9/0, p=0.004), always-think uncapped 27 (10/0, p=0.002). Median
+  latency 1.3 s / 1.5 s / 6.4 s / 6.1 s. On v4 derived escalated 13 of 30, ALL computational, none of
+  the 12 lookups; it misses computational questions whose WRONG first answer quotes source numbers
+  (k06 50=the interest cap, k11, k12). Replication baseline -> derived: v3 15 -> 19 (4/0), v2 25 ->
+  27 (2/0). POOLED v2+v3+v4 (94): 57 -> 69, 12 gained / 0 lost, p~0.0005; refusals unchanged 21/28
+  (`compare-escalation-2026-09-21.md`). Cost: latency is unchanged for lookups but numeric answers
+  take ~7-25 s (v3, 68% numeric: median 1.7 -> 7.2 s, p95 44 s), ~65% more tokens on average.
+  cap works (1 of 29 always-capped calls truncated; worst case 35 s uncapped -> 24 s).
+  HARDWARE CAVEAT: all latencies were measured on an IDLE machine. A game (Diablo IV) later held
+  the GPU and generation fell from ~68 to ~8 tokens/s: 1500 tokens then took ~195 s, so a TOKEN cap
+  is not a TIME cap. The 45 s timeout was added AFTER seeing that (verified on the real stack: 160 s
+  -> 50.8 s, correct first answer kept). It is a safety net above the 25 s idle worst case, so it
+  did not affect the reported accuracy.
+  CONSEQUENCES OF THE NEW DEFAULT: `tests/conftest.py` sets AIJP_LLM_ESCALATION=off (older suites use
+  one scripted model); `eval.qa` baselines MUST now set AIJP_LLM_ESCALATION=off explicitly (filenames
+  carry `-escalate-<mode>` so runs cannot be confused); `eval/results/qa-*` before M21 were baselines.
+  `Answer.escalated`, `eval/qa.py` report row "answers re-checked with thinking".
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -359,7 +390,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
-  (3) per-project roles or moving documents between projects if users need them; (4) an actual cloud deployment (needs an account and
+  (3) per-project roles or moving documents between projects if users need them; (4) a way to catch computational questions whose wrong first answer quotes source numbers (escalation's blind spot); (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 

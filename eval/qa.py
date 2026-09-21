@@ -67,6 +67,7 @@ class Record:
     completion_tokens: int = 0
     cited_text: str = ""  # the cited chunks' text; what the faithfulness judge sees
     faithful: bool | None = None  # answered only; None also if the judge failed
+    escalated: str | None = None  # "used" / "fallback" when the thinking re-check applied
     error: str | None = None
 
 
@@ -91,6 +92,7 @@ def run_question(
     top_k: int,
     min_score: float,
     record: Record,
+    escalation_llm: OllamaLLM | None = None,
 ) -> None:
     for attempt in (1, 2):  # one retry: local models occasionally time out under load
         try:
@@ -109,6 +111,8 @@ def run_question(
                 reranker=LLMReranker(llm) if settings.rerank_enabled else None,
                 rerank_pool=settings.rerank_pool,
                 calculator=settings.ask_calculator,
+                escalation=settings.llm_escalation,
+                escalation_llm=escalation_llm,
             )
             record.latency_ms = (time.perf_counter() - start) * 1000
             break
@@ -117,6 +121,7 @@ def run_question(
                 record.error = str(exc)
                 return
     record.refused, record.reason, record.answer = result.refused, result.reason, result.answer
+    record.escalated = result.escalated
     record.top_cosine = result.top_score
     record.prompt_tokens, record.completion_tokens = result.prompt_tokens, result.completion_tokens
     record.cited = [(e.document.source_path, e.chunk.section) for e in result.sources]
@@ -231,6 +236,16 @@ def build_report(
     out.append(row("median latency (retrieval + generation)", f"{percentile(lat, 50):.1f} s"))
     out.append(row("p95 latency", f"{percentile(lat, 95):.1f} s"))
     out.append(row("queries that called the LLM", ratio(len(llm_calls), len(ok))))
+    escalated = [r for r in ok if r.escalated]
+    if escalated:
+        used = sum(r.escalated == "used" for r in escalated)
+        out.append(
+            row(
+                "answers re-checked with thinking",
+                f"{ratio(len(escalated), len(ok))}: {used} used, "
+                f"{len(escalated) - used} fell back to the first answer",
+            )
+        )
     if llm_calls:
         mean_in = statistics.fmean(r.prompt_tokens for r in llm_calls)
         mean_out = statistics.fmean(r.completion_tokens for r in llm_calls)
@@ -306,6 +321,17 @@ def main() -> None:
     )
     llm = OllamaLLM(settings.ollama_base_url, settings.llm_model)  # judge: never thinks
     answer_llm = OllamaLLM(settings.ollama_base_url, settings.llm_model, think=settings.llm_think)
+    escalation_llm = (
+        None
+        if settings.llm_escalation == "off"
+        else OllamaLLM(
+            settings.ollama_base_url,
+            settings.llm_model,
+            think=True,
+            max_tokens=settings.llm_escalation_tokens,
+            timeout=settings.llm_escalation_timeout_seconds,
+        )
+    )
 
     retrieval_qs = {
         q["id"]: q for q in json.loads(args.retrieval_dataset.read_text("utf-8"))["questions"]
@@ -342,7 +368,9 @@ def main() -> None:
         ]
         for n, (qid, kind, question, rq, groups) in enumerate(todo, start=1):
             rec = Record(qid, kind, question)
-            run_question(session, embedder, answer_llm, settings, mode, top_k, min_score, rec)
+            run_question(
+                session, embedder, answer_llm, settings, mode, top_k, min_score, rec, escalation_llm
+            )
             if rec.error is None and rq is not None:
                 expected = expected_of(rq)
                 hits = retrieval.search(
@@ -388,6 +416,12 @@ def main() -> None:
         if settings.ask_calculator
         else "off",
         "answer model thinking": "ON (the judge never thinks)" if settings.llm_think else "off",
+        "escalation": (
+            f"{settings.llm_escalation} (thinking re-check capped at "
+            f"{settings.llm_escalation_tokens} tokens, first answer kept on failure)"
+            if settings.llm_escalation != "off"
+            else "off"
+        ),
         "embedding model": settings.embedding_model,
         "answer + judge model": settings.llm_model,
         "platform": platform.platform(),
@@ -399,6 +433,7 @@ def main() -> None:
         + ("-rerank" if settings.rerank_enabled else "")
         + ("-calc" if settings.ask_calculator else "")
         + ("-think" if settings.llm_think else "")
+        + (f"-escalate-{settings.llm_escalation}" if settings.llm_escalation != "off" else "")
         + ("-smoke" if args.limit else "")
     )
     (args.out_dir / f"{stem}.md").write_text(report, encoding="utf-8")

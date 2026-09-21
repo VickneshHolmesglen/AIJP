@@ -133,6 +133,8 @@ class AskResponse(BaseModel):
     top_score: float | None
     usage: Usage
     calculations: list[CalculationOut] = []
+    # "used": a second, reasoning pass replaced the first answer. "fallback": it failed.
+    escalated: Literal["used", "fallback"] | None = None
 
 
 class DocumentPage(DocumentOut):
