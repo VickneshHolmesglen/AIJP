@@ -21,6 +21,7 @@ RefusalReason = Literal[
     "uncited_answer",
     "calculation_failed",
     "ungrounded_number",
+    "answer_truncated",
 ]
 
 SYSTEM_PROMPT = """\
@@ -345,6 +346,10 @@ def ask(
         "prompt_tokens": completion.prompt_tokens or 0,
         "completion_tokens": completion.completion_tokens or 0,
     }
+    if completion.truncated:
+        # Cut off at the token cap: even text that parses is a fragment of a longer thought (the
+        # model sometimes reasons inside its answer), so never show it and never re-check it.
+        return Answer(True, None, "answer_truncated", [], top_score, reranked=reranked, **tokens)
     answerable, text, refs = _parse(completion.text)
     if not answerable or not text:
         return Answer(True, None, "model_declined", [], top_score, reranked=reranked, **tokens)

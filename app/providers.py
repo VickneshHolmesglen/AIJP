@@ -7,7 +7,7 @@ way. Tests never call these: they inject fakes through FastAPI dependency overri
 
 from functools import lru_cache
 
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.embeddings import OllamaEmbedder
 from app.llm import OllamaLLM
 
@@ -35,7 +35,20 @@ def escalation_llm() -> OllamaLLM | None:
     )
 
 
+def answer_token_cap(settings: Settings) -> int | None:
+    """The num_predict cap for the shared model: none when it thinks (the reasoning counts toward
+    the cap and 1024 would cut it off) or when the setting is 0."""
+    if settings.llm_think or settings.llm_max_tokens <= 0:
+        return None
+    return settings.llm_max_tokens
+
+
 @lru_cache
 def llm() -> OllamaLLM:
     settings = get_settings()
-    return OllamaLLM(settings.ollama_base_url, settings.llm_model, think=settings.llm_think)
+    return OllamaLLM(
+        settings.ollama_base_url,
+        settings.llm_model,
+        think=settings.llm_think,
+        max_tokens=answer_token_cap(settings),
+    )

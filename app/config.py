@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     llm_model: str = "qwen3.5"
     # Let the ANSWER model reason before it replies (slower; see eval/results/qa-*-think.md).
     llm_think: bool = False
+    # Hard cap on the tokens one non-thinking call may generate (0 = no cap). Answers are 50-300
+    # tokens, but on v3 c02 the model reasoned inside its JSON answer for 15,665 tokens / 227 s and
+    # the request failed on the 180 s client timeout. A cut-off answer is refused as
+    # `answer_truncated`. Not applied when llm_think is on: Ollama counts thinking toward the cap.
+    llm_max_tokens: int = 1024
     # Escalation (app/qa.py): answer normally first, then re-ask WITH thinking only when it pays.
     # "off"; "derived": the first answer contains a number that is not in the cited passages or the
     # question (a computed number, where non-thinking answers go wrong); "cue": that, OR the

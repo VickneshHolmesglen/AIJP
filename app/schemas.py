@@ -126,6 +126,7 @@ class AskResponse(BaseModel):
             "uncited_answer",
             "calculation_failed",
             "ungrounded_number",
+            "answer_truncated",
         ]
         | None
     )

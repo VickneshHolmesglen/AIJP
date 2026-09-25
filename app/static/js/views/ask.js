@@ -26,6 +26,11 @@ const REASONS = {
     explain: () =>
       "The model's arithmetic could not be computed by the calculator (an invalid expression or a missing step), so the answer was withheld rather than show a number nobody computed.",
   },
+  answer_truncated: {
+    label: "Answer cut off",
+    explain: () =>
+      "The model's reply ran past the length limit before it finished, so it was withheld rather than show part of an answer. Rephrasing the question more specifically may help.",
+  },
   uncited_answer: {
     label: "Answer withheld",
     explain: () =>

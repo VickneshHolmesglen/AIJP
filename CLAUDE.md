@@ -55,7 +55,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 565
+  DONE. Ruff, mypy pass. Tests: 571
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -130,7 +130,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   early; chunk text is embedded without its section name (worth testing in the eval milestone).
 - M4 design: `app/llm.py` (LLMProvider Protocol + OllamaLLM), `app/qa.py` (retrieve -> retrieval
   gate `is_evidence_sufficient` -> JSON-mode LLM -> server-side citation verification), `POST /ask`.
-  Refusal reasons: insufficient_evidence (LLM not called), model_declined, uncited_answer.
+  Refusal reasons: insufficient_evidence (LLM not called), model_declined, uncited_answer. (Later: calculation_failed,
+  ungrounded_number (M16), answer_truncated (M22 fix).)
   Sources are labelled untrusted in the prompt (prompt-injection defence).
 - M3 design: `app/embeddings.py` (EmbeddingProvider Protocol + OllamaEmbedder), embedding is a
   separate step (`POST /embeddings`), `POST /search` returns hits with full citations, HNSW cosine
@@ -428,12 +429,21 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   60 is in the sources (Grunt health). Bridge facts (raw JSON, sections that never name the entity)
   are the retrieval weak spot. Which chunk was missing is INFERRED from citations, not yet checked
   against the top-10 lists.
-  BUG FOUND (NOT FIXED, needs a user decision): the FIRST answer call has no token cap. v3 c02 ("sell
+  BUG FOUND AND FIXED (2026-09-25): the FIRST answer call had no token cap. v3 c02 ("sell
   a level 3 Cannon Tower") deterministically makes qwen3.5 (think off) reason inside the JSON answer
   string for 15,665 tokens / 227 s (done_reason=length); the client times out at 180 s -> LLMError ->
   the API request fails after 3 minutes and holds the GPU. It took 1808 tokens / 33 s on 2026-09-20,
-  so the behaviour drifted. Fix options: cap `num_predict` for the first answer and refuse a
-  truncated one.
+  so the behaviour drifted. FIX (user chose 1024 + a new reason): `AIJP_LLM_MAX_TOKENS=1024` on the
+  shared model (`providers.answer_token_cap`; 0 = none; NOT applied with llm_think, as thinking counts
+  toward num_predict); `qa.ask` refuses a truncated first answer as `answer_truncated` BEFORE parsing
+  (a cut-off answer that happens to parse and cite was previously SHOWN and re-checked), no re-check.
+  Reranker/classifier/consistency judge share the cap; each already fails safe on bad output. eval.qa
+  uses the same cap and prints it in the header. tests/test_answer_cap.py (6). VERIFIED on the real
+  model: c02 -> answer_truncated in 14.9 s (was a 180 s error), a lookup unaffected (1.0 s). LIMIT: a
+  token cap is not a time cap: with a game on the GPU (~5 tok/s) 1024 tokens took 201 s, still past the
+  180 s client timeout (-> error). A shorter wall-clock limit on the first answer was NOT added (it
+  would also refuse slow correct answers on a busy machine; ask the user). Eval reports before this
+  fix ran uncapped.
   PROCESS NOTES: (1) the GPU was shared with a game (Diablo IV) for part of the session: generation
   was 4-20 tokens/s vs ~70 idle. After the game exited Ollama needed a few warm calls to recover
   (measure with eval_count/eval_duration from /api/chat, not wall clock). The v5 runs were started
@@ -447,8 +457,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
-  (3) per-project roles or moving documents between projects if users need them; (4) M22 is finished (classify did not replicate); follow-ups: fix the uncapped first-answer
-  runaway (see M22 BUG), then retrieval of bridge facts (embed the section path with the chunk, or
+  (3) per-project roles or moving documents between projects if users need them; (4) M22 is finished (classify did not replicate); follow-ups: (the first-answer runaway is
+  fixed, see M22 BUG) retrieval of bridge facts (embed the section path with the chunk, or
   a second retrieval hop), measured on a NEW held-out set (v6, avoid "by how much" wording); (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.

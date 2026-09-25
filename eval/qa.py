@@ -28,6 +28,7 @@ from app.db import init_db
 from app.embeddings import OllamaEmbedder
 from app.llm import LLMError, OllamaLLM
 from app.models import Chunk
+from app.providers import answer_token_cap
 from app.rerank import LLMReranker
 from eval.common import dataset_tag
 from eval.judge import JudgeValidation, judge_supported, validate_judge
@@ -320,7 +321,12 @@ def main() -> None:
         settings.ollama_base_url, settings.embedding_model, settings.embedding_dim
     )
     llm = OllamaLLM(settings.ollama_base_url, settings.llm_model)  # judge: never thinks
-    answer_llm = OllamaLLM(settings.ollama_base_url, settings.llm_model, think=settings.llm_think)
+    answer_llm = OllamaLLM(  # capped exactly like the API's model, so the eval measures it
+        settings.ollama_base_url,
+        settings.llm_model,
+        think=settings.llm_think,
+        max_tokens=answer_token_cap(settings),
+    )
     escalation_llm = (
         None
         if settings.llm_escalation == "off"
@@ -416,6 +422,7 @@ def main() -> None:
         if settings.ask_calculator
         else "off",
         "answer model thinking": "ON (the judge never thinks)" if settings.llm_think else "off",
+        "answer token cap": f"{answer_token_cap(settings) or 'none'} (a cut-off answer is refused)",
         "escalation": (
             f"{settings.llm_escalation} (thinking re-check capped at "
             f"{settings.llm_escalation_tokens} tokens, first answer kept on failure)"

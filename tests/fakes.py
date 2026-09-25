@@ -34,8 +34,9 @@ class DownEmbedder:
 
 
 class ScriptedLLM:
-    def __init__(self, reply: dict | str | Exception) -> None:
+    def __init__(self, reply: dict | str | Exception, *, truncated: bool = False) -> None:
         self.reply = reply
+        self.truncated = truncated
         self.calls: list[tuple[str, str]] = []
 
     def generate(self, system: str, user: str) -> Completion:
@@ -43,4 +44,4 @@ class ScriptedLLM:
         if isinstance(self.reply, Exception):
             raise self.reply
         text = self.reply if isinstance(self.reply, str) else json.dumps(self.reply)
-        return Completion(text, prompt_tokens=120, completion_tokens=15)
+        return Completion(text, prompt_tokens=120, completion_tokens=15, truncated=self.truncated)
