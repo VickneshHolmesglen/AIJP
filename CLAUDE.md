@@ -427,8 +427,10 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   "by how much" is fairly answered with "20/30 percent"; NOT re-scored, v5 is held out). Every v5
   fallback is a truncation (22-23 s), never the 45 s timeout. c14's wrong "60" escaped `derived` because
   60 is in the sources (Grunt health). Bridge facts (raw JSON, sections that never name the entity)
-  are the retrieval weak spot. Which chunk was missing is INFERRED from citations, not yet checked
-  against the top-10 lists.
+  are the retrieval weak spot. VERIFIED by ranking the whole corpus (vector): the entity chunk
+  ranks 1-2 every time, the bridge chunk ranks 9-25 (cos 0.49-0.60): waves.json 15/25/9 for
+  c01/c02/c14 (c01 also misses Runner at 17), Upgrades and selling 17/23 for c05/c18. So a
+  reranker over the top 10 cannot fix 4 of 5: the fix has to change what is retrieved.
   BUG FOUND AND FIXED (2026-09-25): the FIRST answer call had no token cap. v3 c02 ("sell
   a level 3 Cannon Tower") deterministically makes qwen3.5 (think off) reason inside the JSON answer
   string for 15,665 tokens / 227 s (done_reason=length); the client times out at 180 s -> LLMError ->
