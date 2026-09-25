@@ -413,6 +413,27 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   c05 c12 c14 c15 c17 c18) fail even with always-thinking, so they are NOT a trigger problem: candidates
   are the 1500-token cap (4 fallbacks per thinking arm), retrieval of waves.json for the bounty
   questions, or model ability. Not investigated.
+  REPLICATION DONE 2026-09-25 (`qa-v{3,2}-2026-09-25-escalate-classify`, idle GPU logged per minute;
+  a first attempt was contaminated by a game started mid-run: 34 re-checks hit the 45 s timeout,
+  exit 0, visible only in latency; those files are NOT results). derived -> classify, paired:
+  v3 19 -> 19 (+c05/-c07), v2 27 -> 26 (-m10), v5 24 -> 26. POOLED 97: 70 -> 71, 3 gained / 2 lost,
+  p=1.0 (`compare-escalation-classify-pooled-2026-09-25.md`). v5's gain did NOT replicate. Both
+  losses were the 1500-token cap truncating classify's re-check where derived's re-check had
+  finished (m10 derived took 25 s), i.e. cap variance, not the trigger. DEFAULT STAYS `derived`.
+  8-FAILURE DIAGNOSIS (v5 always-think misses, from result files): 5 retrieval (c01 c02 c14: the
+  `waves.json` counts are not in the top 5; c05 c18: "Upgrades and selling" is missing, so declining
+  is right), 1 token cap (c17: perfect retrieval, re-check truncated), 2 dataset wording (c12 c15:
+  "by how much" is fairly answered with "20/30 percent"; NOT re-scored, v5 is held out). Every v5
+  fallback is a truncation (22-23 s), never the 45 s timeout. c14's wrong "60" escaped `derived` because
+  60 is in the sources (Grunt health). Bridge facts (raw JSON, sections that never name the entity)
+  are the retrieval weak spot. Which chunk was missing is INFERRED from citations, not yet checked
+  against the top-10 lists.
+  BUG FOUND (NOT FIXED, needs a user decision): the FIRST answer call has no token cap. v3 c02 ("sell
+  a level 3 Cannon Tower") deterministically makes qwen3.5 (think off) reason inside the JSON answer
+  string for 15,665 tokens / 227 s (done_reason=length); the client times out at 180 s -> LLMError ->
+  the API request fails after 3 minutes and holds the GPU. It took 1808 tokens / 33 s on 2026-09-20,
+  so the behaviour drifted. Fix options: cap `num_predict` for the first answer and refuse a
+  truncated one.
   PROCESS NOTES: (1) the GPU was shared with a game (Diablo IV) for part of the session: generation
   was 4-20 tokens/s vs ~70 idle. After the game exited Ollama needed a few warm calls to recover
   (measure with eval_count/eval_duration from /api/chat, not wall clock). The v5 runs were started
@@ -426,7 +447,9 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
-  (3) per-project roles or moving documents between projects if users need them; (4) finish M22: replicate `classify` on v3/v2, then ask the user whether it should replace `derived` (it costs one extra cheap call and needs no thinking on lookups), and look at why 8 computational questions fail even with always-thinking; (5) an actual cloud deployment (needs an account and
+  (3) per-project roles or moving documents between projects if users need them; (4) M22 is finished (classify did not replicate); follow-ups: fix the uncapped first-answer
+  runaway (see M22 BUG), then retrieval of bridge facts (embed the section path with the chunk, or
+  a second retrieval hop), measured on a NEW held-out set (v6, avoid "by how much" wording); (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 
