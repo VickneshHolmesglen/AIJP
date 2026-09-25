@@ -55,7 +55,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 571
+  DONE. Ruff, mypy pass. Tests: 580
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -451,6 +451,34 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   (measure with eval_count/eval_duration from /api/chat, not wall clock). The v5 runs were started
   only after speed recovered (~74 tok/s); (2) a commit went through with a failing test because
   `pytest | tail` hides the exit code: use `pytest -q; echo $?` or `set -o pipefail` before committing.
+- M23 (NOT in the handoff doc; user chose "bridge-fact retrieval", approach "section-path prefix",
+  format "path first with a newline"). NEGATIVE RESULT, feature stays OFF (default already off).
+  Built: `embedding_input` in app/embeddings.py ("<file> > <heading path>
+<text>"; off = the text
+  unchanged), `AIJP_EMBED_SECTION_PATH` (default false), `services.embed_pending_chunks(section_path=)`
+  (fetches the document path in the same query), eval reports print "embedding input" and carry a
+  `-sectionpath` tag. Chunk.content/citations/queries untouched. Flipping it on a populated DB needs a
+  full re-embed (documented, no automatic path). tests/test_embedding_input.py (7).
+  PROTOCOL: v6 (`{retrieval,qa}_v6.json`: 20 bridge questions = entity chunk + a rule/data/code chunk
+  that never names the entity, require_all; 12 lookups; 8 unanswerable) COMMITTED BEFORE the feature
+  (git eecefc2; labels checked offline against the real chunker, which caught 3 bad labels BEFORE any
+  run); feature committed before any run (cfe061a); each arm once; GPU logged idle.
+  RESULTS (pre-registered primary = bridge full-coverage recall@5, vector): 14/20 -> 10/20, 0 gained
+  / 4 lost (b08 b10 b12 b13, ALL waves.json questions), p=0.125. Hybrid 13 -> 9 (0/4). Lookup MRR
+  0.958 -> 0.926. END TO END (production defaults, only the embedding input differs): 24/32 -> 17/32
+  correct, 1 gained / 8 lost, p=0.039 (`compare-sectionpath-v6-2026-09-25.md`); bridges 13 -> 7 of 20.
+  WHY (diagnosed on the prefixed index, not tuned): the prefix lifts EVERY chunk whose path shares a
+  question word, and the code is named after the same entities: all `src/enemies/enemy.gd > Enemy >`
+  chunks gain "enemy", all `wave_spawner.gd > WaveSpawner >` chunks gain "wave". The one short
+  waves.json chunk gains as much as each of them, so it fell from rank 5 to outside the top 12. A
+  path prefix is a blunt tool in a corpus whose file names echo its domain words; the retrieval weak
+  spot stays open (next candidates: a second retrieval hop keyed on the entities of the first, or
+  reserving slots for data/rule chunks; both need a NEW held-out set, v6 is spent).
+  FOUND ALONG THE WAY (NOT FIXED): lexical search orders by `ts_rank_cd DESC, Chunk.id`, and Chunk.id
+  is a random UUID per ingest, so lexical TIES are broken by coin flip, differently in every eval run
+  (9 of 32 v6 lexical ranks changed between two runs that differ only in embeddings). All lexical and
+  hybrid eval numbers since M6 carry this run-to-run noise; vector is unaffected. Fix: tie-break on
+  (source_path, chunk_index).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -459,9 +487,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
-  (3) per-project roles or moving documents between projects if users need them; (4) M22 is finished (classify did not replicate); follow-ups: (the first-answer runaway is
-  fixed, see M22 BUG) retrieval of bridge facts (embed the section path with the chunk, or
-  a second retrieval hop), measured on a NEW held-out set (v6, avoid "by how much" wording); (5) an actual cloud deployment (needs an account and
+  (3) per-project roles or moving documents between projects if users need them; (4) M22/M23 are finished; bridge-fact retrieval is still open (the section-path prefix FAILED,
+  see M23): a second retrieval hop on a NEW set (v7); a deterministic lexical tie-break (M23); (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 

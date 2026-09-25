@@ -1,0 +1,239 @@
+{
+  "meta": {
+    "date": "2026-09-25",
+    "corpus": "11 files, 73 chunks (eval/corpus)",
+    "questions": "32",
+    "embedding model": "nomic-embed-text",
+    "embedding input": "file + heading path + text",
+    "chunking": "1200 chars, 150 overlap",
+    "hybrid": "RRF k=60, pool=20 per retriever",
+    "top_k": "10",
+    "platform": "Windows-10-10.0.19045-SP0"
+  },
+  "per_question": [
+    {
+      "id": "b01",
+      "kind": "bridge_rule",
+      "vector": 3,
+      "lexical": 5,
+      "hybrid": 3
+    },
+    {
+      "id": "b02",
+      "kind": "bridge_rule",
+      "vector": null,
+      "lexical": 9,
+      "hybrid": null
+    },
+    {
+      "id": "b03",
+      "kind": "bridge_rule",
+      "vector": null,
+      "lexical": null,
+      "hybrid": null
+    },
+    {
+      "id": "b04",
+      "kind": "bridge_rule",
+      "vector": 2,
+      "lexical": 2,
+      "hybrid": 2
+    },
+    {
+      "id": "b05",
+      "kind": "bridge_rule",
+      "vector": null,
+      "lexical": 10,
+      "hybrid": null
+    },
+    {
+      "id": "b06",
+      "kind": "bridge_rule",
+      "vector": 3,
+      "lexical": 5,
+      "hybrid": 3
+    },
+    {
+      "id": "b07",
+      "kind": "bridge_rule",
+      "vector": 3,
+      "lexical": 3,
+      "hybrid": 3
+    },
+    {
+      "id": "b08",
+      "kind": "bridge_data",
+      "vector": null,
+      "lexical": null,
+      "hybrid": null
+    },
+    {
+      "id": "b09",
+      "kind": "bridge_data",
+      "vector": null,
+      "lexical": null,
+      "hybrid": null
+    },
+    {
+      "id": "b10",
+      "kind": "bridge_data",
+      "vector": null,
+      "lexical": null,
+      "hybrid": null
+    },
+    {
+      "id": "b11",
+      "kind": "bridge_data",
+      "vector": null,
+      "lexical": null,
+      "hybrid": null
+    },
+    {
+      "id": "b12",
+      "kind": "bridge_data",
+      "vector": null,
+      "lexical": 6,
+      "hybrid": 8
+    },
+    {
+      "id": "b13",
+      "kind": "bridge_data",
+      "vector": null,
+      "lexical": 7,
+      "hybrid": 8
+    },
+    {
+      "id": "b14",
+      "kind": "bridge_rule",
+      "vector": 10,
+      "lexical": 8,
+      "hybrid": 9
+    },
+    {
+      "id": "b15",
+      "kind": "bridge_rule",
+      "vector": 3,
+      "lexical": 5,
+      "hybrid": 5
+    },
+    {
+      "id": "b16",
+      "kind": "bridge_rule",
+      "vector": 4,
+      "lexical": 10,
+      "hybrid": 6
+    },
+    {
+      "id": "b17",
+      "kind": "bridge_rule",
+      "vector": 2,
+      "lexical": null,
+      "hybrid": 4
+    },
+    {
+      "id": "b18",
+      "kind": "bridge_rule",
+      "vector": 3,
+      "lexical": 7,
+      "hybrid": 3
+    },
+    {
+      "id": "b19",
+      "kind": "bridge_code",
+      "vector": 4,
+      "lexical": 3,
+      "hybrid": 3
+    },
+    {
+      "id": "b20",
+      "kind": "bridge_code",
+      "vector": 2,
+      "lexical": 3,
+      "hybrid": 2
+    },
+    {
+      "id": "l01",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l02",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l03",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l04",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l05",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l06",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l07",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l08",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l09",
+      "kind": "lookup",
+      "vector": 9,
+      "lexical": 8,
+      "hybrid": 7
+    },
+    {
+      "id": "l10",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l11",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    },
+    {
+      "id": "l12",
+      "kind": "lookup",
+      "vector": 1,
+      "lexical": 1,
+      "hybrid": 1
+    }
+  ]
+}
