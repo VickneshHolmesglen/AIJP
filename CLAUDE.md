@@ -55,7 +55,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 580
+  DONE. Ruff, mypy pass. Tests: 582
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -474,11 +474,20 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   path prefix is a blunt tool in a corpus whose file names echo its domain words; the retrieval weak
   spot stays open (next candidates: a second retrieval hop keyed on the entities of the first, or
   reserving slots for data/rule chunks; both need a NEW held-out set, v6 is spent).
-  FOUND ALONG THE WAY (NOT FIXED): lexical search orders by `ts_rank_cd DESC, Chunk.id`, and Chunk.id
+  FOUND ALONG THE WAY (FIXED 2026-09-26, see below): lexical search ordered by `ts_rank_cd DESC, Chunk.id`, and Chunk.id
   is a random UUID per ingest, so lexical TIES are broken by coin flip, differently in every eval run
   (9 of 32 v6 lexical ranks changed between two runs that differ only in embeddings). All lexical and
-  hybrid eval numbers since M6 carry this run-to-run noise; vector is unaffected. Fix: tie-break on
-  (source_path, chunk_index).
+  hybrid eval numbers since M6 carry this run-to-run noise; vector is unaffected.
+  FIX: lexical ORDER BY rank DESC, source_path, chunk_index, Chunk.id (id last: two documents may
+  share a path across projects); hybrid RRF ties sorted by the same key (they used str(chunk id)).
+  Vector search deliberately NOT changed: pgvector uses the HNSW index only for ORDER BY <distance>
+  LIMIT n, extra sort keys would make every vector query a full scan, and float cosine ties do not
+  occur with real embeddings. tests/test_retrieval_ties.py (ids chosen to sort OPPOSITE to the path
+  order; mutation-checked: restoring either old order fails its test). VERIFIED: two v6 retrieval
+  runs now give 0 rank differences in all modes, vector identical to the published baseline.
+  Also fixed: `lexical_search(query_vector=None)` emitted invalid SQL `null()` (func.null instead of
+  sqlalchemy.null); no caller passed None, so it was latent. Published lexical/hybrid reports before
+  this fix are ONE draw of the tie order; they were not regenerated.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -488,7 +497,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
   (3) per-project roles or moving documents between projects if users need them; (4) M22/M23 are finished; bridge-fact retrieval is still open (the section-path prefix FAILED,
-  see M23): a second retrieval hop on a NEW set (v7); a deterministic lexical tie-break (M23); (5) an actual cloud deployment (needs an account and
+  see M23): a second retrieval hop on a NEW set (v7); (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 

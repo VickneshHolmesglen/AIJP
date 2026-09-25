@@ -11,7 +11,7 @@ from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, TypeVar
 
-from sqlalchemy import Select, Text, cast, func, literal_column, select
+from sqlalchemy import Select, Text, cast, func, literal_column, null, select
 from sqlalchemy.dialects.postgresql import TSQUERY
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import ColumnClause
@@ -114,10 +114,14 @@ def lexical_search(
         (1 - Chunk.embedding.cosine_distance(query_vector)) if query_vector is not None else None
     )
     stmt = (
-        select(Chunk, Document, rank.label("rank"), (cosine if cosine is not None else func.null()))
+        select(Chunk, Document, rank.label("rank"), (cosine if cosine is not None else null()))
         .join(Document, Document.id == Chunk.document_id)
         .where(_DOC_TSVECTOR.op("@@")(ts_query))
-        .order_by(rank.desc(), Chunk.id)
+        # Ties (common: short queries hit the same few terms) are broken by location, which is
+        # the same in every ingest. Chunk.id is a random UUID minted at ingest, so ordering by it
+        # alone made lexical results a coin flip per ingest; it stays last only for two documents
+        # that share a path (possible across projects).
+        .order_by(rank.desc(), Document.source_path, Chunk.chunk_index, Chunk.id)
         .limit(limit)
     )
     stmt = _scope(stmt, project_id, document_id, file_types)
@@ -149,7 +153,17 @@ def hybrid_search(
         [[h.chunk.id for h in vector_hits], [h.chunk.id for h in lexical_hits]], rrf_k
     )
     by_id = {h.chunk.id: h for h in [*lexical_hits, *vector_hits]}
-    ranked = sorted(fused, key=lambda cid: (-fused[cid], str(cid)))[:top_k]
+    # RRF ties are common (rank r in one list only scores the same whatever the list): break
+    # them by location, as lexical_search does, not by the random chunk id.
+    ranked = sorted(
+        fused,
+        key=lambda cid: (
+            -fused[cid],
+            by_id[cid].document.source_path,
+            by_id[cid].chunk.chunk_index,
+            str(cid),
+        ),
+    )[:top_k]
     return [Hit(by_id[c].chunk, by_id[c].document, fused[c], by_id[c].cosine) for c in ranked]
 
 
