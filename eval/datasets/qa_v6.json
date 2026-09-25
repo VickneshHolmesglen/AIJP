@@ -1,0 +1,250 @@
+{
+  "description": "Answer-level set (v6). Numeric answers match as WHOLE numbers ('#N'); no bare answer of 1-5 is used because '#4' would also match a citation marker like [4]. `derivations` shows how each was computed.",
+  "answerable": {
+    "b01": [
+      [
+        "#180"
+      ]
+    ],
+    "b02": [
+      [
+        "#15"
+      ]
+    ],
+    "b03": [
+      [
+        "#10"
+      ]
+    ],
+    "b04": [
+      [
+        "#75"
+      ]
+    ],
+    "b05": [
+      [
+        "#42"
+      ]
+    ],
+    "b06": [
+      [
+        "#10"
+      ]
+    ],
+    "b07": [
+      [
+        "#6"
+      ]
+    ],
+    "b08": [
+      [
+        "#360"
+      ]
+    ],
+    "b09": [
+      [
+        "#350"
+      ]
+    ],
+    "b10": [
+      [
+        "#480"
+      ]
+    ],
+    "b11": [
+      [
+        "#900"
+      ]
+    ],
+    "b12": [
+      [
+        "#11"
+      ]
+    ],
+    "b13": [
+      [
+        "#10"
+      ]
+    ],
+    "b14": [
+      [
+        "#600"
+      ]
+    ],
+    "b15": [
+      [
+        "no",
+        "cannot",
+        "can't",
+        "not"
+      ],
+      [
+        "level 3",
+        "three"
+      ]
+    ],
+    "b16": [
+      [
+        "yes",
+        "can be active",
+        "both"
+      ]
+    ],
+    "b17": [
+      [
+        "#12"
+      ]
+    ],
+    "b18": [
+      [
+        "#315"
+      ]
+    ],
+    "b19": [
+      [
+        "#72"
+      ]
+    ],
+    "b20": [
+      [
+        "#6"
+      ]
+    ],
+    "l01": [
+      [
+        "#15"
+      ]
+    ],
+    "l02": [
+      [
+        "#90"
+      ]
+    ],
+    "l03": [
+      [
+        "0.4"
+      ]
+    ],
+    "l04": [
+      [
+        "5 seconds",
+        "five seconds",
+        "5.0 seconds"
+      ]
+    ],
+    "l05": [
+      [
+        "remov",
+        "cancel"
+      ]
+    ],
+    "l06": [
+      [
+        "gamestate"
+      ],
+      [
+        "eventbus"
+      ]
+    ],
+    "l07": [
+      [
+        "#35"
+      ]
+    ],
+    "l08": [
+      [
+        "#80"
+      ]
+    ],
+    "l09": [
+      [
+        "0.8"
+      ]
+    ],
+    "l10": [
+      [
+        "end of every wave",
+        "end of each wave",
+        "after every wave",
+        "after each wave"
+      ]
+    ],
+    "l11": [
+      [
+        "1.0",
+        "at least 1",
+        "minimum of 1",
+        "1 damage"
+      ]
+    ],
+    "l12": [
+      [
+        "#12"
+      ]
+    ]
+  },
+  "derivations": {
+    "b01": "0.75 * 80 * 3 = 180",
+    "b02": "12 * (1 + 0.25) = 15",
+    "b03": "12 * 1.5 - 8 = 10",
+    "b04": "(50 + 0.75 * 50 * 2) * 0.6 = 75",
+    "b05": "40 * 1.25 - 8 = 42",
+    "b06": "200 * 0.05 = 10",
+    "b07": "(200 - 80) * 0.05 = 6",
+    "b08": "6 * 60 = 360",
+    "b09": "10 * 35 = 350",
+    "b10": "4 * 120 = 480",
+    "b11": "10 * 60 + 1 * 300 = 900",
+    "b12": "(10 + 1) * 1 = 11",
+    "b13": "10 * 1 = 10",
+    "b14": "12 * 50 = 600",
+    "b15": "max level is 3",
+    "b16": "Poison and Burn can be active on the same enemy at the same time",
+    "b17": "3 * 4 = 12 (armor ignored)",
+    "b18": "45 * (1 - 0.3) * 10 = 315",
+    "b19": "int(120 * 0.6) = 72",
+    "b20": "int(4 * (1 + 0.25 * 2)) = 6"
+  },
+  "unanswerable": [
+    {
+      "id": "u01",
+      "kind": "near",
+      "question": "How fast does an enraged Shardlord move?"
+    },
+    {
+      "id": "u02",
+      "kind": "near",
+      "question": "What is the path length in pixels from the spawn gate to the Shard Core?"
+    },
+    {
+      "id": "u03",
+      "kind": "near",
+      "question": "How much bounty does wave 6 pay in total?"
+    },
+    {
+      "id": "u04",
+      "kind": "near",
+      "question": "How much health does a Wraith regenerate per second?"
+    },
+    {
+      "id": "u05",
+      "kind": "near",
+      "question": "What is the Arrow Tower's range in pixels?"
+    },
+    {
+      "id": "u06",
+      "kind": "near",
+      "question": "How many build slots does the map have?"
+    },
+    {
+      "id": "u07",
+      "kind": "far",
+      "question": "Which music track plays during boss waves?"
+    },
+    {
+      "id": "u08",
+      "kind": "near",
+      "question": "Is the sell refund different during a wave than between waves?"
+    }
+  ]
+}
