@@ -276,7 +276,9 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp, Session(engine) as session:
         patched = build_corpus(Path(tmp) / "corpus", data.get("patches_dir", "seeded_patches"))
         n_files = ingest_corpus(session, Path(tmp) / "corpus", settings)
-        services.embed_pending_chunks(session, embedder, settings.embed_batch_size)
+        services.embed_pending_chunks(
+            session, embedder, settings.embed_batch_size, section_path=settings.embed_section_path
+        )
         n_chunks = session.scalar(select(func.count()).select_from(Chunk)) or 0
         check_labels(session, claims)
         project_id = projects.get_or_create_default(session).id

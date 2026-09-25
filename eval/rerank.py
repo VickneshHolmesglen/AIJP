@@ -221,7 +221,9 @@ def main() -> None:
 
     with Session(engine) as session:
         n_files = ingest_corpus(session, args.corpus, settings)
-        services.embed_pending_chunks(session, embedder, settings.embed_batch_size)
+        services.embed_pending_chunks(
+            session, embedder, settings.embed_batch_size, section_path=settings.embed_section_path
+        )
         n_chunks = session.scalar(select(func.count()).select_from(Chunk)) or 0
         check_labels(session, questions)
         print(f"Ingested {n_files} files, {n_chunks} chunks.")

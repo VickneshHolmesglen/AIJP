@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import Settings
-from app.embeddings import EmbeddingProvider
+from app.embeddings import EmbeddingProvider, embedding_input
 from app.ingestion.chunking import chunk_segments
 from app.ingestion.errors import DuplicateDocumentError
 from app.ingestion.loaders import extract
@@ -83,27 +83,38 @@ def embed_pending_chunks(
     batch_size: int,
     document_id: uuid.UUID | None = None,
     project_id: uuid.UUID | None = None,
+    section_path: bool = False,
 ) -> int:
     """Embed chunks that have no vector yet. Returns how many were embedded.
 
     Commits per batch, so a provider failure midway keeps earlier batches and a retry only
-    redoes the remainder.
+    redoes the remainder. `section_path` embeds each chunk together with its file and heading
+    path (see `embedding_input`); vectors of both kinds must never share an index, so changing
+    it means re-embedding everything.
     """
     embedded = 0
     while True:
-        query = select(Chunk).where(Chunk.embedding.is_(None))
+        query = (
+            select(Chunk, Document.source_path)
+            .join(Document, Document.id == Chunk.document_id)
+            .where(Chunk.embedding.is_(None))
+        )
         if document_id is not None:
             query = query.where(Chunk.document_id == document_id)
         if project_id is not None:
-            query = query.join(Document, Document.id == Chunk.document_id).where(
-                Document.project_id == project_id
-            )
-        batch = list(
-            session.scalars(query.order_by(Chunk.document_id, Chunk.chunk_index).limit(batch_size))
-        )
-        if not batch:
+            query = query.where(Document.project_id == project_id)
+        rows = session.execute(
+            query.order_by(Chunk.document_id, Chunk.chunk_index).limit(batch_size)
+        ).all()
+        if not rows:
             return embedded
-        vectors = provider.embed([c.content for c in batch])
+        batch = [chunk for chunk, _ in rows]
+        vectors = provider.embed(
+            [
+                embedding_input(chunk.content, path, chunk.section, with_path=section_path)
+                for chunk, path in rows
+            ]
+        )
         for chunk, vector in zip(batch, vectors, strict=True):
             chunk.embedding = vector
         session.commit()

@@ -30,7 +30,7 @@ from app.llm import LLMError, OllamaLLM
 from app.models import Chunk
 from app.providers import answer_token_cap
 from app.rerank import LLMReranker
-from eval.common import dataset_tag
+from eval.common import dataset_tag, embedding_input_label, embedding_tag
 from eval.judge import JudgeValidation, judge_supported, validate_judge
 from eval.metrics import (
     Retrieved,
@@ -355,7 +355,9 @@ def main() -> None:
     )
     with Session(engine) as session:
         n_files = ingest_corpus(session, args.corpus, settings)
-        services.embed_pending_chunks(session, embedder, settings.embed_batch_size)
+        services.embed_pending_chunks(
+            session, embedder, settings.embed_batch_size, section_path=settings.embed_section_path
+        )
         n_chunks = session.scalar(select(func.count()).select_from(Chunk)) or 0
         check_labels(session, [q for q, _ in answerable])
         print(f"Ingested {n_files} files, {n_chunks} chunks.")
@@ -430,6 +432,7 @@ def main() -> None:
             else "off"
         ),
         "embedding model": settings.embedding_model,
+        "embedding input": embedding_input_label(settings),
         "answer + judge model": settings.llm_model,
         "platform": platform.platform(),
     }
@@ -437,6 +440,7 @@ def main() -> None:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     stem = (
         f"qa{dataset_tag(args.qa_dataset, 'qa')}-{meta['date']}"
+        + embedding_tag(settings)
         + ("-rerank" if settings.rerank_enabled else "")
         + ("-calc" if settings.ask_calculator else "")
         + ("-think" if settings.llm_think else "")

@@ -22,6 +22,23 @@ class EmbeddingProvider(Protocol):
         ...
 
 
+def embedding_input(content: str, source_path: str, section: str | None, *, with_path: bool) -> str:
+    """The text a chunk's VECTOR is computed from. `Chunk.content` (what the model reads and what
+    is cited) never changes; only the embedding input can carry the chunk's location.
+
+    Why: a rule chunk ("Each upgrade level adds 25 percent...") or a data chunk (raw JSON counts)
+    shares no words with a question that names an entity, so it ranks 9-25 (v5 diagnosis). Its
+    file path and heading path ("docs/design/towers.md", "Towers > Upgrades and selling") do.
+    """
+    if not with_path:
+        return content
+    # Location first (titles lead in the text the model was trained on), then a newline so it does
+    # not read as part of the first sentence. data/waves.json has only "waves" as its section, so
+    # the file path is kept: for data files it is the only extra signal.
+    location = f"{source_path} > {section}" if section else source_path
+    return f"{location}\n{content}"
+
+
 class OllamaEmbedder:
     def __init__(
         self,

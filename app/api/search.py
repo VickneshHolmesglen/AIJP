@@ -57,7 +57,11 @@ def embed_pending(
     """Embed every chunk of THIS project that does not have a vector yet."""
     try:
         count = services.embed_pending_chunks(
-            session, embedder, settings.embed_batch_size, project_id=project.id
+            session,
+            embedder,
+            settings.embed_batch_size,
+            project_id=project.id,
+            section_path=settings.embed_section_path,
         )
     except EmbeddingError as exc:
         metrics.record_dependency_error("embedding")

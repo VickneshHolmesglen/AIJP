@@ -27,7 +27,7 @@ from app.db import init_db
 from app.embeddings import OllamaEmbedder
 from app.ingestion.errors import IngestionError
 from app.models import Base, Chunk, Document
-from eval.common import dataset_tag
+from eval.common import dataset_tag, embedding_input_label, embedding_tag
 from eval.metrics import (
     Expected,
     Retrieved,
@@ -225,7 +225,9 @@ def main() -> None:
 
     with Session(engine) as session:
         n_files = ingest_corpus(session, args.corpus, settings)
-        embedded = services.embed_pending_chunks(session, embedder, settings.embed_batch_size)
+        embedded = services.embed_pending_chunks(
+            session, embedder, settings.embed_batch_size, section_path=settings.embed_section_path
+        )
         n_chunks = session.scalar(select(func.count()).select_from(Chunk)) or 0
         check_labels(session, questions)
         print(f"Ingested {n_files} files, {n_chunks} chunks ({embedded} embedded).")
@@ -239,6 +241,7 @@ def main() -> None:
         "corpus": f"{n_files} files, {n_chunks} chunks (eval/corpus)",
         "questions": str(len(questions)),
         "embedding model": settings.embedding_model,
+        "embedding input": embedding_input_label(settings),
         "chunking": f"{settings.chunk_max_chars} chars, {settings.chunk_overlap_chars} overlap",
         "hybrid": f"RRF k={settings.rrf_k}, pool={settings.retrieval_pool} per retriever",
         "top_k": str(args.top_k),
@@ -246,7 +249,9 @@ def main() -> None:
     }
     report = build_report(questions, results, meta)
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    stem = f"retrieval{dataset_tag(args.dataset, 'retrieval')}-{meta['date']}"
+    stem = f"retrieval{dataset_tag(args.dataset, 'retrieval')}-{meta['date']}" + embedding_tag(
+        settings
+    )
     (args.out_dir / f"{stem}.md").write_text(report, encoding="utf-8")
     (args.out_dir / f"{stem}.json").write_text(
         json.dumps(

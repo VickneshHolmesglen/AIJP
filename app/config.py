@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     llm_model: str = "qwen3.5"
     # Let the ANSWER model reason before it replies (slower; see eval/results/qa-*-think.md).
     llm_think: bool = False
+    # Embed each chunk WITH its file and heading path (app/embeddings.py `embedding_input`); the
+    # stored text and citations are unchanged. EXPERIMENTAL, off until the v6 eval says otherwise.
+    # Changing it on a database that already has vectors needs a full re-embed: the two kinds of
+    # vector must never share an index (there is no automatic re-embed yet).
+    embed_section_path: bool = False
     # Hard cap on the tokens one non-thinking call may generate (0 = no cap). Answers are 50-300
     # tokens, but on v3 c02 the model reasoned inside its JSON answer for 15,665 tokens / 227 s and
     # the request failed on the 180 s client timeout. A cut-off answer is refused as
