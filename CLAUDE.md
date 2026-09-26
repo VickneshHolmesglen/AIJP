@@ -533,6 +533,16 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   sub-query rounds, 3 data-file variants, MMR) were ALL neutral or worse for multi-source
   questions; the bottleneck is a 5-chunk budget and an embedding model that does not connect a
   question's entity to rules/data that never name it.
+- M27 (user chose "larger k for multi-part questions on dev"). STOPPED AT THE CEILING CHECK, nothing
+  built, v7 unspent. Candidates fixed before running: k=8, k=10. Full-coverage@k (vector, plain index)
+  on v5+v6 multi-source (34): k5 23, k6 23, k8 24, k10 25, k12 25, k15 25, k20 27, k30 33; lookups
+  32/32 at every k. Of the 11 misses at k=5 only 2 are covered by k=10 (v6 b14 at 8, v5 c14 at 9); the
+  rest need k=17-43. So even a perfect detector + perfect answering gains at most +2/34 on dev (about
+  +1 of v7's 20 bridges, undetectable) for 2x prompt size + a detector call: not worth building.
+  INSIGHT: the missing chunks are spread through the middle of a 73-chunk corpus, not just behind the
+  cutoff; at k=30 the prompt holds ~40% of the corpus. For a corpus this small (~13 KB) sending all of
+  it (long context) is the honest alternative to RAG; RAG earns its keep only when the corpus is too
+  big to send. That is the end of the M23-M27 retrieval line (12 variants, none helped).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -543,7 +553,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
   (3) per-project roles or moving documents between projects if users need them; (4) M22/M23 are finished; bridge-fact retrieval is still open (the section-path prefix FAILED,
   see M23) and every hop tried in M24 and every data-file change in M25 was neutral or worse on dev; v7 is
-  UNSPENT; MMR also failed (M26); the one untried idea is a larger k for multi-part questions; (5) an actual cloud deployment (needs an account and
+  UNSPENT; MMR (M26) and a larger k (M27, ceiling +2/34) also failed: the retrieval line is closed; (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 
