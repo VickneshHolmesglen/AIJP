@@ -1,0 +1,495 @@
+{
+  "description": "HELD-OUT TEST set (v7) for the second-retrieval-hop milestone. 20 BRIDGE questions (an entity chunk AND a rule/data/code chunk that does not name the entity, require_all; several need 3-4 chunks) and 12 single-chunk lookups as regression controls. Written and committed BEFORE any hop code; the hop is designed on v5/v6 (dev) and run on v7 ONCE. By the AI assistant, who knew a second hop was planned but not its mechanism (not independent). PRE-REGISTERED primary metric: full-coverage recall@5 on bridge questions, vector baseline vs vector + hop, paired sign test. Secondary: lookup MRR@10 and end-to-end correct (qa_v7.json) with production defaults.",
+  "kinds": {
+    "bridge_rule": "entity chunk + a general rule chunk that never names the entity",
+    "bridge_data": "entity chunk + data/waves.json (counts, no shared vocabulary)",
+    "bridge_code": "entity chunk + a code or config chunk whose formula or key applies to it",
+    "lookup": "one chunk states the answer; a regression control"
+  },
+  "questions": [
+    {
+      "id": "x01",
+      "kind": "bridge_rule",
+      "question": "How much gold does upgrading a Cannon Tower from level 2 to level 3 cost?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x02",
+      "kind": "bridge_rule",
+      "question": "What does a level 3 Cannon shell deal to the Shardlord?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x03",
+      "kind": "bridge_rule",
+      "question": "How much gold does selling a fully upgraded Frost Tower give back?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x04",
+      "kind": "bridge_rule",
+      "question": "What is the total spent on a Cannon Tower that is bought and upgraded once?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x05",
+      "kind": "bridge_rule",
+      "question": "How much interest is paid on exactly the price of two Cannon Towers?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Interest"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x06",
+      "kind": "bridge_rule",
+      "question": "How many base Arrow bolts does it take to kill a Brute?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x07",
+      "kind": "bridge_rule",
+      "question": "How many Cannon shells does it take to kill a Wraith?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x08",
+      "kind": "bridge_rule",
+      "question": "How many seconds does a chilled Runner need to walk 1120 pixels?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Chill"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x09",
+      "kind": "bridge_data",
+      "question": "What is the combined health of all the enemies in wave 2?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Runner"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x10",
+      "kind": "bridge_data",
+      "question": "What is the combined health of every enemy in wave 5?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x11",
+      "kind": "bridge_data",
+      "question": "How many lives would a player lose if wave 5 leaked completely?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Lives"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x12",
+      "kind": "bridge_data",
+      "question": "How much bounty do the Wraiths of wave 5 pay in total?",
+      "expected": [
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x13",
+      "kind": "bridge_rule",
+      "question": "What happens to the fire on an enemy when a Frost Tower hits it right after a Cannon shell?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Interaction rules"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x14",
+      "kind": "bridge_rule",
+      "question": "What does a level 2 Arrow bolt deal to an enemy that is burning?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Arrow Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        },
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Burn"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x15",
+      "kind": "bridge_code",
+      "question": "What does upgrade_cost() return for a Frost Tower that is still at level 1?",
+      "expected": [
+        {
+          "path": "src/towers/tower.gd",
+          "section_prefix": "Tower > upgrade_cost"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x16",
+      "kind": "bridge_code",
+      "question": "Does is_boss() return true for a Brute?",
+      "expected": [
+        {
+          "path": "src/enemies/enemy.gd",
+          "section_prefix": "Enemy > is_boss"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x17",
+      "kind": "bridge_code",
+      "question": "What does time_on_path give for a Grunt on an 800-pixel path without Chill?",
+      "expected": [
+        {
+          "path": "tools/balance.py",
+          "section_prefix": "time_on_path"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x18",
+      "kind": "bridge_rule",
+      "question": "How much health does the Shardlord have left after ten level 3 Cannon shells?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Cannon Tower"
+        },
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Upgrades and selling"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x19",
+      "kind": "bridge_data",
+      "question": "With nothing spent, how much gold does a player hold after killing every enemy of wave 1 and clearing it without a leak?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Starting resources"
+        },
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Wave income"
+        },
+        {
+          "path": "data/waves.json",
+          "section": "waves"
+        },
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Grunt"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "x20",
+      "kind": "bridge_code",
+      "question": "Which config key sets the slow that Frost Tower shards apply?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        },
+        {
+          "path": "config/game.yaml",
+          "section": "combat"
+        }
+      ],
+      "require_all": true
+    },
+    {
+      "id": "y01",
+      "kind": "lookup",
+      "question": "What is the Wraith's movement speed?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ]
+    },
+    {
+      "id": "y02",
+      "kind": "lookup",
+      "question": "What does the Frost Tower cost to build?",
+      "expected": [
+        {
+          "path": "docs/design/towers.md",
+          "section_prefix": "Towers > Frost Tower"
+        }
+      ]
+    },
+    {
+      "id": "y03",
+      "kind": "lookup",
+      "question": "What bounty does killing a Brute pay?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        }
+      ]
+    },
+    {
+      "id": "y04",
+      "kind": "lookup",
+      "question": "What is the interest rate on unspent gold?",
+      "expected": [
+        {
+          "path": "docs/design/economy.md",
+          "section_prefix": "Economy > Interest"
+        }
+      ]
+    },
+    {
+      "id": "y05",
+      "kind": "lookup",
+      "question": "How much damage per second does one Poison stack deal?",
+      "expected": [
+        {
+          "path": "docs/design/status_effects.md",
+          "section_prefix": "Status Effects > Poison"
+        }
+      ]
+    },
+    {
+      "id": "y06",
+      "kind": "lookup",
+      "question": "At what share of its health does the Shardlord enrage?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ]
+    },
+    {
+      "id": "y07",
+      "kind": "lookup",
+      "question": "What does EventBus carry between systems?",
+      "expected": [
+        {
+          "path": "docs/architecture.md",
+          "section_prefix": "Shardfall Architecture > Global singletons"
+        }
+      ]
+    },
+    {
+      "id": "y08",
+      "kind": "lookup",
+      "question": "Where is the save file written?",
+      "expected": [
+        {
+          "path": "docs/architecture.md",
+          "section_prefix": "Shardfall Architecture > Saving"
+        }
+      ]
+    },
+    {
+      "id": "y09",
+      "kind": "lookup",
+      "question": "What is the Brute's movement speed?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Brute"
+        }
+      ]
+    },
+    {
+      "id": "y10",
+      "kind": "lookup",
+      "question": "Which enemy is the boss?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Shardlord (boss)"
+        }
+      ]
+    },
+    {
+      "id": "y11",
+      "kind": "lookup",
+      "question": "What does simulate_wave return?",
+      "expected": [
+        {
+          "path": "tools/balance.py",
+          "section_prefix": "simulate_wave"
+        }
+      ]
+    },
+    {
+      "id": "y12",
+      "kind": "lookup",
+      "question": "How much health does the Wraith have?",
+      "expected": [
+        {
+          "path": "docs/design/enemies.md",
+          "section_prefix": "Enemies > Wraith"
+        }
+      ]
+    }
+  ]
+}

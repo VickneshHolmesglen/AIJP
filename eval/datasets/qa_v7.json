@@ -1,0 +1,253 @@
+{
+  "description": "Answer-level set (v7). Numeric answers match as WHOLE numbers ('#N'); no bare answer of 1-5 is used because '#4' would also match a citation marker like [4]. `derivations` shows how each was computed.",
+  "answerable": {
+    "x01": [
+      [
+        "#270"
+      ]
+    ],
+    "x02": [
+      [
+        "#45"
+      ]
+    ],
+    "x03": [
+      [
+        "#228"
+      ]
+    ],
+    "x04": [
+      [
+        "#300"
+      ]
+    ],
+    "x05": [
+      [
+        "#12"
+      ]
+    ],
+    "x06": [
+      [
+        "#75"
+      ]
+    ],
+    "x07": [
+      [
+        "cannot",
+        "can't",
+        "unable",
+        "not able",
+        "does not",
+        "doesn't"
+      ],
+      [
+        "fly",
+        "flying",
+        "air"
+      ]
+    ],
+    "x08": [
+      [
+        "#10"
+      ]
+    ],
+    "x09": [
+      [
+        "#585"
+      ]
+    ],
+    "x10": [
+      [
+        "#960"
+      ]
+    ],
+    "x11": [
+      [
+        "#12"
+      ]
+    ],
+    "x12": [
+      [
+        "#120"
+      ]
+    ],
+    "x13": [
+      [
+        "remov",
+        "cancel",
+        "ends",
+        "extinguish",
+        "stops"
+      ]
+    ],
+    "x14": [
+      [
+        "#18"
+      ]
+    ],
+    "x15": [
+      [
+        "#120"
+      ]
+    ],
+    "x16": [
+      [
+        "false",
+        "does not",
+        "doesn't",
+        "not a boss"
+      ]
+    ],
+    "x17": [
+      [
+        "#10"
+      ]
+    ],
+    "x18": [
+      [
+        "#4550"
+      ]
+    ],
+    "x19": [
+      [
+        "#365"
+      ]
+    ],
+    "x20": [
+      [
+        "chill_slow_ratio"
+      ]
+    ],
+    "y01": [
+      [
+        "#100"
+      ]
+    ],
+    "y02": [
+      [
+        "#80"
+      ]
+    ],
+    "y03": [
+      [
+        "#25"
+      ]
+    ],
+    "y04": [
+      [
+        "5 percent",
+        "5%",
+        "five percent",
+        "0.05"
+      ]
+    ],
+    "y05": [
+      [
+        "4 damage",
+        "four damage"
+      ]
+    ],
+    "y06": [
+      [
+        "25 percent",
+        "25%",
+        "0.25",
+        "a quarter"
+      ]
+    ],
+    "y07": [
+      [
+        "signal"
+      ]
+    ],
+    "y08": [
+      [
+        "savegame.json"
+      ]
+    ],
+    "y09": [
+      [
+        "#45"
+      ]
+    ],
+    "y10": [
+      [
+        "shardlord"
+      ]
+    ],
+    "y11": [
+      [
+        "true"
+      ]
+    ],
+    "y12": [
+      [
+        "#120"
+      ]
+    ]
+  },
+  "derivations": {
+    "x01": "0.75 * 120 * 3 = 270",
+    "x02": "40 * 1.5 - 15 = 45",
+    "x03": "(80 + 120 + 180) * 0.6 = 228",
+    "x04": "120 + 0.75 * 120 * 2 = 300",
+    "x05": "2 * 120 * 0.05 = 12",
+    "x06": "300 / (12 - 8) = 75",
+    "x07": "Cannon shells cannot hit flying enemies and the Wraith flies",
+    "x08": "1120 / (160 * (1 - 0.3)) = 10",
+    "x09": "8 * 60 + 3 * 35 = 585",
+    "x10": "4 * 120 + 8 * 60 = 960",
+    "x11": "(4 + 8) * 1 = 12 (no boss)",
+    "x12": "4 * 30 = 120",
+    "x13": "applying Chill removes Burn",
+    "x14": "12 * 1.25 * 1.2 = 18",
+    "x15": "int(80 * 0.75 * (1 + 1)) = 120",
+    "x16": "300 < 5000, so false",
+    "x17": "800 / 80 = 10",
+    "x18": "5000 - 10 * (40 * 1.5 - 15) = 4550",
+    "x19": "200 + (100 + 10 + 25) + 6 * 5 = 365",
+    "x20": "combat.chill_slow_ratio"
+  },
+  "unanswerable": [
+    {
+      "id": "u01",
+      "kind": "near",
+      "question": "What is the Frost Tower's fire rate?"
+    },
+    {
+      "id": "u02",
+      "kind": "near",
+      "question": "What is the Venom Tower's range in pixels?"
+    },
+    {
+      "id": "u03",
+      "kind": "near",
+      "question": "How many enemies spawn in wave 7?"
+    },
+    {
+      "id": "u04",
+      "kind": "near",
+      "question": "How much bounty does the Shardlord pay?"
+    },
+    {
+      "id": "u05",
+      "kind": "near",
+      "question": "How long does the Shardlord's enrage last?"
+    },
+    {
+      "id": "u06",
+      "kind": "near",
+      "question": "How much does Cannon splash damage fall off at the edge of the blast?"
+    },
+    {
+      "id": "u07",
+      "kind": "far",
+      "question": "Which platforms does Shardfall ship on?"
+    },
+    {
+      "id": "u08",
+      "kind": "near",
+      "question": "How much experience does the player earn per wave?"
+    }
+  ]
+}

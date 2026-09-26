@@ -21,7 +21,7 @@ def load(name: str) -> dict:
     return json.loads((DATASETS / name).read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("suffix", ["", "_v2", "_v3", "_v4", "_v5", "_v6"])
+@pytest.mark.parametrize("suffix", ["", "_v2", "_v3", "_v4", "_v5", "_v6", "_v7"])
 def test_retrieval_and_qa_sets_are_consistent(suffix: str) -> None:
     retrieval, qa = load(f"retrieval{suffix}.json"), load(f"qa{suffix}.json")
     ids = [q["id"] for q in retrieval["questions"]]
@@ -159,22 +159,23 @@ def test_v5_test_set_is_new_and_has_lookalike_lookups_to_expose_wasted_escalatio
     assert sum(("how much" in q or "how many" in q) for q in lookups) >= 6
 
 
-def test_v6_test_set_is_new_and_every_bridge_needs_two_sources() -> None:
+@pytest.mark.parametrize("version", [6, 7])
+def test_bridge_test_sets_are_new_and_every_bridge_needs_two_sources(version: int) -> None:
     earlier = {
         q["question"].lower()
-        for suffix in ("", "_v2", "_v3", "_v4", "_v5")
+        for suffix in ["", *(f"_v{n}" for n in range(2, version))]
         for q in load(f"retrieval{suffix}.json")["questions"]
     }
-    v6 = load("retrieval_v6.json")["questions"]
-    assert not earlier & {q["question"].lower() for q in v6}
-    bridges = [q for q in v6 if q["kind"].startswith("bridge_")]
-    assert len(bridges) >= 15 and sum(q["kind"] == "lookup" for q in v6) >= 10
+    current = load(f"retrieval_v{version}.json")["questions"]
+    assert not earlier & {q["question"].lower() for q in current}
+    bridges = [q for q in current if q["kind"].startswith("bridge_")]
+    assert len(bridges) >= 15 and sum(q["kind"] == "lookup" for q in current) >= 10
     # A bridge is only a bridge if the answer needs BOTH chunks, from different sections.
     for q in bridges:
         assert q.get("require_all"), q["id"]
         places = {(e["path"], e.get("section") or e.get("section_prefix")) for e in q["expected"]}
         assert len(places) >= 2, q["id"]
     # '#4' would also match a citation marker like [4]: no group may rely on a bare 1-5 alone.
-    for qid, groups in load("qa_v6.json")["answerable"].items():
+    for qid, groups in load(f"qa_v{version}.json")["answerable"].items():
         for group in groups:
             assert not all(alt in {"#1", "#2", "#3", "#4", "#5"} for alt in group), qid
