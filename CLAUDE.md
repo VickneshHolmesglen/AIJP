@@ -505,6 +505,22 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   MOST PROMISING NEXT (not built): make DATA files retrievable at ingest, e.g. a JSON/YAML loader that
   renders records as sentences ("Wave 2: 8 grunt, 3 runner") while keeping line provenance; that is a
   loader change (the rule: formats go in app/ingestion/loaders.py). Then run v7, which is unspent.
+- M25 (NOT in the handoff doc; user chose "data file loader change", then allowed a 3rd dev round).
+  NEUTRAL IN DEV, ALL CODE REVERTED, v7 STILL UNSPENT. Dev = v5+v6 multi-source questions, vector
+  full-coverage@5 (old loader: v5 9/14, v6 14/20); dev numbers are scratch runs, NOT published.
+  Round 1, JSON arrays of records split into one segment per record (verbatim lines, section
+  "waves > #N", header line joined to record 1; needed a label migration section -> section_prefix
+  "waves" in v2-v7, also reverted): v5 10, v6 13. Round 2, + embed JSON chunks as table name + keys and
+  values in plain words (stored text unchanged): v5 10, v6 12. Round 3, UNSPLIT table + that
+  flattened input: v5 10, v6 14 (0 gained / 0 lost vs baseline). WHAT WAS LEARNED: (1) flattening DOES
+  make data reachable (split records went from outside the top 20 to ranks 1-6; unsplit c02 25 -> 10);
+  (2) splitting a table whose records differ only by a number creates near-duplicate vectors that
+  CROWD the top 5 and push out the other chunk the question needs (embeddings barely separate "wave
+  3" from "wave 5"); (3) the remaining data-question failures (v6 b09 b11) are the ENTITY chunk
+  missing ("health of every enemy" pulls many enemy chunks), not the data. So retrieval of these
+  questions is now limited by a top-5 budget shared between 2-4 needed chunks, not by any one chunk
+  being unreachable. Candidates not tried: a larger k only for multi-part questions, or result
+  diversity (MMR); both need v7 (unspent) as the test.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -514,8 +530,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
   (3) per-project roles or moving documents between projects if users need them; (4) M22/M23 are finished; bridge-fact retrieval is still open (the section-path prefix FAILED,
-  see M23) and every hop tried in M24 failed on dev: next is making data files retrievable at ingest
-  (M24), then run the UNSPENT v7; (5) an actual cloud deployment (needs an account and
+  see M23) and every hop tried in M24 and every data-file change in M25 was neutral or worse on dev; v7 is
+  UNSPENT; remaining ideas: larger k for multi-part questions or MMR diversity (M25); (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 
