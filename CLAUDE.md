@@ -521,6 +521,18 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   questions is now limited by a top-5 budget shared between 2-4 needed chunks, not by any one chunk
   being unreachable. Candidates not tried: a larger k only for multi-part questions, or result
   diversity (MMR); both need v7 (unspent) as the test.
+- M26 (user chose "MMR diversity on the dev sets"). NEGATIVE IN DEV, nothing built, v7 unspent.
+  Settings FIXED before running: pool 20 (vector), lambda 0.7 primary, 0.5/0.85 sensitivity; plain
+  index (re-ingested and checked identical to the published v6 baseline). Multi-source full-coverage
+  @5 on v5+v6 (34): baseline 23; MMR 0.7 22 (+0 -1); 0.85 22 (+0 -1); 0.5 17 (+0 -6, and one lookup
+  lost its chunk from the top 5). Rank 1 never changes (MMR's first pick is the most relevant). WHY:
+  crowding by near-duplicates only existed with M25's split records (reverted); on the plain index
+  the top 5 holds DIFFERENT but wrong chunks, and the missing ones (ranks 9-30, low relevance) cannot
+  be lifted by a diversity bonus without also discarding good chunks. Scratch harness, not published.
+  SUMMARY M23-M26: 11 retrieval variants (path prefix, 3 embedding hops, lexical hop, 2 LLM
+  sub-query rounds, 3 data-file variants, MMR) were ALL neutral or worse for multi-source
+  questions; the bottleneck is a 5-chunk budget and an embedding model that does not connect a
+  question's entity to rules/data that never name it.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -531,7 +543,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
   (3) per-project roles or moving documents between projects if users need them; (4) M22/M23 are finished; bridge-fact retrieval is still open (the section-path prefix FAILED,
   see M23) and every hop tried in M24 and every data-file change in M25 was neutral or worse on dev; v7 is
-  UNSPENT; remaining ideas: larger k for multi-part questions or MMR diversity (M25); (5) an actual cloud deployment (needs an account and
+  UNSPENT; MMR also failed (M26); the one untried idea is a larger k for multi-part questions; (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 
