@@ -26,9 +26,9 @@ from app import qa, retrieval, services
 from app.config import Settings
 from app.db import init_db
 from app.embeddings import OllamaEmbedder
-from app.llm import LLMError, OllamaLLM
+from app.llm import LLMError, LLMProvider
 from app.models import Chunk
-from app.providers import answer_token_cap
+from app.providers import answer_token_cap, make_llm
 from app.rerank import LLMReranker
 from eval.common import dataset_tag, embedding_input_label, embedding_tag
 from eval.judge import JudgeValidation, judge_supported, validate_judge
@@ -87,13 +87,13 @@ def ratio(n: int, d: int) -> str:
 def run_question(
     session: Session,
     embedder: OllamaEmbedder,
-    llm: OllamaLLM,
+    llm: LLMProvider,
     settings: Settings,
     mode: retrieval.RetrievalMode,
     top_k: int,
     min_score: float,
     record: Record,
-    escalation_llm: OllamaLLM | None = None,
+    escalation_llm: LLMProvider | None = None,
 ) -> None:
     for attempt in (1, 2):  # one retry: local models occasionally time out under load
         try:
@@ -320,19 +320,14 @@ def main() -> None:
     embedder = OllamaEmbedder(
         settings.ollama_base_url, settings.embedding_model, settings.embedding_dim
     )
-    llm = OllamaLLM(settings.ollama_base_url, settings.llm_model)  # judge: never thinks
-    answer_llm = OllamaLLM(  # capped exactly like the API's model, so the eval measures it
-        settings.ollama_base_url,
-        settings.llm_model,
-        think=settings.llm_think,
-        max_tokens=answer_token_cap(settings),
-    )
+    llm = make_llm(settings, think=False, max_tokens=None)  # judge: never thinks
+    # capped exactly like the API's model, through the same factory, so the eval measures it
+    answer_llm = make_llm(settings, think=settings.llm_think, max_tokens=answer_token_cap(settings))
     escalation_llm = (
         None
         if settings.llm_escalation == "off"
-        else OllamaLLM(
-            settings.ollama_base_url,
-            settings.llm_model,
+        else make_llm(
+            settings,
             think=True,
             max_tokens=settings.llm_escalation_tokens,
             timeout=settings.llm_escalation_timeout_seconds,
@@ -434,12 +429,18 @@ def main() -> None:
         "embedding model": settings.embedding_model,
         "embedding input": embedding_input_label(settings),
         "answer + judge model": settings.llm_model,
+        "llm api": (
+            f"OpenAI-compatible chat completions at {settings.openai_base_url}"
+            if settings.llm_provider == "openai"
+            else "Ollama native /api/chat"
+        ),
         "platform": platform.platform(),
     }
     report = build_report(records, validation, meta, (args.price_in, args.price_out))
     args.out_dir.mkdir(parents=True, exist_ok=True)
     stem = (
         f"qa{dataset_tag(args.qa_dataset, 'qa')}-{meta['date']}"
+        + ("-openai" if settings.llm_provider == "openai" else "")
         + embedding_tag(settings)
         + ("-rerank" if settings.rerank_enabled else "")
         + ("-calc" if settings.ask_calculator else "")

@@ -30,8 +30,9 @@ from app import retrieval, services
 from app.config import Settings
 from app.db import init_db
 from app.embeddings import OllamaEmbedder
-from app.llm import Completion, LLMProvider, OllamaLLM
+from app.llm import Completion, LLMProvider
 from app.models import Chunk
+from app.providers import make_llm
 from app.rerank import LLMReranker, safe_rerank
 from eval.common import dataset_tag
 from eval.metrics import (
@@ -216,7 +217,7 @@ def main() -> None:
     embedder = OllamaEmbedder(
         settings.ollama_base_url, settings.embedding_model, settings.embedding_dim
     )
-    llm = CountingLLM(OllamaLLM(settings.ollama_base_url, settings.llm_model))
+    llm = CountingLLM(make_llm(settings, think=False, max_tokens=None))
     questions = load_dataset(args.dataset)[: args.limit]
 
     with Session(engine) as session:

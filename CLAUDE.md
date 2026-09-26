@@ -55,7 +55,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 582
+  DONE. Ruff, mypy pass. Tests: 601
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -543,6 +543,26 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   cutoff; at k=30 the prompt holds ~40% of the corpus. For a corpus this small (~13 KB) sending all of
   it (long context) is the honest alternative to RAG; RAG earns its keep only when the corpus is too
   big to send. That is the end of the M23-M27 retrieval line (12 variants, none helped).
+- M28 (NOT in the handoff doc; user chose "OpenAI-compatible provider", to close the "LLM APIs" job
+  gap at no cost). `OpenAICompatibleLLM` in app/llm.py (Chat Completions over httpx, NO new
+  dependency); `AIJP_LLM_PROVIDER=ollama|openai` (default ollama, unchanged); `openai_base_url` defaults
+  to local Ollama's /v1; `openai_api_key` is a SecretStr sent only as a Bearer header (not in repr,
+  errors carry the HTTP status only, never the body). `providers.make_llm(settings, think, max_tokens,
+  timeout)` is now the ONLY place a chat client is built: API (`llm`, `escalation_llm`), MCP, and
+  eval/qa, rerank, consistency (they built OllamaLLM directly before, so a provider switch would have
+  silently missed them). eval/qa reports carry "llm api" and a `-openai` filename tag.
+  PROBED BEFORE CODING (Ollama 0.34.4 /v1, 2026-09-27): `reasoning_effort: none` turns thinking off,
+  but `think: false` is SILENTLY IGNORED (thinks, returns empty content); `max_tokens` caps, but
+  `max_completion_tokens` is SILENTLY IGNORED (191 tokens for a cap of 5); JSON mode via
+  `response_format` works; truncation = finish_reason "length"; unknown model = 404. Hence the
+  configurable `openai_token_param` and `openai_send_reasoning_effort` (a plain hosted chat model may
+  reject reasoning_effort). tests/test_openai_llm.py (17): exact request body, Bearer only with a key,
+  every failure -> LLMError without the key, truncation, factory. VERIFIED on the real model through
+  /v1: c02 -> answer_truncated at exactly 1024 tokens, a lookup answered (27 tokens); native and /v1
+  generate at the same speed (244 tokens, 22.5 s each, measured side by side). NOT DONE: the
+  side-by-side eval (same questions through both APIs) -- the GPU was shared with a game
+  ("Guildrun", 11 tok/s); a hosted API (needs a key; Anthropic's Messages API is a different shape).
+  eval/ is not under mypy (19 pre-existing errors, none from this change).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it

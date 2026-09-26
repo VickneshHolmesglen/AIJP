@@ -31,9 +31,9 @@ from app.agent.consistency import run_consistency_check
 from app.config import Settings
 from app.db import init_db
 from app.embeddings import OllamaEmbedder
-from app.llm import OllamaLLM
 from app.models import Chunk, Document
 from app.presenters import to_run_detail
+from app.providers import make_llm
 from eval.common import dataset_tag
 from eval.metrics import confusion_matrix, gate_sweep, percentile
 from eval.retrieval import DEFAULT_DB, ingest_corpus
@@ -263,7 +263,7 @@ def main() -> None:
     embedder = OllamaEmbedder(
         settings.ollama_base_url, settings.embedding_model, settings.embedding_dim
     )
-    llm = OllamaLLM(settings.ollama_base_url, settings.llm_model, think=settings.llm_think)
+    llm = make_llm(settings, think=settings.llm_think, max_tokens=None)
     data = json.loads(args.dataset.read_text("utf-8"))
     claims = data["claims"]
     if args.limit:

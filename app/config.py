@@ -2,7 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 EscalationMode = Literal["off", "derived", "cue", "classify", "always"]
@@ -28,6 +28,20 @@ class Settings(BaseSettings):
     retrieval_pool: int = 20  # candidates taken from each retriever before fusion
     rrf_k: int = 60
     llm_model: str = "qwen3.5"
+    # Which API the chat model is called through (app/llm.py). "ollama": Ollama's native /api/chat.
+    # "openai": the OpenAI Chat Completions API, which OpenAI, Azure OpenAI, Groq, vLLM, LM Studio
+    # and Ollama's own /v1 all speak; the default base URL is local Ollama, so it costs nothing.
+    llm_provider: Literal["ollama", "openai"] = "ollama"
+    openai_base_url: str = "http://127.0.0.1:11434/v1"
+    # Sent as a Bearer header; SecretStr keeps it out of reprs and logs. None: no header (local).
+    openai_api_key: SecretStr | None = None
+    # Name of the token-cap parameter: Ollama and most servers honour only "max_tokens" (Ollama
+    # silently ignores the other one); newer OpenAI reasoning models accept only
+    # "max_completion_tokens".
+    openai_token_param: Literal["max_tokens", "max_completion_tokens"] = "max_tokens"
+    # Thinking is switched on/off with `reasoning_effort` ("medium"/"none"). Set false for a server
+    # or model that rejects the parameter (thinking is then whatever the model does by default).
+    openai_send_reasoning_effort: bool = True
     # Let the ANSWER model reason before it replies (slower; see eval/results/qa-*-think.md).
     llm_think: bool = False
     # Embed each chunk WITH its file and heading path (app/embeddings.py `embedding_input`); the
