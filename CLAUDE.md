@@ -488,6 +488,23 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   Also fixed: `lexical_search(query_vector=None)` emitted invalid SQL `null()` (func.null instead of
   sqlalchemy.null); no caller passed None, so it was latent. Published lexical/hybrid reports before
   this fix are ONE draw of the tie order; they were not regenerated.
+- M24 (NOT in the handoff doc; user chose "second retrieval hop with a v7 set", then "LLM sub-queries"
+  after the cheap hops failed). STOPPED IN THE DEV PHASE, NOTHING SHIPPED, v7 NOT RUN (still unspent).
+  v7 (`{retrieval,qa}_v7.json`: 20 bridge incl. 3-4-chunk ones, 12 lookups, 8 unanswerable; keys
+  avoid numbers stated in the sources) was COMMITTED BEFORE any hop code (git 8af1a12). Design was
+  done on v5+v6 as DEV (34 multi-source + 32 lookup questions), vector baseline full-coverage@5 23/34.
+  DEV NUMBERS (scratch harness, NOT published reports): residual query r=q-(q.h1)h1 with 1/2 reserved
+  slots 20 / 18 (0 gained); feedback query (question + top hit text) 20 / 19 (0 gained); lexical as the
+  hop 19 / 18 (0 gained); LLM sub-queries (one non-thinking call, <=2 queries, one reserved slot each)
+  round 1 16/34 (+1 -8), round 2 (no entity names, "general mechanism" wording) 17/34 (+2 -8).
+  Lookups were never hurt (their chunk is rank 1). WHY every hop fails: (1) the waves.json chunk is
+  UNREACHABLE by embeddings: even ideal generic sub-queries ("total enemy health per wave") never put it
+  in their top 20 (its vector is dominated by JSON syntax); (2) the rule chunk "Upgrades and selling"
+  reached at best rank 12-14; (3) the model ignores "no names" half the time and never answers "no
+  extra fact needed", so every question pays for the evicted rank-4/5 chunk.
+  MOST PROMISING NEXT (not built): make DATA files retrievable at ingest, e.g. a JSON/YAML loader that
+  renders records as sentences ("Wave 2: 8 grunt, 3 runner") while keeping line provenance; that is a
+  loader change (the rule: formats go in app/ingestion/loaders.py). Then run v7, which is unspent.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
@@ -497,7 +514,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
   thinking only for questions that need arithmetic) is worth testing on a NEW set (v4);
   (3) per-project roles or moving documents between projects if users need them; (4) M22/M23 are finished; bridge-fact retrieval is still open (the section-path prefix FAILED,
-  see M23): a second retrieval hop on a NEW set (v7); (5) an actual cloud deployment (needs an account and
+  see M23) and every hop tried in M24 failed on dev: next is making data files retrievable at ingest
+  (M24), then run the UNSPENT v7; (5) an actual cloud deployment (needs an account and
   a decision on where the models run).
   Docker Desktop must be running first, then `docker compose up -d db`.
 
