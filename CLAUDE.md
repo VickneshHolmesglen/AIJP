@@ -50,6 +50,9 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   faithfulness judge + its own validation), `results/` (generated reports; `qa-run.log/.err` are
   scratch output of a detached run)
 - `tests/` — unit tests need no DB; `@pytest.mark.integration` tests need Postgres
+- `docs/evaluation.md` — the evaluation story for readers (only numbers from eval/results reports);
+  `docs/images/` — README screenshots of the real UI (Playwright + Edge from the scratchpad, demo
+  project `shardfall` in the dev DB `aijp` loaded from eval/corpus; keys used were revoked)
 
 ## Status (last updated 2026-09-20)
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
@@ -566,6 +569,11 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   `compare-provider-2026-09-27.md`). NOT DONE: a hosted API (needs a key; Anthropic's Messages API
   is a different shape and would need its own provider).
   eval/ is not under mypy (19 pre-existing errors, none from this change).
+- PORTFOLIO PASS (2026-09-27, user: "this is just a job application demo portfolio"): README rewritten
+  for a hiring manager (pitch, screenshot, what it does, results table, skills-to-job-ads table, mermaid
+  diagram, quick start; detail below), long eval narrative moved to docs/evaluation.md. Every number
+  checked against its report; M24-M27 (dev-only scratch runs) described WITHOUT numbers. CI is
+  described as verified from a fresh clone, NOT as run on GitHub (it has not been).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
   origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it

@@ -1,78 +1,139 @@
 # Project Intelligence RAG
 
-A production-oriented AI knowledge system that understands technical documentation and source
-code, answers questions with verifiable citations, detects insufficient evidence, and measures its
-own retrieval and answer quality.
+Ask questions about a software project's design docs **and** source code, and get answers with
+citations to the exact file, section and line range, or an explicit refusal when the evidence is not
+there. Built without LangChain or LlamaIndex so every stage can be explained, and measured with its
+own evaluation tooling.
 
-> **Status: feature-complete portfolio project.** Ingestion, embeddings, hybrid retrieval, grounded
-> Q&A with verified citations, evaluation, web UI, MCP server, agent workflows, containers and CI,
-> API-key authentication, migrations and an optional reranker are implemented and tested. Every
-> published number comes from the evaluation tooling (`eval/results/`); the "Known limitations"
-> section lists what is small, approximate or unverified.
+![Ask view: a grounded answer with numbered citations to the design docs](docs/images/ask-answer.png)
 
-## Why
+**Stack:** Python 3.11 · FastAPI · PostgreSQL + pgvector · Ollama (local `qwen3.5` +
+`nomic-embed-text`) or any OpenAI-compatible API · MCP · Docker · 601 tests
+**Runs fully local:** no API keys, no data leaves the machine.
 
-Most RAG demos are "chat with a PDF". This one targets software projects: design docs, READMEs,
-and eventually source code, so it can answer "where is enemy health calculated?" with a citation to
-a file and line range.
+## What it does
 
-## Current capabilities
+- **Grounded Q&A with verified citations.** The model must cite retrieved passages; the server
+  checks every citation against what was actually retrieved and withholds uncited answers. Click a
+  citation to open the exact lines.
+- **Refuses instead of guessing.** Off-topic questions are stopped by an evidence gate before the
+  model is called; on-topic questions whose fact is missing are declined with a reason.
+- **Understands code, not just prose.** Python is split by symbol (`ast`, parse only), GDScript,
+  YAML and JSON by structure, so a citation says *which function*.
+- **Design-vs-code check (agent workflow).** State a claim ("selling refunds 60%"); a fixed workflow
+  gathers evidence from the docs and from the code, and the model's verdict needs citations on both
+  sides. A discrepancy can only *draft* a task that a human approves.
+- **MCP server** so Claude (or any MCP client) can search, look up symbols and ask grounded
+  questions. Read-only by design.
+- **Production basics:** API-key auth with roles, multi-project isolation, Alembic migrations,
+  hardened container, JSON logs, Prometheus metrics, CI workflow.
 
-- A web UI at `/ui/` (run the API, open http://localhost:8000): ask with clickable footnote
-  citations that open the exact cited lines, compare retrieval modes, upload files or a whole
-  project folder, browse evaluation reports and check system health. No build step or framework;
-  uploaded and model-generated text is only ever rendered as text, under a strict CSP
-- A design-vs-code consistency check: state a claim, get evidence from the design docs and from
-  the code/config side by side, and a verdict of consistent, potential discrepancy or
-  insufficient evidence. It can only *draft* a follow-up task; a human approves it (see "Agent
-  workflows" below)
-- An MCP server (`uv run python -m app.mcp_server`) so Claude or any MCP client can search the
-  project, find where a symbol is defined, read documents and ask grounded questions. It is
-  read-only by design and every result carries a citation (see "Use from Claude" below)
-- Vector, lexical (PostgreSQL full-text) and hybrid (Reciprocal Rank Fusion) retrieval, compared
-  by a reproducible benchmark (`uv run python -m eval.retrieval`, results in `eval/results/`)
-- Answer-quality evaluation (`uv run python -m eval.qa`): correctness, citation accuracy, refusal
-  accuracy, LLM-judged faithfulness (the judge is validated on hand-labelled cases), latency,
-  tokens and cost; every published number comes from that run
-- Upload PDF, TXT, Markdown, Python, GDScript, JSON and YAML files (`POST /documents`); source
-  files are split by symbol so citations name the function or class, not just the file
-- Validation: extension allowlist, size limit, content sniffing, filename and path sanitisation
-- Provenance-preserving extraction: PDF page numbers, Markdown heading paths, line ranges
-- Line-aware chunking with overlap; every chunk maps to an exact citable location
-- Duplicate detection by SHA-256 (409 with the existing document id)
-- List / get / delete documents (chunks cascade)
+<table>
+<tr>
+<td width="50%"><img src="docs/images/ask-refusal.png" alt="A refusal that explains why"><br><sub>A near-miss question is refused, with the reason.</sub></td>
+<td width="50%"><img src="docs/images/verify.png" alt="Design versus code consistency check"><br><sub>Design vs code: evidence from both sides, then a verdict.</sub></td>
+</tr>
+<tr>
+<td><img src="docs/images/ask-source.png" alt="Source viewer with the cited lines highlighted"><br><sub>Every citation opens the exact source lines.</sub></td>
+<td><img src="docs/images/evaluation.png" alt="Evaluation reports rendered in the UI"><br><sub>Benchmark reports, rendered as the tooling wrote them.</sub></td>
+</tr>
+</table>
 
-## Run locally
+## Results
+
+Measured on a synthetic Godot tower-defence project (11 files: design docs, GDScript, Python, YAML,
+JSON). Every number comes from a report in [`eval/results/`](eval/results/).
+
+| | Result |
+|---|---|
+| Correct answers | **33/36** |
+| A cited source is correct | 34/36 |
+| False refusals | **0/36** |
+| Unanswerable questions refused | 11/12 (all 6 off-topic, 5 of 6 near-miss) |
+| Retrieval (vector) | recall@5 0.946, MRR@10 0.875 |
+| Design-vs-code: seeded mismatches found | 4/6, with **0/6 false alarms** |
+| Median answer latency (local GPU) | 1.1 s |
+
+**How I evaluate changes:** new ideas are tested on question sets written and committed *before*
+the feature existed, each variant runs once, and a paired comparison (sign test, 95% intervals)
+decides whether it becomes a default. That process kept a thinking re-check that took held-out
+accuracy from 57 to 69 of 94, and rejected a reranker, a calculator and a retrieval change that
+looked good but did not improve answers. The full story, including what did not work and why, is in
+**[docs/evaluation.md](docs/evaluation.md)**.
+
+## Skills shown
+
+| Area | Where |
+|---|---|
+| Python, REST APIs | FastAPI app (`app/api/`), typed schemas, OpenAPI docs at `/docs` |
+| SQL / databases | PostgreSQL + pgvector, full-text search, Alembic migrations incl. a data migration (`app/migrations/`) |
+| RAG | Ingestion with provenance, vector / lexical / hybrid retrieval, evidence gate, citation verification (`app/qa.py`) |
+| LLM APIs | Ollama native API and an OpenAI Chat Completions client, verified to give identical answers on 48/48 questions (`app/llm.py`) |
+| Agents | Fixed-step workflow with audit trail and human approval (`app/agent/`) |
+| MCP | 7-tool read-only server on the official SDK (`app/mcp_server.py`) |
+| AI evaluation | Retrieval, answer, refusal and faithfulness metrics; held-out sets; paired significance tests (`eval/`) |
+| Security | API keys (hashed, constant-time compare), roles, project isolation, upload validation, prompt-injection labelling, strict CSP |
+| Docker / CI | Multi-stage non-root read-only image, compose; a GitHub Actions workflow (lint, types, tests on a real database, container smoke test, dependency audit) verified step by step from a fresh clone |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U[Upload] --> V[Validate] --> L[Loader per format] --> C[Line-aware chunks] --> DB[(Postgres + pgvector)]
+    Q[Question] --> R[Retrieve] --> G{Evidence gate}
+    DB --> R
+    G -- too weak --> X[Refuse: insufficient evidence]
+    G -- enough --> M[LLM, JSON mode] --> VC[Verify citations] --> A[Answer + sources, or refuse]
+    A --> UI[Web UI] & API[HTTP API] & MCP[MCP server]
+```
+
+| Piece | Why it is here |
+|---|---|
+| FastAPI + Pydantic | Typed request/response schemas, automatic OpenAPI docs |
+| PostgreSQL + pgvector | One store for documents, chunks, vectors and full-text search, so provenance and retrieval share transactions |
+| SQLAlchemy 2 + Alembic | Explicit, typed models; versioned schema changes |
+| httpx | The only HTTP client: Ollama and OpenAI-compatible APIs, no vendor SDKs |
+| mcp (official SDK) | The MCP protocol is JSON-RPC with capability negotiation; better to depend on the reference implementation |
+| pypdf | Pure-Python PDF text extraction |
+| No LangChain / LlamaIndex | The pipeline is written explicitly so each stage can be explained and tested |
+
+## Quick start
 
 Requires Python 3.11+, [uv](https://docs.astral.sh/uv/), Docker and [Ollama](https://ollama.com/).
 
 ```bash
 docker compose up -d db
-ollama pull nomic-embed-text            # embeddings; the answer model defaults to qwen3.5
+ollama pull nomic-embed-text && ollama pull qwen3.5
 uv sync
-uv run uvicorn app.main:app --reload   # UI at http://localhost:8000, API docs at /docs
-uv run pytest
+uv run python -m app.keys create --name me --role approver   # prints an API key once
+uv run uvicorn app.main:app                                  # UI at http://127.0.0.1:8000
 ```
+
+Open the UI, paste the key, upload a folder on the **Documents** page and ask away. Tests:
+`uv run pytest` (integration tests need the database running). Evaluation:
+`uv run python -m eval.qa`.
+
+To use a hosted model instead of the local one, set `AIJP_LLM_PROVIDER=openai`,
+`AIJP_OPENAI_BASE_URL` and `AIJP_OPENAI_API_KEY` (see [docs/deployment.md](docs/deployment.md)).
+
+---
+
+## Details
 
 ### In containers
 
 ```bash
 docker compose up -d --build db api     # API + UI on http://127.0.0.1:8000, Postgres on 127.0.0.1:5432
+docker compose exec api python -m app.keys create --name me --role approver
 ```
 
-The API container calls Ollama on your host by default. It runs as a non-root user with a read-only
+The API container calls Ollama on the host by default. It runs as a non-root user with a read-only
 filesystem and no Linux capabilities, logs one JSON object per line with a request id, and exposes
-Prometheus metrics at `/metrics`. Everything binds to loopback. **API-key authentication is on by
-default** (roles reader < editor < approver), so create a key first:
+Prometheus metrics at `/metrics`. Everything binds to loopback. Authentication is on by default
+(roles reader < editor < approver); `AIJP_AUTH_ENABLED=false` turns it off for a throwaway local run.
 
-```bash
-docker compose exec api python -m app.keys create --name me --role approver   # token is shown once
-uv run python -m app.keys create --name me --role approver                     # without Docker
-curl -H "Authorization: Bearer aijp_..." http://127.0.0.1:8000/documents
-```
-
-Several bodies of documents can live side by side as **projects**: nothing one project stores
-ever appears in another's searches, answers, runs or tasks. Create one and confine a key to it:
+**Projects** keep bodies of documents apart: nothing one project stores appears in another's
+searches, answers, runs or tasks, and a key can be confined to one project:
 
 ```bash
 docker compose exec api python -m app.projects create --slug shardfall --name "Shardfall"
@@ -80,141 +141,51 @@ docker compose exec api python -m app.keys create --name alice --role editor --p
 curl -H "Authorization: Bearer aijp_..." "http://127.0.0.1:8000/documents?project=shardfall"
 ```
 
-A confined key defaults to its own project; a key for all projects picks one per request with
-`?project=<slug>` (default project: `default`), and the web UI has a project switcher.
+[docs/deployment.md](docs/deployment.md) covers configuration, a security checklist, monitoring and
+alerts, backup and restore, CI, a cloud reference architecture (designed, not deployed) and an
+explicit list of what has and has not been verified.
 
-The web UI asks for the key on first load. For a throwaway local run, `AIJP_AUTH_ENABLED=false`
-turns it off (with a startup warning and a banner in the UI). See [docs/deployment.md](docs/deployment.md)
-for configuration, security checklist, monitoring and alerts, backup and restore, CI, a cloud
-reference architecture (designed, not deployed) and an explicit list of what has and has not been
-verified. CI (`.github/workflows/ci.yml`) runs lint, types, the full test suite against a real
-database (failing if any test is skipped), a container smoke test and a dependency audit.
+### Use from Claude (MCP)
 
-## Use from Claude (MCP)
-
-The MCP server speaks stdio and needs Postgres and Ollama running, like the API. Tools (all
-read-only, all annotated as such): `search_project`, `search_source_code`, `ask_project`,
-`find_symbol`, `list_documents`, `get_document`, `get_project_status`.
+The MCP server speaks stdio and needs Postgres and Ollama running. Tools (all read-only):
+`search_project`, `search_source_code`, `ask_project`, `find_symbol`, `list_documents`,
+`get_document`, `get_project_status`.
 
 ```bash
-# Claude Code
 claude mcp add project-intelligence -- uv run --directory /path/to/AIJP python -m app.mcp_server
 ```
 
-```jsonc
-// Claude Desktop: claude_desktop_config.json
-{ "mcpServers": { "project-intelligence": {
-    "command": "uv",
-    "args": ["run", "--directory", "/path/to/AIJP", "python", "-m", "app.mcp_server"]
-} } }
-```
+Tool results are marked as untrusted document text, unexpected errors never leak internals, and the
+audit log (stderr) records tool, status, duration and argument sizes, never content.
 
-Safety properties, each covered by tests: no tool can change the index; tool results are marked as
-untrusted document text in the server instructions; unexpected errors never leak internals to the
-client; the audit log (stderr) records tool, status, duration and argument sizes, never content.
+### Agent workflow: design vs code
 
-## API examples
+`POST /agent/consistency-checks {"claim": "..."}` (or the **Verify** page) runs fixed steps: search
+the design docs, search code and config, look up code identifiers named in the claim, apply an
+evidence gate, ask the model to judge, validate the verdict, draft an action. Code decides the
+sequence; the model only fills the judging step.
 
-```bash
-curl -F "file=@design/towers.md" -F "source_path=design/towers.md" localhost:8000/documents
-curl localhost:8000/documents
-curl localhost:8000/documents/<id>
-curl -X DELETE localhost:8000/documents/<id>
-```
+- A verdict must cite evidence on **both** sides or it is downgraded to "insufficient evidence".
+- Every step is written to an audit trail as it finishes (locations of evidence, never text).
+- A potential discrepancy only **drafts** a task. Approval takes no payload, only registered action
+  kinds can run, and the row is locked so two approvals cannot both execute.
 
-## Agent workflows
+### Known limitations
 
-`POST /agent/consistency-checks {"claim": "..."}` (or the **Verify** page) runs a fixed workflow:
-search design docs, search code and config, look up any code identifiers named in the claim, apply
-an evidence gate, ask the model to judge, validate the verdict, and draft an action.
+- The evaluation sets are small and were written by the AI assistant that built the system; see
+  [docs/evaluation.md](docs/evaluation.md) for intervals and caveats.
+- Questions that combine a named thing with a general rule or data table (e.g. "damage of a level 2
+  Venom Tower") are the weak spot: the rule chunk never names the thing. Five retrieval approaches
+  were tried and none helped; details in docs/evaluation.md.
+- Scanned (image-only) PDFs are rejected (no OCR). Source chunking is symbol-level, not full AST;
+  the GDScript scanner is approximate.
+- Auth is CLI-managed API keys: no users, SSO or per-project roles. The MCP server is local stdio
+  and inherits the trust of whoever launches it.
+- Latency is measured on one machine with a local GPU.
 
-There is deliberately no free-form loop where a model picks its own next tool. Code decides the
-sequence; the model only fills the judging step, and its output is validated:
+### Built with an AI coding assistant
 
-- A verdict must cite evidence on **both** the design and the code side, or it is downgraded to
-  "insufficient evidence" (the model's citations are checked against what was actually retrieved).
-- Every step is written to an audit trail as it finishes: name, duration, and the *locations* of
-  evidence, never document text.
-- A potential discrepancy only **drafts** a task. Nothing is created until a person approves it.
-  Approval takes no payload (what runs is exactly what the server stored), only registered action
-  kinds can execute, and the action row is locked so two approvals cannot both run.
-- The result always carries a disclaimer: this is triage from retrieved passages, not proof.
-
-Measured on a corpus with six deliberately seeded design/code mismatches, six consistent claims and
-four unsupported ones (the first of three claim sets, 60 claims in all; see `docs/deployment.md` and
-`eval/results/compare-judge-persource-*.md` for the pooled results and the opt-in per-source judge) (`uv run python -m eval.consistency`, report in
-`eval/results/consistency-2026-09-20.md`, local `qwen3.5`): 4 of 6 seeded mismatches found, 0 of 6
-false alarms, 6 of 6 consistent claims confirmed, 3 of 4 unsupported claims correctly left
-undecided, median 29 s per check. The misses are informative, not hidden: the model sometimes
-compares numbers wrongly even when its own explanation states both, and once judged a claim
-"potential discrepancy" while its explanation said the evidence was missing. The approval gate is
-what stops such a verdict from becoming a real task. 16 claims written by the project author is a
-small sample; treat the percentages as indicative.
-
-## Architecture
-
-```text
-Upload -> validate -> extract (per-format loader) -> chunk (line-aware) -> PostgreSQL + pgvector
-Question -> embed -> retrieve (vector | lexical | hybrid) -> evidence gate -> LLM (JSON)
-         -> verify citations against what was retrieved -> answer with sources, or refuse
-Interfaces: HTTP API + web UI (app/api, app/static) and MCP server (app/mcp_server.py)
-```
-
-| Piece | Why |
-|---|---|
-| FastAPI + Pydantic | Typed request/response schemas, automatic OpenAPI docs |
-| PostgreSQL + pgvector | One store for documents, chunks, vectors and full-text search, so provenance and retrieval share transactions |
-| SQLAlchemy 2 | Explicit, typed models without hiding SQL |
-| pypdf | Pure-Python PDF text extraction, no system dependencies |
-| httpx | HTTP client for Ollama (embeddings, generation, health probe) |
-| mcp (official SDK) | The MCP protocol is JSON-RPC with capability negotiation; hand-rolling it would be worse than depending on the reference implementation |
-| Ollama (external) | Local embedding and answer models: no API keys, no data leaves the machine |
-| No LangChain / LlamaIndex | The pipeline is written explicitly so each stage can be explained and tested |
-
-## Known limitations
-
-- Scanned (image-only) PDFs are rejected; OCR is out of scope
-- Migrations are Alembic (applied at startup, see docs/deployment.md); there is no rollback plan
-  beyond a backup. Projects isolate documents, searches, answers, runs, tasks and (optionally) API
-  keys, but a project has no members or per-project roles: a key is either confined to one
-  project or can use all of them, and deleting a project (CLI only) removes everything in it
-- Authentication is API keys managed by CLI: no users, SSO, per-project permissions or key-rotation
-  UI. Keys are not rate-limited (do that at the proxy). The MCP server is local stdio and bypasses
-  API auth, so it inherits the trust of whoever launches it
-- Retrieval: an optional LLM reranker exists (`AIJP_RERANK_ENABLED`, off by default). It ranks
-  the right chunk first more often (MRR@10 0.875 -> 0.911 on vector, 0.769 -> 0.926 on hybrid) but
-  did not improve answers end to end (34/36 -> 33/36 correct) and more than doubled the latency, so it
-  stays off (`eval/results/rerank-*.md`, `qa-*-rerank.md`). Hybrid search did not beat vector-only
-  either, so vector is the default. The evidence gate only stops off-topic questions; near-miss
-  questions rely on the model declining
-- Evaluation datasets are small and self-authored over one small synthetic project: a first set
-  (36 answerable + 12 unanswerable) and a harder second set (36 + 14) written after seeing the
-  first, both by the AI assistant that built the project, not an independent party. Every
-  proportion is reported with a 95% interval; at this size, differences of a few points are noise.
-  The faithfulness judge is the same local model that answers: it scored 12/12 on easy validation
-  cases but 12/14 on harder ones, and it marks correct derived numbers as unsupported
-- On the harder sets the weak point is the answer model's multi-step reasoning, not retrieval
-  (right chunks retrieved, wrong formula or wrong sum), which is why reranking improves ranking
-  (MRR@10 0.56 -> 0.68) without improving answers (59/72 correct pooled, with and without it).
-  Two fixes were built and measured on a held-out set: a server-side calculator (opt-in,
-  `AIJP_ASK_CALCULATOR`) made answers much WORSE (the local model does not reliably delegate its
-  arithmetic), while letting the model think first (opt-in, `AIJP_LLM_THINK`) helped (40 -> 46 of
-  64 correct pooled, p=0.07) at about 6x the latency. The calculator is off by default. A cheaper form of thinking is ON by default: the answer is first produced without it, and only an answer containing a computed number (one not in the cited passages) is re-asked with a capped thinking pass, keeping the first answer if that fails or times out (pooled over 94 questions: 57 -> 69 correct, 12 gained and 0 lost, with unchanged refusals; plain lookups cost nothing extra). An opt-in `classify` mode, which also re-checks answers to questions a cheap model call judges to need calculation, did better still on one further test set (26 of 34 against 24) but has not been replicated
-- Source-code chunking is symbol-level, not AST-aware; the GDScript scanner is approximate
-- The consistency check only sees retrieved passages. It can miss a mismatch when the model
-  compares values badly, and a constant that is defined but no longer used looks "consistent" to
-  it. Checks are synchronous (about 30 s locally). Approvals record which key decided, but
-  self-approval is allowed by design
-
-## Roadmap
-
-Done: 1-2 ingestion, 3 embeddings + search, 4 grounded Q&A, 5 source code, 6 hybrid retrieval,
-7 evaluation, 8 UI, 9 MCP, 10 agent workflows, 11 containers, CI and monitoring, 12 authentication
-and accountability, 13 database migrations (Alembic), 14 reranking (built and measured; off by
-default because the end-to-end eval did not justify it), 15 a harder second evaluation set with
-confidence intervals and paired significance tests, 16 a calculator and a thinking mode, measured
-on a held-out set (calculator rejected, thinking kept as an option). 19 an opt-in per-source consistency
-judge, 20 multi-project support, 21 capped thinking that only re-checks computed numbers (on by
-default). Open follow-ups:
-a cheaper way to get the benefit of thinking, a consistency judge that does not trust a config value over the code, recalibrating the
-consistency gate on both question sets, and an actual cloud deployment.
+This project was built with Claude Code, working from a written spec
+([handoff document](Claude%20Code%20Handoff%20%E2%80%94%20AI%20Project%20Intelligence%20Portfolio.md))
+in milestones, each finished with tests, measurements and a written explanation. The working notes
+the assistant keeps are in [CLAUDE.md](CLAUDE.md).
