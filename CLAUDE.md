@@ -559,9 +559,12 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   reject reasoning_effort). tests/test_openai_llm.py (17): exact request body, Bearer only with a key,
   every failure -> LLMError without the key, truncation, factory. VERIFIED on the real model through
   /v1: c02 -> answer_truncated at exactly 1024 tokens, a lookup answered (27 tokens); native and /v1
-  generate at the same speed (244 tokens, 22.5 s each, measured side by side). NOT DONE: the
-  side-by-side eval (same questions through both APIs) -- the GPU was shared with a game
-  ("Guildrun", 11 tok/s); a hosted API (needs a key; Anthropic's Messages API is a different shape).
+  generate at the same speed (244 tokens, 22.5 s each, measured side by side). SIDE-BY-SIDE EVAL
+  (v1 qa, 36+12, production defaults, idle GPU logged): native vs /v1 IDENTICAL -- 48/48 answers
+  word for word, same refusals, 33/36 correct both, 34,341 tokens both, median 1.1 s both
+  (`qa-2026-09-27-escalate-derived` vs `qa-2026-09-27-openai-escalate-derived`,
+  `compare-provider-2026-09-27.md`). NOT DONE: a hosted API (needs a key; Anthropic's Messages API
+  is a different shape and would need its own provider).
   eval/ is not under mypy (19 pre-existing errors, none from this change).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
@@ -606,5 +609,10 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   command-line pattern; the launcher's command line differs (`uvicorn.exe app.main:app`). A
   PowerShell command containing `Remove-Item` near the project dir can be refused as a whole, so
   nothing after it runs; check state before assuming a cleanup happened.
+- GPU CONTENTION IS NOT ALWAYS VISIBLE AS LOAD: Firefox once held 5.85 GB of the RX 6800 XT's 16 GB
+  VRAM with ~0% utilisation, and the model ran at 11-20 tok/s (normal ~75) even at "100% GPU" in
+  /api/ps. Check per-process `\GPU Process Memory(*)\Dedicated Usage`, not only utilisation; after
+  freeing VRAM, unload the model (`keep_alive: 0`) so it reloads cleanly. Games seen: Diablo IV,
+  Moonlighter 2, Guildrun.
 - Available: Python 3.11, uv, git, Ollama. Docker engine 29.8.0 and the pgvector/pgvector:pg16
   image are verified working (2026-09-20). Start Docker Desktop via Start-Process on its exe.
