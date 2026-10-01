@@ -54,7 +54,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   `docs/images/` — README screenshots of the real UI (Playwright + Edge from the scratchpad, demo
   project `shardfall` in the dev DB `aijp` loaded from eval/corpus; keys used were revoked)
 
-## Status (last updated 2026-09-20)
+## Status (last updated 2026-10-01)
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
@@ -285,9 +285,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   content is benchmark input), `.gitignore` extended, a stray empty file `Bearer` removed, secret
   scan clean. VERIFIED FROM A FRESH CLONE (scratchpad `clone/`): locked install, format, lint, mypy,
   457 tests + the ci.yml skip guard verbatim, image build, hardened container smoke, pip-audit, and
-  `actionlint` on the workflow. NOT DONE: no remote exists and nothing was pushed (no `gh` CLI
-  here; the user must create an empty repo and give its URL, or approve installing gh), so the
-  workflow has STILL never run on GitHub. Push commands are in docs/deployment.md section 7.
+  `actionlint` on the workflow. PUSHED LATER (see GITHUB below); the first Actions runs have not
+  been reviewed.
   Gotchas: in Git Bash `docker run ... --tmpfs /tmp` needs `MSYS_NO_PATHCONV=1` or the path is
   rewritten to `C:/...`; a clone runs the same shared `aijp_test` database, so still never run two
   test/eval processes at once.
@@ -574,10 +573,27 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   diagram, quick start; detail below), long eval narrative moved to docs/evaluation.md. Every number
   checked against its report; M24-M27 (dev-only scratch runs) described WITHOUT numbers. CI is
   described as verified from a fresh clone, NOT as run on GitHub (it has not been).
+- GITHUB (2026-10-01): remote `origin` = github.com/VickneshHolmesglen/AIJP, PRIVATE; the user pushed
+  `main` themselves. The user's personal email had been written into CLAUDE.md (M17 note) and
+  pushed; it was SCRUBBED: `git filter-branch` changed exactly that one line in 24 commits (each
+  verified to differ by 1 line, nothing else), force-pushed with a lease, and 5 Dependabot branches
+  built on the old history were deleted (Dependabot recreates them). The email is reachable from no
+  branch; GitHub still keeps the closed Dependabot PRs' old commits (private repo, owner only; purge
+  needs GitHub Support or a recreated repo before going public). A pre-rewrite bundle exists only in
+  that session's scratchpad. NEVER write personal emails or names into tracked files. Standing
+  permission: commit and push routine work to this private repo without asking; ask before any
+  force-push or making it public. NOT checked: the GitHub Actions runs (private: needs the user or a
+  token). Dependabot proposed Python 3.11 -> 3.14 (base image): a deliberate decision, do not merge
+  blindly.
+- PORTFOLIO MATERIAL: an interview cheat sheet exists as a Claude Doc (claude.ai artifact
+  aec0b8cc-69f1-4dbd-af0f-942c7fafa982); `docs/portfolio-brief.md` (UNTRACKED on purpose: it describes
+  the user's other repos) holds the survey of the game project Sanctuary Defenders (G:\TDef, public
+  github.com/VickneshHolmesglen/TDEF); a README/LICENSE/screenshot brief was left at
+  G:\TDef\portfolio-readme-brief.md for Claude in that folder.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
-  next. Open follow-ups, roughly by value: (1) ONCE THE USER GIVES A REMOTE, `git remote add
-  origin <url>` + `git push -u origin main` and read the first Actions run, fixing whatever it
-  finds (the last big unverified claim); (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
+  next. Open follow-ups, roughly by value: (1) read the first GitHub Actions runs (ask the user for
+  the result or a token) and fix whatever fails, then link this README and the game repo's README to
+  each other once both are presentable; (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
   config agrees with the design (M19 fixed it only structurally, opt-in), the faithfulness judge
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or

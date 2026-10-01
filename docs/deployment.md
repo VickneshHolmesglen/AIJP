@@ -303,21 +303,15 @@ Actions are referenced by major version tag. Pinning to commit SHAs is stronger 
 supply-chain attacks; Dependabot (configured in `.github/dependabot.yml`) is set up to keep whatever
 is pinned current.
 
-The repository is a local git repository (one commit) that has not been pushed anywhere, so the
-workflow itself has not run on GitHub. What was done instead (see section 9): `actionlint` passes,
-and all three jobs' steps were run from a fresh `git clone` of the commit, which proves nothing the
-working directory supplied silently (an ignored file, a stale virtualenv) is needed.
-
-To publish it (create an EMPTY repository on GitHub first, private is a sensible default):
-
-```bash
-git remote add origin https://github.com/<you>/<repo>.git
-git push -u origin main
-```
-
-Then open the repository's **Actions** tab. Expect the first run to be the real test: differences
+The repository is on GitHub (private), so the workflow runs there on every push. Before that it
+was verified without GitHub (see section 9): `actionlint` passes, and all three jobs' steps were run
+from a fresh `git clone`, which proves nothing the working directory supplied silently (an ignored
+file, a stale virtualenv) is needed. The first GitHub runs have NOT been reviewed yet: differences
 between this Windows machine and GitHub's Ubuntu runners (paths, the Docker `host-gateway` entry,
-action versions) are the most likely place for a surprise, and only that run can show them.
+action versions) are the most likely place for a surprise. Check the repository's **Actions** tab.
+
+Dependabot is active and opens version-bump pull requests. Review them like any change: a runtime
+bump (for example the Python base image) is a deliberate decision, not a routine merge.
 
 There is deliberately no deploy job yet: nothing is published to a registry automatically. To
 publish by hand: `docker build -t <registry>/project-intelligence:<tag> .` then `docker push`.
