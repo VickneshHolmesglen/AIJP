@@ -5,7 +5,10 @@ citations to the exact file, section and line range, or an explicit refusal when
 there. Built without LangChain or LlamaIndex so every stage can be explained, and measured with its
 own evaluation tooling.
 
-![Ask view: a grounded answer with numbered citations to the design docs](docs/images/ask-answer.png)
+![Demo: a question answered with citations, the cited lines opened in the source, and a question the documents cannot answer refused](docs/images/demo.gif)
+
+<sub>A real session against the local model. Waits for the model are shown at 5× speed (labelled);
+the real latency is in each answer's header (13.1 s and 6.0 s here).</sub>
 
 **Stack:** Python 3.11 · FastAPI · PostgreSQL + pgvector · Ollama (local `qwen3.5` +
 `nomic-embed-text`) or any OpenAI-compatible API · MCP · Docker · 602 tests

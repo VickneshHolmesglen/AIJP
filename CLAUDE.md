@@ -52,7 +52,11 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - `tests/` — unit tests need no DB; `@pytest.mark.integration` tests need Postgres
 - `docs/evaluation.md` — the evaluation story for readers (only numbers from eval/results reports);
   `docs/images/` — README screenshots of the real UI (Playwright + Edge from the scratchpad, demo
-  project `shardfall` in the dev DB `aijp` loaded from eval/corpus; keys used were revoked)
+  project `shardfall` in the dev DB `aijp` loaded from eval/corpus; keys used were revoked).
+  `demo.gif` (README top, 2026-10-18): Playwright `recordVideo` of a real session, ffmpeg to GIF
+  (8 fps, 800 px, 96 colours, 4.1 MB); the two model waits are 5x speed WITH an on-screen label,
+  the rest is real time. Questions: Venom Tower damage + poison stacks (cited), multiplayer
+  modes (model_declined). Script/filter lived in that session's scratchpad.
 
 ## Status (last updated 2026-10-01)
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
