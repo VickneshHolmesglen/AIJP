@@ -1,6 +1,7 @@
 version: 2
 updates:
-  # Actions are referenced by major tag; Dependabot keeps them current.
+  # Actions are referenced by major tag where one exists (setup-uv publishes only immutable
+  # full-version tags since v8); Dependabot keeps them current.
   - package-ecosystem: github-actions
     directory: /
     schedule:
