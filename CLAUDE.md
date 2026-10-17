@@ -58,7 +58,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 601
+  DONE. Ruff, mypy pass. Tests: 602
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -586,9 +586,20 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   `C:\Program Files\GitHub CLI\gh.exe`, logged in as the repo owner): every run since the push had
   failed ONLY in the pip-audit job (pyjwt 2.14.0 CVE-2026-101918, via mcp[crypto]); quality (601
   tests, skip guard) and container jobs were already green on the GitHub runner. Fixed by
-  `uv lock --upgrade-package pyjwt` (2.15.1, commit 866d60e); run 39006969435 is all green. The 5
-  open Dependabot PRs (#6-#10) still show the old failure until rebased (commenting on PRs is
-  blocked for the assistant by the permission classifier: the user does it). Warnings left:
+  `uv lock --upgrade-package pyjwt` (2.15.1, commit 866d60e); run 39006969435 is all green.
+  Rebasing the 5 Dependabot PRs (#6-#10) then exposed TWO FLAKY FAILURES unrelated to the bumps:
+  (1) A REAL BUG: two simultaneous approvals of one action BOTH executed (two tasks). The API's
+  project check `session.get`s the action first; the later `SELECT ... FOR UPDATE` did wait for the
+  other request's commit, but SQLAlchemy keeps an object already in the identity map and ignored
+  the fresh row (ORM "pending", DB "executed"). Fix: `populate_existing=True` on the locked select
+  in `actions.decide`. Deterministic test `test_decide_rereads_an_action_the_session_already_loaded`
+  (no threads; it MUST hold a strong reference to the pre-loaded object: the identity map is weak,
+  an unreferenced one is garbage-collected and reloaded, which made the first version pass
+  vacuously). Threaded test went from failing 5/6 locally to 20/20. Introduced in M20 (the
+  pre-check), passed by timing luck until then. (2) The container auth smoke step still piped
+  `curl | grep -q` (/metrics body > pipe buffer -> curl exit 23 under pipefail; the M20 fix covered
+  only the public step); bodies are now captured first everywhere. The assistant may post
+  `@dependabot rebase` when the user asks (it was blocked once when unasked). Warnings left:
   actions/checkout@v4 + setup-uv@v5 target Node 20; ubuntu-latest moves to Ubuntu 26 on
   2026-10-19. Dependabot proposed Python 3.11 -> 3.14 (base image): a deliberate decision, do not merge
   blindly.

@@ -108,7 +108,8 @@ jobs:
           curl -fsS "$base/health"
           curl -fsS "$base/health/ready"
           curl -fsS "$base/ui/" -o /dev/null
-          curl -fsS "$base/auth/config" | grep -q '"auth_enabled":true'
+          config=$(curl -fsS "$base/auth/config")
+          grep -q '"auth_enabled":true' <<<"$config"
           # Every response carries a request id.
           # (A GET that dumps headers: `curl -I` sends HEAD, which the GET-only route refuses.)
           # (Captured first: `grep -q` exits at the first match and closes the pipe while curl is
@@ -135,10 +136,16 @@ jobs:
           # Keys are created with the CLI inside the running (read-only, non-root) container.
           token=$(docker compose exec -T api python -m app.keys create --name ci --role approver --token-only | tr -d '\r\n')
           auth="Authorization: Bearer $token"
-          curl -fsS -H "$auth" "$base/auth/me" | grep -q '"role":"approver"'
-          curl -fsS -H "$auth" "$base/metrics" | grep -q '^http_requests_total'
+          # Bodies are captured before grep (see the public step: `curl | grep -q` fails with curl
+          # exit 23 under pipefail once a body outgrows the pipe buffer, as /metrics does). A plain
+          # assignment keeps curl's exit status, so -f still fails the step on an HTTP error.
+          me=$(curl -fsS -H "$auth" "$base/auth/me")
+          grep -q '"role":"approver"' <<<"$me"
+          metrics=$(curl -fsS -H "$auth" "$base/metrics")
+          grep -q '^http_requests_total' <<<"$metrics"
           # /status reports Ollama as unreachable here (none in CI) but must still answer 200.
-          curl -fsS -H "$auth" "$base/status" | grep -q '"pgvector":true'
+          status=$(curl -fsS -H "$auth" "$base/status")
+          grep -q '"pgvector":true' <<<"$status"
           # A reader key can read but cannot write.
           reader=$(docker compose exec -T api python -m app.keys create --name ci-reader --role reader --token-only | tr -d '\r\n')
           [ "$(code -H "Authorization: Bearer $reader" "$base/documents")" = "200" ]
@@ -151,7 +158,8 @@ jobs:
           [ "$(code -H "Authorization: Bearer $scoped" "$base/documents?project=ci-b")" = "404" ]
           [ "$(code -H "Authorization: Bearer $scoped" "$base/documents?project=nonexistent")" = "404" ]
           [ "$(code -X POST -H "Authorization: Bearer $scoped" -H 'Content-Type: application/json' -d '{"slug":"x","name":"X"}' "$base/projects")" = "403" ]
-          curl -fsS -H "$auth" "$base/projects" | grep -q '"slug":"ci-b"'
+          listed=$(curl -fsS -H "$auth" "$base/projects")
+          grep -q '"slug":"ci-b"' <<<"$listed"
           # A revoked key stops working on the next request.
           docker compose exec -T api python -m app.keys revoke ci-reader
           [ "$(code -H "Authorization: Bearer $reader" "$base/documents")" = "401" ]
