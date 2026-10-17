@@ -612,7 +612,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   G:\TDef\portfolio-readme-brief.md for Claude in that folder.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) CI is green on GitHub and the Dependabot backlog is
-  merged (2026-10-17); left: bump actions/checkout + setup-uv off Node 20; then link this README and the game repo's README to
+  merged and actions bumped to Node 24 (checkout v7, setup-uv v10.3.0, 2026-10-17); then link this README and the game repo's README to
   each other once both are presentable; (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
   config agrees with the design (M19 fixed it only structurally, opt-in), the faithfulness judge
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
