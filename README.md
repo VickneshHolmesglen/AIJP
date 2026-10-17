@@ -8,7 +8,7 @@ own evaluation tooling.
 ![Ask view: a grounded answer with numbered citations to the design docs](docs/images/ask-answer.png)
 
 **Stack:** Python 3.11 · FastAPI · PostgreSQL + pgvector · Ollama (local `qwen3.5` +
-`nomic-embed-text`) or any OpenAI-compatible API · MCP · Docker · 601 tests
+`nomic-embed-text`) or any OpenAI-compatible API · MCP · Docker · 602 tests
 **Runs fully local:** no API keys, no data leaves the machine.
 
 ## What it does
@@ -189,3 +189,11 @@ This project was built with Claude Code, working from a written spec
 ([handoff document](Claude%20Code%20Handoff%20%E2%80%94%20AI%20Project%20Intelligence%20Portfolio.md))
 in milestones, each finished with tests, measurements and a written explanation. The working notes
 the assistant keeps are in [CLAUDE.md](CLAUDE.md).
+
+## Other project
+
+**[Sanctuary Defenders](https://github.com/VickneshHolmesglen/TDEF)**: a hybrid RPG tower defence
+game in Godot 4.6 (GDScript). You play a hero on the field while modular towers you designed hold
+the line, then return to a persistent base to craft, breed creatures and build a Tarot deck. Also
+built with an AI coding assistant, with automated tests in CI. (This project's evaluation corpus is a separate,
+synthetic tower defence project written for the benchmark, not that game.)
