@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- build stage: resolve and install dependencies from the lockfile --------------------------
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 # Pinned to the uv release that produced uv.lock, so builds are reproducible.
 COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 
 # ---- runtime stage: no uv, no build tools, no root ---------------------------------------------
-FROM python:3.11-slim AS runtime
+FROM python:3.14-slim AS runtime
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 WORKDIR /srv
 COPY --from=builder --chown=app:app /srv/.venv /srv/.venv
