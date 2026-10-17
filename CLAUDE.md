@@ -607,13 +607,17 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   blindly.
 - PORTFOLIO MATERIAL: an interview cheat sheet exists as a Claude Doc (claude.ai artifact
   aec0b8cc-69f1-4dbd-af0f-942c7fafa982); `docs/portfolio-brief.md` (UNTRACKED on purpose: it describes
-  the user's other repos) holds the survey of the game project Sanctuary Defenders (G:\TDef, public
-  github.com/VickneshHolmesglen/TDEF); a README/LICENSE/screenshot brief was left at
-  G:\TDef\portfolio-readme-brief.md for Claude in that folder.
+  the user's other repos) holds the survey of the game project Sanctuary Defenders (G:\TDef,
+  github.com/VickneshHolmesglen/TDEF, PRIVATE as of 2026-10-17); a README/LICENSE/screenshot brief
+  was left at G:\TDef\portfolio-readme-brief.md for Claude in that folder. CROSS-LINKED 2026-10-17:
+  each README ends with an "Other project" section linking the other (TDEF commit 378dc3d, only
+  README.md committed: that repo had another session's uncommitted work). BOTH REPOS ARE PRIVATE, so
+  the links 404 for anyone else until the user makes them public (their decision; this repo still
+  needs the Dependabot-PR history purge noted under GITHUB before going public).
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) CI is green on GitHub and the Dependabot backlog is
-  merged and actions bumped to Node 24 (checkout v7, setup-uv v10.3.0, 2026-10-17); then link this README and the game repo's README to
-  each other once both are presentable; (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
+  merged and actions bumped to Node 24 (checkout v7, setup-uv v10.3.0, 2026-10-17) and the READMEs are cross-linked; left: making the
+  repos public (user decision) and checking CI on the Ubuntu 26 runner image (from 2026-10-19); (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
   config agrees with the design (M19 fixed it only structurally, opt-in), the faithfulness judge
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
   the one lever that helped answers, so a cheaper way to get it (a smaller reasoning budget, or
