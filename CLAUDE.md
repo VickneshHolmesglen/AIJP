@@ -582,8 +582,15 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   needs GitHub Support or a recreated repo before going public). A pre-rewrite bundle exists only in
   that session's scratchpad. NEVER write personal emails or names into tracked files. Standing
   permission: commit and push routine work to this private repo without asking; ask before any
-  force-push or making it public. NOT checked: the GitHub Actions runs (private: needs the user or a
-  token). Dependabot proposed Python 3.11 -> 3.14 (base image): a deliberate decision, do not merge
+  force-push or making it public. CI ON GITHUB VERIFIED 2026-10-17 (gh CLI installed at
+  `C:\Program Files\GitHub CLI\gh.exe`, logged in as the repo owner): every run since the push had
+  failed ONLY in the pip-audit job (pyjwt 2.14.0 CVE-2026-101918, via mcp[crypto]); quality (601
+  tests, skip guard) and container jobs were already green on the GitHub runner. Fixed by
+  `uv lock --upgrade-package pyjwt` (2.15.1, commit 866d60e); run 39006969435 is all green. The 5
+  open Dependabot PRs (#6-#10) still show the old failure until rebased (commenting on PRs is
+  blocked for the assistant by the permission classifier: the user does it). Warnings left:
+  actions/checkout@v4 + setup-uv@v5 target Node 20; ubuntu-latest moves to Ubuntu 26 on
+  2026-10-19. Dependabot proposed Python 3.11 -> 3.14 (base image): a deliberate decision, do not merge
   blindly.
 - PORTFOLIO MATERIAL: an interview cheat sheet exists as a Claude Doc (claude.ai artifact
   aec0b8cc-69f1-4dbd-af0f-942c7fafa982); `docs/portfolio-brief.md` (UNTRACKED on purpose: it describes
@@ -591,8 +598,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   github.com/VickneshHolmesglen/TDEF); a README/LICENSE/screenshot brief was left at
   G:\TDef\portfolio-readme-brief.md for Claude in that folder.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
-  next. Open follow-ups, roughly by value: (1) read the first GitHub Actions runs (ask the user for
-  the result or a token) and fix whatever fails, then link this README and the game repo's README to
+  next. Open follow-ups, roughly by value: (1) CI is green on GitHub (2026-10-17); review/merge the
+  rebased Dependabot PRs one by one (sqlalchemy 2.1 and fastapi are minor-version jumps), then link this README and the game repo's README to
   each other once both are presentable; (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
   config agrees with the design (M19 fixed it only structurally, opt-in), the faithfulness judge
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
