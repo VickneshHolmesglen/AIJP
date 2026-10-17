@@ -297,6 +297,24 @@ def test_simultaneous_approvals_execute_once(env) -> None:
 
 
 @pytest.mark.integration
+def test_decide_rereads_an_action_the_session_already_loaded(env, db_engine) -> None:
+    # The race above, made deterministic: the approve route reads the action (unlocked) to check
+    # its project, then decide() locks it. If another request approved and committed in between,
+    # the locked SELECT must see that, not the stale copy already in the session's identity map.
+    env.install(DISCREPANCY)
+    action_id = uuid.UUID(env.check().json()["actions"][0]["id"])
+    with Session(db_engine) as late, Session(db_engine) as first:
+        # Keep a strong reference, as the route does: the identity map is weak, an unreferenced
+        # object would be garbage-collected and simply reloaded.
+        stale = late.get(AgentAction, action_id)
+        assert stale is not None and stale.status == "pending"
+        actions.decide(first, action_id, True)
+        with pytest.raises(actions.ActionConflictError):
+            actions.decide(late, action_id, True)
+    assert env.api.get("/agent/tasks").json()["total"] == 1
+
+
+@pytest.mark.integration
 def test_unknown_action_id_is_404(env) -> None:
     assert env.api.post(f"/agent/actions/{uuid.uuid4()}/approve").status_code == 404
     assert env.api.post(f"/agent/actions/{uuid.uuid4()}/reject").status_code == 404

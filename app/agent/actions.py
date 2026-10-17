@@ -74,8 +74,14 @@ def decide(
 ) -> AgentAction:
     """Approve (execute) or reject a pending action. Raises ActionNotFoundError or
     ActionConflictError; a failing executor marks the action `failed` instead of raising."""
+    # populate_existing: if the caller already loaded this action (the API does, to authorise it),
+    # the identity map would otherwise keep that stale copy and ignore the row the lock returns,
+    # so a request that waited for a concurrent approval would still see "pending" and run it again.
     action = session.scalars(
-        select(AgentAction).where(AgentAction.id == action_id).with_for_update()
+        select(AgentAction)
+        .where(AgentAction.id == action_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
     ).one_or_none()
     if action is None:
         raise ActionNotFoundError("Action not found")
