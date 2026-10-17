@@ -598,7 +598,9 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   vacuously). Threaded test went from failing 5/6 locally to 20/20. Introduced in M20 (the
   pre-check), passed by timing luck until then. (2) The container auth smoke step still piped
   `curl | grep -q` (/metrics body > pipe buffer -> curl exit 23 under pipefail; the M20 fix covered
-  only the public step); bodies are now captured first everywhere. The assistant may post
+  only the public step); bodies are now captured first everywhere. All 5 PRs were then merged one
+  at a time (squash, `--match-head-commit`, main CI green after each): ruff 0.17.0, mypy 2.4.0,
+  mcp 2.3.0, fastapi 0.143.0, sqlalchemy 2.1.4; 602 tests pass locally on the new lock. The assistant may post
   `@dependabot rebase` when the user asks (it was blocked once when unasked). Warnings left:
   actions/checkout@v4 + setup-uv@v5 target Node 20; ubuntu-latest moves to Ubuntu 26 on
   2026-10-19. Dependabot proposed Python 3.11 -> 3.14 (base image): a deliberate decision, do not merge
@@ -609,8 +611,8 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   github.com/VickneshHolmesglen/TDEF); a README/LICENSE/screenshot brief was left at
   G:\TDef\portfolio-readme-brief.md for Claude in that folder.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
-  next. Open follow-ups, roughly by value: (1) CI is green on GitHub (2026-10-17); review/merge the
-  rebased Dependabot PRs one by one (sqlalchemy 2.1 and fastapi are minor-version jumps), then link this README and the game repo's README to
+  next. Open follow-ups, roughly by value: (1) CI is green on GitHub and the Dependabot backlog is
+  merged (2026-10-17); left: bump actions/checkout + setup-uv off Node 20; then link this README and the game repo's README to
   each other once both are presentable; (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
   config agrees with the design (M19 fixed it only structurally, opt-in), the faithfulness judge
   mishandles derived numbers, and reasoning (AIJP_LLM_THINK) is
