@@ -614,9 +614,9 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   the scrubbed email, so it must NEVER be made public) and a NEW public `AIJP` was created and
   `main` pushed to it (history scanned first: noreply identities only, no secret patterns). The
   standing push permission was for a PRIVATE repo: ask before pushing now. TDEF scanned clean
-  (noreply identities, no PR refs, no secret patterns) but making it public was blocked by the
-  permission classifier: the user does it (`gh repo edit VickneshHolmesglen/TDEF --visibility public
-  --accept-visibility-change-consequences`). Local Windows username appears in paths in both repos.
+  (noreply identities, no PR refs, no secret patterns) and made PUBLIC on the user's request the same
+  day. Portfolio site https://vickneshholmesglen.github.io (repo from G:\Portfolio\site) links both.
+  Local Windows username appears in paths in both repos.
 - PORTFOLIO MATERIAL: an interview cheat sheet exists as a Claude Doc (claude.ai artifact
   aec0b8cc-69f1-4dbd-af0f-942c7fafa982); `docs/portfolio-brief.md` (UNTRACKED on purpose: it describes
   the user's other repos) holds the survey of the game project Sanctuary Defenders (G:\TDef,
