@@ -58,11 +58,11 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   the rest is real time. Questions: Venom Tower damage + poison stacks (cited), multiplayer
   modes (model_declined). Script/filter lived in that session's scratchpad.
 
-## Status (last updated 2026-10-01)
+## Status (last updated 2026-11-03)
 - Milestones 1-11 are complete and verified (foundation, ingestion, embeddings + semantic search,
   grounded Q&A, source code ingestion, hybrid retrieval, evaluation, UI, MCP, agent workflows,
   containers/CI/monitoring), plus M12 authentication (see below). THE ROADMAP IN THE HANDOFF DOC IS
-  DONE. Ruff, mypy pass. Tests: 602
+  DONE. Ruff, mypy pass. Tests: 634
   pass, 0 skipped (real Postgres/pgvector; embedder and LLM faked in tests; the pipeline, UI, MCP
   server, agent workflow and the containers were also exercised end to end against real Ollama
   nomic-embed-text + qwen3.5).
@@ -662,9 +662,20 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   (https://vickneshholmesglen.github.io/design-audit/) with project card P-05 in projects.js; README
   section "On a real game". The site copy is a COPY: after re-rendering docs/demo/index.html, copy
   it again. Render command flags: --title --intro --footer --link "Label=https://..." (https only).
-  634 tests pass.
-- NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
-  next. Open follow-ups, roughly by value: (1) CI is green on GitHub and the Dependabot backlog is
+  634 tests pass. Also (same day): README screenshot `docs/images/design-audit.png` (captured from
+  the LIVE page with playwright-core + Edge, cropped to the content column, linked to the page);
+  CI's pip-audit failed on NEW advisories in existing deps (pypdf, certifi, opentelemetry-api),
+  fixed by `uv lock --upgrade-package` (pypdf 6.21.4, certifi 2026.10.23, opentelemetry-api
+  1.45.2, commit 2c251c7); CI green on GitHub after it.
+  PORTFOLIO COMPARISON (2026-11-03, web search of hiring guides; blogs, not data): AIJP is at or
+  above the bar on evals, production signals, domain specificity and README. Gaps are on the SITE:
+  no LinkedIn (user has none, will create one later), no résumé, P-01/P-02 (the logistics
+  projects that back the site's logistics pitch) unfinished, and no interactive hosted demo.
+  Recommended next build: P-01 (logistics AI evaluation; not in this repo).
+- NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M29 are complete, so ask the user what
+  next (portfolio-wise: P-01 is the recommendation). Open follow-ups, roughly by value: (0) the
+  published consistency reports predate M29's two gate/identifier fixes; re-run eval.consistency
+  (v1-v3) if those numbers are quoted again; (1) CI is green on GitHub and the Dependabot backlog is
   merged and actions bumped to Node 24 (checkout v7, setup-uv v10.3.0, 2026-10-17) and the READMEs are cross-linked; left: making the
   repos public (user decision) and checking CI on the Ubuntu 26 runner image (from 2026-10-19); (2) remaining M15 findings: the consistency judge misses code-only discrepancies when a
   config agrees with the design (M19 fixed it only structurally, opt-in), the faithfulness judge
