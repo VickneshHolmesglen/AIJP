@@ -61,6 +61,8 @@ JSON). Every number comes from a report in [`eval/results/`](eval/results/).
 
 **[Live demo page →](https://vickneshholmesglen.github.io/design-audit/)**
 
+[![The design audit page: the tally of 68 verdicts, 25 of 33 confirmed by hand, and the real finding in damage-status.md with its hand-check note](docs/images/design-audit.png)](https://vickneshholmesglen.github.io/design-audit/)
+
 The design-vs-code check, run on my own Godot game
 ([TDEF](https://github.com/VickneshHolmesglen/TDEF): 42 design docs, 181 GDScript files, 466 `.tres`
 data resources). `python -m app.design_audit` has the model pull checkable claims out of each design
