@@ -1,0 +1,952 @@
+{
+  "document": "design/gdd/monster.md",
+  "section_filter": "Core Rules",
+  "generated": "2026-11-03T06:28:37+00:00",
+  "model": "qwen3.5",
+  "embedding_model": "nomic-embed-text",
+  "judge_mode": "per_source",
+  "evidence_gate": 0.6,
+  "passages_read": 13,
+  "passages_failed": [
+    {
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "error": "Ollama request failed: HTTP 500 (prediction aborted, token repeat limit reached)"
+    }
+  ],
+  "minutes": 3.4,
+  "counts": {
+    "consistent": 17,
+    "potential_discrepancy": 1,
+    "insufficient_evidence": 2
+  },
+  "claims": [
+    {
+      "claim": "The 'armored' archetype_tag causes towers to deal 50% reduced damage to monsters.",
+      "quote": "`&\"armored\"` — D&S applies 50% tower damage mitigation (tower hits deal half damage; hero damage is unaffected).",
+      "line": 40,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "62660d0e-efb2-4097-b334-f01051ee023f",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "All design sources [D1-D5] explicitly state that the 'armored' archetype_tag triggers a 50% damage mitigation for tower attacks. Implementation sources [C1, C2, C3, C4, C5] support this claim by showing code logic where `is_armored` is derived from the tag and applied as a 0.5 multiplier (or reduced by penetration), while [C6] discusses elemental resistances which are unrelated to the specific armored mitigation mechanic.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/event-bus.md",
+          "section": "EventBus System > Detailed Design > Interactions with Other Systems — Event Catalogue > Tower System",
+          "start_line": 117,
+          "end_line": 117,
+          "text": "| `tower_attacked` | `TowerAttackedEvent` Resource: `tower_id: int`, `target_monster_id: int`, `damage_amount: float`, `is_armored: bool`, `armor_penetration: float`, `is_crit: bool` | Damage & Status, Monster System (status-tick DoT application), Audio | Tower's shot deals damage. `is_armored` is pre-resolved by Tower System from the target's `MonsterResource.archetype_tag` (`true` when `archetype_tag == &\"armored\"`); D&S applies 50% tower damage mitigation when `true`. Hero damage is not affected by this flag. **Corrected 2026-07-15 (`/design-review`)**: this row was still declared as 5 bare typed parameters, violating Core Rule 4 — this is a hot-path event (fires every tower shot), so the AC-03 static-check would have failed against the shipped catalogue as written. Promoted to a `TowerAttackedEvent` Resource subclass. **`is_siege` field and Monster System subscription removed 2026-07-15**: tower.md's T4 Siege/boss-shield-penetration mechanic was struck (no such shield mechanic exists in monster.md) — see tower.md's T4 Boss-Lane Identity section. **`armor_penetration`/`is_crit` added 2026-08-16 (Tower Stats System Phase 1)**: `armor_penetration` reduces D&S's armored-mitigation"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Visual/Audio Requirements > Archetype Tag Visual Feedback > Armored Hit Effect (`archetype_tag = &\"armored\"`)",
+          "start_line": 666,
+          "end_line": 682,
+          "text": "#### Armored Hit Effect (`archetype_tag = &\"armored\"`)\n\nWhen a tower deals damage to an `armored` entity, the 50% mitigation must be visually distinguishable from an unmitigated hit. Players cannot make informed placement decisions near armored enemies if mitigated hits look identical to normal hits.\n\n**Required visual (one of):**\n- Metallic spark burst: 2–4 particles, silver/grey palette, at the hit point — distinct from the standard damage-flash white\n- Shield flash highlight: silver-tinted sprite overlay, 2–3 frames duration, distinct from standard white damage flash\n\n**Not required:** Modification to the floating damage number — the number already reflects the mitigated amount. The visual should communicate \"this hit was reduced\", not duplicate the number.\n\n**Art/UX delegation:** Exact treatment (spark vs. flash) is delegated to Art Director and UX Designer. This requirement specifies the information need — armored mitigation must be visually distinguishable — not the execution.\n\n**Hero damage is unaffected:** Hero hits on armored entities use no mitigation and therefore no armored-hit visual. The armored visual is tower-hit-only.\n\n**MVP required:** Yes.\n\n---"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Dependencies > Systems this GDD depends on",
+          "start_line": 503,
+          "end_line": 503,
+          "text": "| Tower System | `design/gdd/tower.md` | Emits `tower_attacked` with `damage_amount`, `target_monster_id`, and `is_armored`. Tower System reads the target's `MonsterResource.archetype_tag` at fire time and pre-resolves `is_armored` — D&S never reads monster state directly. **Resolved (2026-05-11, confirmed still current 2026-07-15):** tower.md Rule 20a documents the `archetype_tag` read and `is_armored` field. *(`is_siege` removed 2026-07-15 — the T4 Siege mechanic was struck from tower.md; see `tower.md`'s T4 Boss-Lane Identity section and `event-bus.md`'s `tower_attacked` catalogue row.)* **Payload grown 2026-08-13:** `tower_attacked` also carries `effect_type`/`effect_value`/`effect_duration` (the firing tower's own `PowerComponent` fields) — D&S's own handler ignores all three (Rule I.2); they exist for Monster System's independent status-effect subscription (Formulas D5/D6). **Payload grown again 2026-08-16 (Tower Stats System Phase 1):** `armor_penetration: float` and `is_crit: bool` added — both consumed by D&S's own Formula D1 (see this doc's top-of-file Amendment note); `damage_amount` itself now already reflects Tower System's crit/vs-tag/boss/resistance resolution. |"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+          "start_line": 182,
+          "end_line": 193,
+          "text": "#### D1 — Tower Damage Resolution\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `raw_damage` | float | 5–200 | Weapon component base damage; read from `tower_attacked` payload field `damage_amount`. **As of Tower Stats System Phase 1 (2026-08-16), this already reflects Tower System's own crit/vs-tag/boss-multiplier/elemental-resistance resolution — see `tower.md` Formula 1b — before it ever reaches D&S.** |\n| `is_armored` | bool | — | Pre-resolved by Tower System from target's `archetype_tag`; `true` when `archetype_tag == &\"armored\"` |\n| `armor_penetration` | float | [0.0, 1.0] | **Added Phase 1.** From the firing weapon's `WeaponComponent.armor_penetration`, read from `tower_attacked` payload field `armor_penetration`. Fraction of `armored_mitigation_multiplier` this hit negates; irrelevant when `is_armored == false`. |\n| `final_damage` | int | 2–200 | Damage applied to monster HP via `monster_damage_taken` |\n\n**Expression** (extended Phase 1 — collapses to the original formula when `armor_penetration = 0.0`, the default for all pre-Phase-1 content):\n```\neffective_mitigation = clamp("
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 38,
+          "end_line": 40,
+          "text": "| `display_name` | `String` | Human-readable name for HUD / codex |\n   | `tier` | `int` enum | 0=STANDARD · 1=ELITE · 2=BOSS |\n   | `archetype_tag` | `StringName` | Optional gameplay tag. Empty `StringName` if untagged. **Supported MVP values:** `&\"armored\"` — D&S applies 50% tower damage mitigation (tower hits deal half damage; hero damage is unaffected). `&\"\"` (default) — no modification. Additional tags reserved for post-MVP. **Also the lookup key for `FoundationComponent.bonus_damage_vs_tags` (`tower.md`, Tower Stats System Phase 1, 2026-08-16) — a tower can author bonus damage against any `archetype_tag` value, not just \"armored\".** **Implementation note:** `TowerSystem`'s own monster cache did not actually read this field until 2026-08-16 — every monster was silently treated as unarmored in real gameplay before that fix (see `tower.md`'s Dependencies table, Tower Attacked row). |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/foundation/event_bus/event_bus.gd",
+          "section": "EventBus > declarations: mission_phase_changed, wave_started, wave_completed, wave_countdown_warning, phase_timer_tick, monster_spawn_requested, wave_preview_available, wave_stalled, player_ready, game_paused, game_unpaused, scene_transition_started, scene_transition_completed, hero_auto_attacked, h",
+          "start_line": 267,
+          "end_line": 281,
+          "text": "signal tower_component_equipped(payload: TowerComponentEquippedEvent)\n\n## Tower fires at a monster.\n## is_siege: derived from originating tower's Foundation.siege flag (true for T4 only).\n## is_armored: pre-resolved by Tower System from target's MonsterResource.archetype_tag\n##   (true when archetype_tag == &\"armored\"); D&S applies 50% tower damage mitigation,\n##   reduced further by armor_penetration below (Tower Stats System Phase 1).\n## damage_amount: as of Phase 1, already includes crit/vs-tag/boss multipliers AND the\n##   target's elemental-resistance reduction for the firing weapon's element -- element\n##   itself never crosses this signal, since TowerSystem resolves resistance upstream via\n##   its own monster cache (keeps Damage & Status a pure math node with no registry\n##   dependency). armor_penetration is the only new damage-modifier field carried here,\n##   because armored-mitigation is D&S's own job, not TowerSystem's.\n## effect_type/effect_value/effect_duration: the firing tower's own PowerComponent\n##   fields. effect_type can now be \"\" for TWO distinct reasons (Phase 1) -- no Power"
+        },
+        {
+          "path": "src/core/tower/tower_system.gd",
+          "section": "TowerSystem > _on_monster_spawned",
+          "start_line": 865,
+          "end_line": 881,
+          "text": "## Synchronous subscription (Tower GDD Rule 14a: must receive before tower_attacked).\n##\n## Real pre-existing bugs found and fixed here (Tower Stats System Phase 1,\n## player-requested 2026-08-16): this used to hardcode \"is_armored\": false\n## unconditionally — MonsterSpawnedEvent's payload never carried archetype/\n## tag info (ADR-0001 Rule 3 caps event payloads at 5 fields; this one only\n## has entity_id/monster_id/wave_index/grid_position/hp_max), so the\n## armored-monster 50% damage mitigation in damage_status.gd has never\n## actually fired in real gameplay — every monster was silently treated as\n## unarmored regardless of its real archetype_tag. Separately,\n## FoundationComponent.tier_boss_dps_multiplier (validated to 2.0 at tower\n## tier 4, documented in tower.md's own DPS-ceiling formula as \"the boss\n## variant\") was never actually multiplied into any damage computation\n## anywhere in this file — dead data, same bug class as is_armored. Both\n## fixed by looking up the real MonsterResource via the payload's\n## monster_id (the same GameDataRegistry-lookup-by-id pattern used\n## everywhere else in this codebase for resolving static content), which"
+        },
+        {
+          "path": "src/scenes/armored_hit_spark_vfx.gd",
+          "section": "ArmoredHitSparkVFX > declarations: DURATION, SPARK_COLOR, _elapsed, _particles",
+          "start_line": 1,
+          "end_line": 24,
+          "text": "class_name ArmoredHitSparkVFX\nextends Node2D\n\n## design/gdd/monster.md \"Archetype Tag Visual Feedback\" → \"Armored Hit\n## Effect\": \"When a tower deals damage to an armored entity, the 50%\n## mitigation must be visually distinguishable from an unmitigated hit...\n## Required visual (one of): Metallic spark burst: 2-4 particles,\n## silver/grey palette, at the hit point — distinct from the standard\n## damage-flash white.\" (The other GDD-sanctioned option, a shield-flash\n## sprite overlay, was not chosen — a standalone particle burst matches\n## every other VFX node this session already built, and needs no access to\n## the target MonsterEntity's own sprite internals.)\n##\n## \"Hero damage is unaffected: Hero hits on armored entities use no\n## mitigation and therefore no armored-hit visual. The armored visual is\n## tower-hit-only.\" — this node is only ever spawned from ProjectileVisual's\n## own is_armored flag (sourced from tower_attacked), never from any\n## hero-attack path.\n##\n## No configure() needed — every field is fixed by the GDD's own spec\n## (fixed particle count, fixed silver/grey color), so this just configures\n## itself in _ready().\n\nconst DURATION: float = 0.25"
+        },
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _on_tower_attacked",
+          "start_line": 107,
+          "end_line": 123,
+          "text": "## D1 formula: floor(raw_damage × mitigation). is_siege unused at MVP.\n## effect_type/effect_value/effect_duration (2026-08-13): burn/poison status\n## ticks are resolved by Monster System's own status-tick pass, not D&S — see\n## damage-status.md Rule I.3's exception note. Ignored here on purpose.\n##\n## armor_penetration/is_crit (Tower Stats System Phase 1, 2026-08-16):\n## armor_penetration reduces the armored-mitigation multiplier itself —\n## effective_mitigation = ARMORED_MITIGATION_MULTIPLIER + (1.0 -\n## ARMORED_MITIGATION_MULTIPLIER) × armor_penetration, clamped to\n## [ARMORED_MITIGATION_MULTIPLIER, 1.0] (0% pen = today's flat 0.5, 100% pen\n## = mitigation fully countered). damage_amount arrives with crit already\n## applied (TowerSystem's own job) — is_crit is only forwarded here so\n## MonsterDamageTaken carries a real value instead of the previous hardcoded\n## false, for any VFX/audio/HUD hook that wants to react to a tower crit.\nfunc _on_tower_attacked(_tower_id: int, target_monster_id: int, damage_amount: float,\n\t\t_is_siege: bool, is_armored: bool, _effect_type: String, _effect_value: float,\n\t\t_effect_duration: float, armor_penetration: float, is_crit: bool) -> void:"
+        },
+        {
+          "path": "src/core/monster/monster_resource.gd",
+          "section": "MonsterResource > declarations: monster_id, display_name, tier, archetype_tag, base_hp, base_speed, elemental_resistances, armor, evasion, drop_table_id, menagerie_attraction_drop_chance, boss_attack_range_cells, base_damage, base_attack_interval, hero_attack_windup_seconds, movement_type, heal_radi",
+          "start_line": 1,
+          "end_line": 26,
+          "text": "class_name MonsterResource\nextends Resource\n\n## Data definition for a single monster archetype.\n##\n## GDD source: design/gdd/monster.md — Group 1 (Entity Data Schema)\n## ADR-0009: Resource data model — one class_name per file, exported fields only.\n##\n## tier values: 0=STANDARD  1=ELITE  2=BOSS\n## archetype_tag: &\"\" (untagged, default) or &\"armored\" (50% tower damage mitigation).\n## base_damage / base_attack_interval / boss_attack_range_cells / hero_attack_windup_seconds:\n## attack settings for the attack-capable tiers (hero-damage spec §4.1). ELITE attacks the\n## Hero only; BOSS attacks towers and the Hero. STANDARD must leave them at 0.\n\n@export_group(\"Identity\")\n@export var monster_id: StringName = &\"\"\n@export var display_name: String = \"\"\n@export_range(0, 2) var tier: int = 0\n@export var archetype_tag: StringName = &\"\"\n\n@export_group(\"Combat Stats\")\n@export var base_hp: float = 100.0\n@export var base_speed: float = 1.0  ## cells per second at wave 1\n## Tower Stats System Phase 1 (player-requested 2026-08-16): StringName\n## element (matching WeaponComponent.element -- \"fire\"/\"ice\"/\"poison\"/\n## \"lightning\"/\"arcane\", per HeroSkillEffectResource.VALID_DAMAGE_TYPES'"
+        }
+      ],
+      "seconds": 14.8,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The 'elemental_resistances' dictionary maps a StringName element ('fire', 'frost', 'poison', 'lightning', or 'arcane') to a float resist fraction between 0.0 and 0.9.",
+      "quote": "`StringName` element (`\"fire\"`/`\"frost\"`/`\"poison\"`/`\"lightning\"`/`\"arcane\"`, matching `WeaponComponent.element`) → `float` resist fraction `[0.0, 0.9]`",
+      "line": 41,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "320712b0-ab58-4325-83a5-f67615e05b5b",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D1] explicitly states that `elemental_resistances` maps elements like 'fire' or 'frost' to a float fraction in the range [0.0, 0.9]. Implementation sources [C2] and [C5] confirm this structure in code comments and declarations, noting the specific element strings and the 0.9 cap. Source [C1] supports this by showing the runtime logic retrieving these values with a default of 0.0 for missing keys.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 41,
+          "end_line": 45,
+          "text": "| `elemental_resistances` | `Dictionary` | **Added Tower Stats System Phase 1 (2026-08-16).** `StringName` element (`\"fire\"`/`\"frost\"`/`\"poison\"`/`\"lightning\"`/`\"arcane\"`, matching `WeaponComponent.element`) → `float` resist fraction `[0.0, 0.9]`. Missing key = `0.0` (no resistance) — fully backward-compatible, no data migration for existing monster content. Read by `TowerSystem`'s monster cache and applied in its damage-resolution formula (`tower.md` Formula 1b); physical hits (`element == \"\"`) never consult this. |\n   | `base_hp` | `float` | HP at wave 1, difficulty Normal. Scaled at runtime. |\n   | `base_speed` | `float` | Path traversal speed in grid-cells/second at wave 1. |\n   | `base_damage` | `float` | Attack-capable tiers (ELITE, BOSS): base damage per attack (BOSS: per tower attack and per Hero attack; ELITE: per Hero attack). Set to 0 for STANDARD and for non-attacking ELITEs. |\n   | `base_attack_interval` | `float` | Attack-capable tiers (ELITE, BOSS): seconds between attack attempts (shared cooldown). Set to 0 for STANDARD and non-attacking ELITEs. |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/tower/tower_system.gd",
+          "section": "TowerSystem > _resolve_element_resistance",
+          "start_line": 581,
+          "end_line": 589,
+          "text": "## Looks up the target's cached elemental_resistances against the weapon's\n## element. \"\" (physical) never resolves to anything but 0.0 resistance —\n## no monster content authors a \"\" key in elemental_resistances (see that\n## field's own doc comment).\nfunc _resolve_element_resistance(element: String, monster_cache_entry: Dictionary) -> float:\n\tif element == \"\":\n\t\treturn 0.0\n\tvar resistances: Dictionary = monster_cache_entry.get(\"elemental_resistances\", {}) as Dictionary\n\treturn resistances.get(element, 0.0) as float"
+        },
+        {
+          "path": "src/core/monster/monster_resource.gd",
+          "section": "MonsterResource > declarations: monster_id, display_name, tier, archetype_tag, base_hp, base_speed, elemental_resistances, armor, evasion, drop_table_id, menagerie_attraction_drop_chance, boss_attack_range_cells, base_damage, base_attack_interval, hero_attack_windup_seconds, movement_type, heal_radi",
+          "start_line": 25,
+          "end_line": 41,
+          "text": "## element (matching WeaponComponent.element -- \"fire\"/\"ice\"/\"poison\"/\n## \"lightning\"/\"arcane\", per HeroSkillEffectResource.VALID_DAMAGE_TYPES'\n## canonical \"frost\" -> \"ice\" rename, 2026-09-04 -- corrected here 2026-09-18,\n## this doc comment was stale) -> float resist fraction [0.0, 0.9]. Missing\n## key = 0.0 (no resistance) -- fully backward-compatible, no data migration\n## needed for existing monster content. Read by TowerSystem's monster cache\n## (see tower_system.gd::_on_monster_spawned()) and applied in\n## _try_attack()'s damage formula; physical hits (WeaponComponent.element ==\n## \"\") never consult this dictionary at all. Capped at 0.9, not 1.0, so no\n## element can make a monster fully damage-immune. Hero Combat & Stats\n## Redesign (2026-09-18): this same dict now also mitigates the Hero's own\n## Magic Attack damage (Hero._on_monster_spawned() caches it for that\n## purpose too) -- one shared resistance value per element, not a separate\n## tower-vs-hero pair.\n@export var elemental_resistances: Dictionary = {}\n## Hero Combat & Stats Redesign (2026-09-18), Section 3.3: mitigates the\n## Hero's own outgoing PHYSICAL Attack damage only (never tower damage --"
+        },
+        {
+          "path": "src/core/monster/monster_resource.gd",
+          "section": "MonsterResource > declarations: monster_id, display_name, tier, archetype_tag, base_hp, base_speed, elemental_resistances, armor, evasion, drop_table_id, menagerie_attraction_drop_chance, boss_attack_range_cells, base_damage, base_attack_interval, hero_attack_windup_seconds, movement_type, heal_radi",
+          "start_line": 1,
+          "end_line": 26,
+          "text": "class_name MonsterResource\nextends Resource\n\n## Data definition for a single monster archetype.\n##\n## GDD source: design/gdd/monster.md — Group 1 (Entity Data Schema)\n## ADR-0009: Resource data model — one class_name per file, exported fields only.\n##\n## tier values: 0=STANDARD  1=ELITE  2=BOSS\n## archetype_tag: &\"\" (untagged, default) or &\"armored\" (50% tower damage mitigation).\n## base_damage / base_attack_interval / boss_attack_range_cells / hero_attack_windup_seconds:\n## attack settings for the attack-capable tiers (hero-damage spec §4.1). ELITE attacks the\n## Hero only; BOSS attacks towers and the Hero. STANDARD must leave them at 0.\n\n@export_group(\"Identity\")\n@export var monster_id: StringName = &\"\"\n@export var display_name: String = \"\"\n@export_range(0, 2) var tier: int = 0\n@export var archetype_tag: StringName = &\"\"\n\n@export_group(\"Combat Stats\")\n@export var base_hp: float = 100.0\n@export var base_speed: float = 1.0  ## cells per second at wave 1\n## Tower Stats System Phase 1 (player-requested 2026-08-16): StringName\n## element (matching WeaponComponent.element -- \"fire\"/\"ice\"/\"poison\"/\n## \"lightning\"/\"arcane\", per HeroSkillEffectResource.VALID_DAMAGE_TYPES'"
+        }
+      ],
+      "seconds": 9.5,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "If a key is missing from the 'elemental_resistances' dictionary, the default resistance value is 0.0.",
+      "quote": "Missing key = `0.0` (no resistance)",
+      "line": 41,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "a7e135a0-0c2f-40cf-9b18-c97bbb1021a7",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D1] explicitly states that a missing key in `elemental_resistances` results in a value of 0.0, and design source [D4] confirms this logic in its damage resolution formula where the default is 0.0 if the element is not present. Implementation source [C1] supports this by using `.get(element, 0.0)` which returns 0.0 for missing keys, while implementation source [C3] reiterates that a missing key equals 0.0.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 41,
+          "end_line": 45,
+          "text": "| `elemental_resistances` | `Dictionary` | **Added Tower Stats System Phase 1 (2026-08-16).** `StringName` element (`\"fire\"`/`\"frost\"`/`\"poison\"`/`\"lightning\"`/`\"arcane\"`, matching `WeaponComponent.element`) → `float` resist fraction `[0.0, 0.9]`. Missing key = `0.0` (no resistance) — fully backward-compatible, no data migration for existing monster content. Read by `TowerSystem`'s monster cache and applied in its damage-resolution formula (`tower.md` Formula 1b); physical hits (`element == \"\"`) never consult this. |\n   | `base_hp` | `float` | HP at wave 1, difficulty Normal. Scaled at runtime. |\n   | `base_speed` | `float` | Path traversal speed in grid-cells/second at wave 1. |\n   | `base_damage` | `float` | Attack-capable tiers (ELITE, BOSS): base damage per attack (BOSS: per tower attack and per Hero attack; ELITE: per Hero attack). Set to 0 for STANDARD and for non-attacking ELITEs. |\n   | `base_attack_interval` | `float` | Attack-capable tiers (ELITE, BOSS): seconds between attack attempts (shared cooldown). Set to 0 for STANDARD and non-attacking ELITEs. |"
+        },
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Formulas > Formula 1b: Per-Hit Damage Resolution (Tower Stats System Phase 1, player-requested 2026-08-16)",
+          "start_line": 481,
+          "end_line": 489,
+          "text": "boss_mult     = tier_boss_dps_multiplier if target is [BOSS]-tagged else 1.0\ndamage        = base_damage × crit_mult × vs_tag_mult × boss_mult\nresistance    = target.elemental_resistances[element] if element != \"\" and present else 0.0\ndamage        = damage × (1.0 − resistance)\n```\n\n**Top amendment (2026-09-01, Rule 4a):** the 3 `top_*_bonus` lines are new — `bonus_type` gates which single one is ever non-zero on a given Top instance (never more than one at once, per that component's own `validate()`). `top.bonus_type == \"\"` (inert Top, including every auto-defaulted Tier-1 tower under Rule 4c) contributes 0.0 to all three, reproducing the pre-amendment formula exactly.\n\n`armor_penetration` is applied downstream of this (Damage & Status's job, not Tower System's — see `design/gdd/damage-status.md`'s armored-mitigation formula), since armored-mitigation has always been D&S-owned."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/tower/tower_system.gd",
+          "section": "TowerSystem > _resolve_element_resistance",
+          "start_line": 581,
+          "end_line": 589,
+          "text": "## Looks up the target's cached elemental_resistances against the weapon's\n## element. \"\" (physical) never resolves to anything but 0.0 resistance —\n## no monster content authors a \"\" key in elemental_resistances (see that\n## field's own doc comment).\nfunc _resolve_element_resistance(element: String, monster_cache_entry: Dictionary) -> float:\n\tif element == \"\":\n\t\treturn 0.0\n\tvar resistances: Dictionary = monster_cache_entry.get(\"elemental_resistances\", {}) as Dictionary\n\treturn resistances.get(element, 0.0) as float"
+        }
+      ],
+      "seconds": 8.6,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The `hero_attack_windup_seconds` field is required to be greater than 0 when `base_damage` is greater than 0 for ELITE or BOSS tiers.",
+      "quote": "Required > 0 when `base_damage > 0` on ELITE/BOSS.",
+      "line": 47,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "c89303da-86ae-4a3e-b2c8-5a71347a63fb",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D1] explicitly states that `hero_attack_windup_seconds` is required to be greater than 0 when `base_damage > 0` for ELITE/BOSS tiers. Implementation source [C1] supports this by validating the resource and appending an error if `tier == 1`, `base_damage > 0`, and `hero_attack_windup_seconds <= 0`. Design source [D2] further states that attack-capable monsters (ELITE with damage or BOSS) start a wind-up based on this field.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 46,
+          "end_line": 50,
+          "text": "| `boss_attack_range_cells` | `float` | Attack-capable tiers (ELITE, BOSS): Chebyshev cell radius for targeting (towers for BOSS, the Hero for ELITE and BOSS). Set to 0 for STANDARD and non-attacking ELITEs. |\n   | `hero_attack_windup_seconds` | `float` | Attack-capable tiers (ELITE, BOSS), added 2026-09-25: wind-up in seconds before a Hero-targeted attack fires. Required > 0 when `base_damage > 0` on ELITE/BOSS. |\n   | `drop_table_id` | `StringName` | References a Resource Economy drop table. Passed as-is in `monster_died`; Monster System does not read it. |\n   | `menagerie_attraction_drop_chance` | `float` | 0.0–1.0. Chance this monster type drops a rare Menagerie-attraction material on death. Shared by all tiers; rarity scaling deferred to Resource Economy GDD. |\n   | ~~`hero_damage_bonus_eligible`~~ | ~~`bool`~~ | **Deprecated — do not use.** D&S now derives the hero damage tier from the entity's `tier` field (0=STANDARD, 1=ELITE, 2=BOSS) at attack-roll time via `hero_bonus_tier: int` in `HeroAutoAttackEvent`. This field is dead weight and must not be read by any system. Retain in the schema for a migration window; remove after Hero GDD and EventBus GDD are updated. |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 4: Attack Behavior",
+          "start_line": 145,
+          "end_line": 147,
+          "text": "19. A BOSS will attempt to attack a tower even on the frame it breaches. Attack check executes before breach check in the same frame.\n\n19a. **Hero attacks (ELITE and BOSS)** *(added 2026-09-25)*: an attack-capable monster (ELITE with `base_damage > 0`, or BOSS) that finds the Hero within `boss_attack_range_cells` (Chebyshev, from the monster's cell to the Hero's cached cell) locks the Hero and starts a seconds-based wind-up (`hero_attack_windup_seconds`), emitting `monster_hero_attack_winding_up(entity_id, windup_seconds)`. ELITEs target the Hero only. A BOSS targets the closest of Hero or tower and chooses the Hero only when it is strictly closer than the closest tower (ties go to the tower; when only the Hero is in range, the Hero). The tower path (rules 17-18, the 4-frame prepare) is unchanged. Runtime state: `hero_windup_remaining` (seconds, 0 = none); `boss_locked_target_id = -2` is the sentinel for \"the Hero\"; ELITEs share `boss_attack_cooldown_remaining`, `boss_scan_frames_remaining` and `boss_locked_target_id` with BOSSes (the tower attack itself stays BOSS-only). `monster_hero_attack_winding_up` is emitted deferred."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_resource.gd",
+          "section": "MonsterResource > validate",
+          "start_line": 125,
+          "end_line": 144,
+          "text": "if hero_attack_windup_seconds <= 0.0:\n\t\t\terrors.append(\"BOSS tier requires hero_attack_windup_seconds > 0\")\n\tif tier == 1 and base_damage > 0.0:  # ELITE attacker (base_damage == 0 is a valid non-attacker)\n\t\tif base_attack_interval <= 0.0:\n\t\t\terrors.append(\"ELITE attacker requires base_attack_interval > 0\")\n\t\tif boss_attack_range_cells <= 0:\n\t\t\terrors.append(\"ELITE attacker requires boss_attack_range_cells > 0\")\n\t\tif hero_attack_windup_seconds <= 0.0:\n\t\t\terrors.append(\"ELITE attacker requires hero_attack_windup_seconds > 0\")\n\tif tier == 0 and base_damage > 0.0:\n\t\terrors.append(\"STANDARD tier must have base_damage == 0\")\n\tif hero_attack_windup_seconds < 0.0:\n\t\terrors.append(\"hero_attack_windup_seconds must not be negative (got %.2f)\" % hero_attack_windup_seconds)\n\tfor element: Variant in elemental_resistances:\n\t\tvar resistance: float = elemental_resistances[element] as float\n\t\tif resistance < 0.0 or resistance > 0.9:\n\t\t\terrors.append(\"elemental_resistances[%s] must be in [0.0, 0.9] (got %.2f)\" % [element, resistance])\n\tif armor < 0.0:\n\t\terrors.append(\"armor must not be negative (got %.2f)\" % armor)\n\tif evasion < 0.0 or evasion > 100.0:"
+        }
+      ],
+      "seconds": 9.5,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The `boss_attack_range_cells` field represents a Chebyshev cell radius for targeting towers in BOSS tiers and the Hero in ELITE and BOSS tiers.",
+      "quote": "Chebyshev cell radius for targeting (towers for BOSS, the Hero for ELITE and BOSS).",
+      "line": 46,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "0879a21e-e642-477f-8f08-259a393f0a96",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D2] explicitly defines `boss_attack_range_cells` as the 'Attack-capable tiers (ELITE, BOSS): Chebyshev cell radius for targeting (towers for BOSS, the Hero for ELITE and BOSS)'. Implementation source [C3] provides the corresponding code declaration `@export var boss_attack_range_cells: int = 0`, which supports the existence of this field within the monster resource schema. Both sources align on the definition of the field as a Chebyshev radius used for targeting specific entity tiers.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 46,
+          "end_line": 50,
+          "text": "| `boss_attack_range_cells` | `float` | Attack-capable tiers (ELITE, BOSS): Chebyshev cell radius for targeting (towers for BOSS, the Hero for ELITE and BOSS). Set to 0 for STANDARD and non-attacking ELITEs. |\n   | `hero_attack_windup_seconds` | `float` | Attack-capable tiers (ELITE, BOSS), added 2026-09-25: wind-up in seconds before a Hero-targeted attack fires. Required > 0 when `base_damage > 0` on ELITE/BOSS. |\n   | `drop_table_id` | `StringName` | References a Resource Economy drop table. Passed as-is in `monster_died`; Monster System does not read it. |\n   | `menagerie_attraction_drop_chance` | `float` | 0.0–1.0. Chance this monster type drops a rare Menagerie-attraction material on death. Shared by all tiers; rarity scaling deferred to Resource Economy GDD. |\n   | ~~`hero_damage_bonus_eligible`~~ | ~~`bool`~~ | **Deprecated — do not use.** D&S now derives the hero damage tier from the entity's `tier` field (0=STANDARD, 1=ELITE, 2=BOSS) at attack-roll time via `hero_bonus_tier: int` in `HeroAutoAttackEvent`. This field is dead weight and must not be read by any system. Retain in the schema for a migration window; remove after Hero GDD and EventBus GDD are updated. |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_resource.gd",
+          "section": "MonsterResource > declarations: monster_id, display_name, tier, archetype_tag, base_hp, base_speed, elemental_resistances, armor, evasion, drop_table_id, menagerie_attraction_drop_chance, boss_attack_range_cells, base_damage, base_attack_interval, hero_attack_windup_seconds, movement_type, heal_radi",
+          "start_line": 58,
+          "end_line": 77,
+          "text": "@export_group(\"Attack Settings (ELITE / BOSS)\")\n@export var boss_attack_range_cells: int = 0\n@export var base_damage: float = 0.0\n@export var base_attack_interval: float = 0.0\n## Seconds between an attacker locking the Hero and the hit resolving (hero-damage spec §4.2).\n## The boss-to-tower wind-up is a separate fixed frame count in MonsterManager.\n@export var hero_attack_windup_seconds: float = 0.0\n\n\n## Archetype behaviours (2026-11-02, enemy-variety pass). All default to \"off\", so\n## existing monsters are unchanged. Each one exists to counter a build:\n##   flying  -- crosses the map in a straight line, ignoring the maze; BALLISTIC\n##              (lobbed) weapons cannot hit it, HOMING/BEAM can.\n##   heal_*  -- periodically heals every other monster within the radius; kill it first.\n##   split_* -- on death (not breach) releases split_count of split_into_monster_id\n##              where it fell, continuing along its path.\n##   stealth -- towers cannot target it unless the Hero is within\n##              stealth_reveal_radius_cells (Chebyshev); the Hero can always hit it.\n@export_group(\"Archetype Behaviour\")\n@export_enum(\"ground\", \"flying\") var movement_type: String = \"ground\""
+        }
+      ],
+      "seconds": 7.1
+    },
+    {
+      "claim": "The formula for Armor mitigation is Mitigation% = Armor / (Armor + 50 × Hero Level).",
+      "quote": "Formula: Mitigation% = Armor / (Armor + 50 × Hero Level).",
+      "line": 53,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "111748bd-64ca-46fa-a8c4-f1436ae9ad83",
+      "status": "awaiting_approval",
+      "verdict": "potential_discrepancy",
+      "explanation": "Design source [D1] is unrelated as it describes tower damage formulas, while [D2] and [D4] state the claim's formula for hero incoming damage. However, [D3] contradicts the claim by presenting a different table where 100 armor yields 50% reduction (implying Armor/(Armor+100)), whereas the claim specifies a denominator of (Armor + 50 × Hero Level). Implementation sources [C1], [C2], and [C3] all support the claim, explicitly using the coefficient 50 in the denominator for physical damage mitigation.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 5: Armor Damage Reduction (Reference Only — D&S Owns Implementation)",
+          "start_line": 322,
+          "end_line": 336,
+          "text": "| Armor | Damage taken % |\n|-------|---------------|\n| 0 | 100% |\n| 100 | 50% |\n| 200 | 33% |\n| 300 | 25% |\n| 500 | 17% |\n\n**Example:**\n```\nincoming_damage = 270, armor = 120\neffective_damage_taken = max(1, floor(270 × (100 / 220))) = max(1, floor(122.7)) = 122\n```\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_resource.gd",
+          "section": "MonsterResource > declarations: monster_id, display_name, tier, archetype_tag, base_hp, base_speed, elemental_resistances, armor, evasion, drop_table_id, menagerie_attraction_drop_chance, boss_attack_range_cells, base_damage, base_attack_interval, hero_attack_windup_seconds, movement_type, heal_radi",
+          "start_line": 40,
+          "end_line": 60,
+          "text": "## Hero Combat & Stats Redesign (2026-09-18), Section 3.3: mitigates the\n## Hero's own outgoing PHYSICAL Attack damage only (never tower damage --\n## that stays on archetype_tag/is_armored, untouched by this field). Formula:\n## Mitigation% = Armor / (Armor + 50 x hero_level), hero_level hardcoded to 1\n## in damage_status.gd pending the not-yet-designed Hero Leveling system.\n## Default 0.0 = no mitigation (fully backward-compatible with every existing\n## monster .tres, none of which author this field yet).\n@export var armor: float = 0.0\n## Hero Combat & Stats Redesign (2026-09-18), Section 3.3: flat percentage\n## [0, 100] chance the Hero's attack (any damage_type) misses this monster\n## entirely -- rolled before any damage math in damage_status.gd. Default 0.0\n## = never evades (fully backward-compatible).\n@export_range(0.0, 100.0, 0.1) var evasion: float = 0.0\n\n@export_group(\"Drop / Economy\")\n@export var drop_table_id: StringName = &\"\"\n@export_range(0.0, 1.0, 0.01) var menagerie_attraction_drop_chance: float = 0.0\n\n@export_group(\"Attack Settings (ELITE / BOSS)\")\n@export var boss_attack_range_cells: int = 0\n@export var base_damage: float = 0.0"
+        },
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _resolve_target_mitigation",
+          "start_line": 36,
+          "end_line": 53,
+          "text": "## Target mitigation (Section 3.5.4): returns a 0.0-1.0 multiplier to apply\n## to raw damage. \"physical\" uses the Armor diminishing-returns curve\n## (Mitigation% = Armor / (Armor + 50 x hero_level), hero_level now the real\n## per-attack value passed in by the caller -- see Hero Leveling System\n## 2026-09-19 note above); any other damage_type (fire/ice/poison/\n## lightning/arcane) uses the caller-resolved target_elemental_resist\n## directly (Hero already looked this up from the target's\n## MonsterResource.elemental_resistances dict by the ability's own\n## damage_type before emitting -- this function never does that lookup\n## itself, matching the project's existing \"caller resolves, D&S only does\n## math\" division of labor already established by _on_tower_attacked()'s\n## is_armored parameter); \"true\" bypasses both, returning 1.0 (no\n## mitigation) per Section 3.3's dormant-capability note.\nstatic func _resolve_target_mitigation(damage_type: String, target_armor: float, target_elemental_resist: float, hero_level: int) -> float:\n\tif damage_type == \"true\":\n\t\treturn 1.0\n\tif damage_type == \"physical\":\n\t\t# MonsterResource.validate() rejects negative armor at content-authoring"
+        },
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > mitigate_hero_incoming",
+          "start_line": 299,
+          "end_line": 309,
+          "text": "## Pure Rule V mitigation (unit-tested directly). \"physical\": armor; \"fire\"/\"frost\": the\n## caller passes the matching resist fraction; any other type is unmitigated. Floored at 1\n## so no hit is ever fully negated.\nstatic func mitigate_hero_incoming(amount: float, damage_type: String, armor: float, resist: float) -> int:\n\tvar mitigated: float = amount\n\tmatch damage_type:\n\t\t\"physical\":\n\t\t\tmitigated = amount * HERO_INCOMING_ARMOR_COEFFICIENT / (maxf(0.0, armor) + HERO_INCOMING_ARMOR_COEFFICIENT)\n\t\t\"fire\", \"frost\":\n\t\t\tmitigated = amount * (1.0 - clampf(resist, 0.0, HERO_INCOMING_RESIST_CAP))\n\treturn maxi(1, floori(mitigated))"
+        }
+      ],
+      "seconds": 8.8,
+      "review": {
+        "verdict_correct": false,
+        "note": "False alarm. The cited hero.md table is a different mechanic (the Hero's own armor against incoming damage); for monster armor the code matches the claim exactly (monster_resource.gd, damage_status.gd)."
+      }
+    },
+    {
+      "claim": "The evasion stat represents a flat percentage chance between 0 and 100 that the Hero's attack misses entirely.",
+      "quote": "`evasion` | `float [0, 100]`, default 0.0 | Flat percentage chance the Hero's attack (any damage type) misses this monster entirely.",
+      "line": 54,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "e67bd3b3-ca97-4de9-b163-886462b292a7",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source D5 states that the `evasion` field represents a 'Flat percentage chance' with a range of '[0, 100]'.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 51,
+          "end_line": 58,
+          "text": "| `sprite_frames` | `SpriteFrames` | Required animations: `\"walk\"`, `\"death\"`. BOSS additionally requires `\"attack\"` and **`\"attack_prepare\"`** (the telegraph animation, see Rule 17d). |\n   | `death_vfx_scene` | `PackedScene` | One-shot VFX scene instantiated at death position. |\n   | `armor` | `float`, default 0.0 | Mitigates the Hero's own outgoing Physical Attack damage only (never tower damage). Formula: Mitigation% = Armor / (Armor + 50 × Hero Level). |\n   | `evasion` | `float [0, 100]`, default 0.0 | Flat percentage chance the Hero's attack (any damage type) misses this monster entirely. Rolled before any damage math. Never affects tower damage. |\n\n3. MonsterResource data lives in `assets/data/monsters/`. Each monster type has exactly one `.tres` file. Tuning (HP, speed, damage, drop chance) is done by editing resource files — never hardcoded in scripts.\n\n4. The MVP supports **5–8 distinct monster types**, each with one MonsterResource. All types must be authored before the first playable build. The Wave Manager references types by `monster_id`."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _roll_evasion",
+          "start_line": 29,
+          "end_line": 33,
+          "text": "## Evasion roll (Section 3.5.1): true if the attack misses entirely.\n## evasion_percent is MonsterResource.evasion, already in [0,100] units (not\n## a 0.0-1.0 fraction) -- matches that field's own @export_range.\nstatic func _roll_evasion(evasion_percent: float) -> bool:\n\treturn randf() * 100.0 < evasion_percent"
+        },
+        {
+          "path": "src/core/monster/monster_resource.gd",
+          "section": "MonsterResource > declarations: monster_id, display_name, tier, archetype_tag, base_hp, base_speed, elemental_resistances, armor, evasion, drop_table_id, menagerie_attraction_drop_chance, boss_attack_range_cells, base_damage, base_attack_interval, hero_attack_windup_seconds, movement_type, heal_radi",
+          "start_line": 40,
+          "end_line": 60,
+          "text": "## Hero Combat & Stats Redesign (2026-09-18), Section 3.3: mitigates the\n## Hero's own outgoing PHYSICAL Attack damage only (never tower damage --\n## that stays on archetype_tag/is_armored, untouched by this field). Formula:\n## Mitigation% = Armor / (Armor + 50 x hero_level), hero_level hardcoded to 1\n## in damage_status.gd pending the not-yet-designed Hero Leveling system.\n## Default 0.0 = no mitigation (fully backward-compatible with every existing\n## monster .tres, none of which author this field yet).\n@export var armor: float = 0.0\n## Hero Combat & Stats Redesign (2026-09-18), Section 3.3: flat percentage\n## [0, 100] chance the Hero's attack (any damage_type) misses this monster\n## entirely -- rolled before any damage math in damage_status.gd. Default 0.0\n## = never evades (fully backward-compatible).\n@export_range(0.0, 100.0, 0.1) var evasion: float = 0.0\n\n@export_group(\"Drop / Economy\")\n@export var drop_table_id: StringName = &\"\"\n@export_range(0.0, 1.0, 0.01) var menagerie_attraction_drop_chance: float = 0.0\n\n@export_group(\"Attack Settings (ELITE / BOSS)\")\n@export var boss_attack_range_cells: int = 0\n@export var base_damage: float = 0.0"
+        }
+      ],
+      "seconds": 6.1,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The scaled_hp field is immutable after spawn and is calculated as base_hp multiplied by wave_hp_multiplier multiplied by difficulty_hp_multiplier.",
+      "quote": "`scaled_hp` | `float` | Immutable after spawn. `base_hp × wave_hp_multiplier × difficulty_hp_multiplier`.",
+      "line": 66,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "77bdb291-8897-45d7-a331-6b6e15733c93",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D2], [D4], and [D5] explicitly state that `scaled_hp` is calculated as the product of `base_hp`, `wave_hp_multiplier`, and `difficulty_hp_multiplier`, and remains immutable after spawn. Implementation source [C4] supports this by calculating `scaled_hp` using the exact same formula (`res.base_hp * hp_mult * diff_mult`) and assigning it to both `current_hp` and `scaled_hp`. Sources [C5] and [C6] further confirm the immutability of these fields after spawn. Other sources ([D3], [C1]-[C3], [C7], [C8]) are unrelated to the specific calculation or immutability of `scaled_hp`.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 280,
+          "end_line": 293,
+          "text": "| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp  \n**Design note:** Linear HP scaling per wave (not exponential) keeps time-to-kill ratios stable across the mission. Exponential HP inflation produces damage-sponge late waves — a known negative feedback pattern in tower defense.\n\n**Worked examples:**\n\n| Scenario | base_hp | Multipliers | scaled_hp |\n|----------|---------|-------------|-----------|\n| Wave 1, Normal, STANDARD | 60 | 1.00 × 1.00 | 60 |\n| Wave 4, Normal, ELITE (before Wave 4 amp) | 300 | 1.45 × 1.00 | 435 |\n| Wave 8, Brutal, heavy ELITE | 300 | 2.05 × 1.70 | 1,045 |\n\n---"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 262,
+          "end_line": 282,
+          "text": "### Formula 1 — Monster HP Scaling\n\n```\nscaled_hp = base_hp × wave_hp_multiplier × difficulty_hp_multiplier\n\nwave_hp_multiplier       = 1 + (hp_wave_growth_rate × (wave_index - 1))\ndifficulty_hp_multiplier = 1 + (hp_difficulty_growth_rate × (difficulty_tier - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_hp` | float | 40–800 | HP at wave 1, Normal difficulty. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `difficulty_tier` | int | 1–3 | Player-selected difficulty: 1=Normal, 2=Hard, 3=Brutal. |\n| `hp_wave_growth_rate` | float | 0.12–0.20 | Per-wave fractional HP increase. Tuning knob. Default: 0.15 |\n| `hp_difficulty_growth_rate` | float | 0.25–0.50 | Per-difficulty-tier fractional HP increase. Tuning knob. Default: 0.35 |\n| `wave_hp_multiplier` | float | 1.00–2.40 | HP scale factor from wave progression. |\n| `difficulty_hp_multiplier` | float | 1.00–2.00 | HP scale factor from difficulty selection. |\n| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 4 — Penultimate Wave Elite Amplification",
+          "start_line": 374,
+          "end_line": 378,
+          "text": "| `elite_penultimate_wave_hp_amplifier` | float | 1.35 | HP multiplier for ELITE monsters on the penultimate wave. |\n| Application condition | — | `is_penultimate_wave == true` AND `tier == ELITE` | No other wave or tier receives this amplifier. |\n\n**Output range:** `scaled_hp` from Formula 1 multiplied by 1.35. No additional clamp.  \n**Combined multiplier at penultimate wave, Normal (example: 5-wave mission, wave 4):** `wave_hp_multiplier (1.45) × elite_penultimate_wave_hp_amplifier (1.35) = 1.9575×`."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 60,
+          "end_line": 70,
+          "text": "5. A **runtime monster entity** holds this mutable state alongside its MonsterResource reference. **Scene root node: `Area2D`** — movement is position-based (`global_position` set directly); `CharacterBody2D` is prohibited as it pushes co-occupying entities apart (violates EC-1.3).\n\n   | Field | Type | Description |\n   |-------|------|-------------|\n   | `entity_id` | `int` | Unique instance ID, monotonically incrementing per mission. Never recycled within a mission. |\n   | `current_hp` | `float` | Starts at `scaled_hp`. |\n   | `scaled_hp` | `float` | Immutable after spawn. `base_hp × wave_hp_multiplier × difficulty_hp_multiplier`. |\n   | `scaled_speed` | `float` | Immutable after spawn. `base_speed × wave_speed_multiplier`. |\n   | `current_path` | `Array[Vector2i]` | Ordered cells from current position to nearest GOAL. Populated at spawn; refreshed on path invalidation. |\n   | `path_step_index` | `int` | Index into `current_path` of the cell the monster is currently moving toward. |\n   | `lifecycle_state` | `int` enum | SPAWNING / ACTIVE / DEAD / BREACHED |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _spawn_entity",
+          "start_line": 1061,
+          "end_line": 1081,
+          "text": "func _spawn_entity(res: MonsterResource, spawn_cell: Vector2i, wave_index: int,\n\t\tdifficulty_tier: int, wave_reward_scalar: float, split_origin: Dictionary = {}) -> MonsterEntity:\n\t_current_difficulty_tier = difficulty_tier\n\t# HP scaling: base_hp × (1 + rate × (wave-1)) × (1 + diff_rate × (diff-1))\n\tvar hp_mult := 1.0 + HP_WAVE_GROWTH_RATE * float(wave_index - 1)\n\t# Tiers above Brutal are Ascension ranks: Brutal's HP times a per-rank growth.\n\tvar diff_mult := (1.0 + HP_DIFFICULTY_GROWTH_RATE * float(mini(difficulty_tier, DifficultyRewards.BRUTAL_TIER) - 1)) \\\n\t\t\t* DifficultyRewards.ascension_hp_multiplier(difficulty_tier)\n\tvar scaled_hp := maxf(1.0, res.base_hp * hp_mult * diff_mult)\n\t# Speed scaling: base_speed × (1 + rate × (wave-1)) × tarot_scalar\n\tvar speed_mult := 1.0 + SPEED_WAVE_GROWTH_RATE * float(wave_index - 1)\n\tvar scaled_speed := maxf(0.1, res.base_speed * speed_mult * _tarot_speed_scalar)\n\n\t_entity_id_counter += 1\n\tvar entity := MonsterEntity.new()\n\tentity.resource = res\n\tentity.entity_id = _entity_id_counter\n\tentity.current_hp = scaled_hp\n\tentity.scaled_hp = scaled_hp\n\tentity.scaled_speed = scaled_speed\n\tentity.lifecycle_state = MonsterEntity.State.SPAWNING"
+        }
+      ],
+      "seconds": 15.3,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The scaled_speed field is immutable after spawn and is calculated as base_speed multiplied by wave_speed_multiplier.",
+      "quote": "`scaled_speed` | `float` | Immutable after spawn. `base_speed × wave_speed_multiplier`.",
+      "line": 67,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "f1f188b5-ab63-434f-905f-b59f3dafd4ff",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1, D2, D3, and D5 explicitly state that `scaled_speed` is immutable after spawn and defined by base speed and wave multipliers. Implementation source C4 supports this by calculating effective speed using the immutable `entity.scaled_speed` multiplied by slow multipliers, while C5 and C6 declare the field as immutable in the code schema.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D6 — Slow Effect Speed Multiplier *(amended 2026-08-13, same day, follow-up; resolved by Monster System, not D&S — see Rule I.1's second named exception)*",
+          "start_line": 343,
+          "end_line": 354,
+          "text": "| `effective_speed` | float | ≥ 0 | What Monster System's movement pass (Pass 3) actually reads each frame — `MonsterEntity.scaled_speed` is NEVER mutated; it stays immutable after spawn per ADR-0006. |\n\n**Expression:**\n```\nspeed_multiplier = max(speed_multiplier_floor, 1.0 - effect_value)     # per instance, computed once when the instance is created\neffective_speed  = scaled_speed × Π(speed_multiplier for each active instance on this monster)\n```\n\n> `speed_multiplier_floor` defaults to `0.05` — see Tuning Knobs. The product (`Π`) is the multiplicative-stacking rule — see the Amendment note above for the worked reasoning on why multiplicative was chosen over additive.\n\n**Worked examples** (`speed_multiplier_floor = 0.05`):\n- Frostbolt Turret hit: `effect_type=\"slow\"`, `effect_value=0.15`, target has no other active slow → `speed_multiplier = max(0.05, 1.0 - 0.15) = 0.85`. A monster with `scaled_speed=2.0` cells/sec moves at `2.0 × 0.85 = 1.7` cells/sec for the instance's remaining duration."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+          "start_line": 295,
+          "end_line": 312,
+          "text": "### Formula 2 — Monster Speed Scaling\n\n```\nscaled_speed = base_speed × wave_speed_multiplier × tarot_speed_scalar\n\nwave_speed_multiplier = 1 + (speed_wave_growth_rate × (wave_index - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_speed` | float | 0.5–3.0 | Path traversal speed in grid-cells/second at wave 1. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `speed_wave_growth_rate` | float | 0.04–0.10 | Per-wave fractional speed increase. Tuning knob. Default: 0.06 |\n| `wave_speed_multiplier` | float | 1.00–1.70 | Speed scale from wave progression. |\n| `tarot_speed_scalar` | float | 0.50–2.00 | Tarot modifier from `mission_modifier_applied`. Defaults to 1.0 if no modifier active. |\n| `scaled_speed` | float | 0.25–10.2 | Immutable speed assigned at spawn. Floored at 0.1 cells/sec. |\n\n**Output range:** 0.25–10.2 cells/sec (Tarot extreme case: base_speed=3.0, max wave, tarot=2.0)"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Acceptance Criteria",
+          "start_line": 805,
+          "end_line": 821,
+          "text": "AND `entity.scaled_speed` itself remains `2.0` (unmutated) both during and after the slow's active window\n\n**AC-33: Slow effect — multiplicative stacking**\nGIVEN entity 99 already carries one active slow instance with `speed_multiplier=0.85`\nWHEN a second `tower_attacked` event with `effect_type=\"slow\"`, `effect_value=0.15` targeting entity 99 arrives\nTHEN entity 99's `active_slow_effects` now holds 2 independent instances\nAND `effective_speed = scaled_speed × 0.85 × 0.85 = scaled_speed × 0.7225` — NOT `scaled_speed × 0.70` (the additive alternative that was explicitly rejected)\n\n**AC-34: Slow effect — speed_multiplier_floor prevents a full stop**\nGIVEN a `tower_attacked` event with `effect_type=\"slow\"`, `effect_value=0.99`\nWHEN the instance is created\nTHEN `speed_multiplier = max(0.05, 1.0 - 0.99) = max(0.05, 0.01) = 0.05` — the floor wins, not the raw `0.01`\nAND a monster with only this one instance active still moves at 5% of `scaled_speed`, never 0\n\n**AC-35: Slow effect — duration decay and expiry (no ticks)**\nGIVEN entity 99 has one active slow instance with `remaining_duration=1.5`\nWHEN Pass 1b runs with `delta=1.0` then again with `delta=1.0`"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 60,
+          "end_line": 70,
+          "text": "5. A **runtime monster entity** holds this mutable state alongside its MonsterResource reference. **Scene root node: `Area2D`** — movement is position-based (`global_position` set directly); `CharacterBody2D` is prohibited as it pushes co-occupying entities apart (violates EC-1.3).\n\n   | Field | Type | Description |\n   |-------|------|-------------|\n   | `entity_id` | `int` | Unique instance ID, monotonically incrementing per mission. Never recycled within a mission. |\n   | `current_hp` | `float` | Starts at `scaled_hp`. |\n   | `scaled_hp` | `float` | Immutable after spawn. `base_hp × wave_hp_multiplier × difficulty_hp_multiplier`. |\n   | `scaled_speed` | `float` | Immutable after spawn. `base_speed × wave_speed_multiplier`. |\n   | `current_path` | `Array[Vector2i]` | Ordered cells from current position to nearest GOAL. Populated at spawn; refreshed on path invalidation. |\n   | `path_step_index` | `int` | Index into `current_path` of the cell the monster is currently moving toward. |\n   | `lifecycle_state` | `int` enum | SPAWNING / ACTIVE / DEAD / BREACHED |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _effective_speed",
+          "start_line": 509,
+          "end_line": 523,
+          "text": "## Product of every active slow instance's speed_multiplier (1.0 if none are\n## active) — the multiplicative-stacking combination rule from Formula D6.\n## Never mutates entity.scaled_speed itself.\nfunc _effective_speed(entity: MonsterEntity) -> float:\n\tif entity.stun_remaining > 0.0:\n\t\treturn 0.0\n\tvar multiplier: float = 1.0\n\tfor slow: ActiveSlowEffect in entity.active_slow_effects:\n\t\tmultiplier *= slow.speed_multiplier\n\treturn entity.scaled_speed * multiplier\n\n\n# ---------------------------------------------------------------------------\n# Pass 1b — Status Effects (burn/poison DoT ticks + slow duration decay)\n# ---------------------------------------------------------------------------"
+        }
+      ],
+      "seconds": 12.9,
+      "review": {
+        "verdict_correct": true,
+        "note": "The code also multiplies by a tarot speed scalar, which Group 8 of the same doc specifies."
+      }
+    },
+    {
+      "claim": "The boss_attack_cooldown_remaining field is only applicable to BOSS entities.",
+      "quote": "BOSS only: seconds until next attack attempt.",
+      "line": 71,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "b28a8fd4-7e0d-4c48-9a07-db62f1f06c6c",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "All design sources [D1-D5] explicitly define `boss_attack_cooldown_remaining` as a field specific to BOSS entities, often noting it starts at 0 for them while implying other monsters use different mechanics or defaults. Implementation source [C2] reinforces this by grouping the variable under a comment block labeled 'BOSS-only runtime fields (safe to leave at defaults for STANDARD/ELITE)', and [C1] shows the field being actively managed in the boss logic pass. Therefore, every source states that the field is applicable only to BOSS entities.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Edge Cases > Category 5: BOSS Attack Edge Cases",
+          "start_line": 479,
+          "end_line": 487,
+          "text": "### Category 5: BOSS Attack Edge Cases\n\n**EC-5.1 — No towers in range when BOSS cooldown reaches 0**\nSituation: `boss_attack_cooldown_remaining` reaches 0 but `Grid.get_towers_in_range()` returns empty.\nWhat happens: Per Rule 17c (B6 design decision), cooldown is NOT reset — it remains at 0 (BOSS stays primed). When a tower next enters range and the scan executes, the BOSS immediately enters the `attack_prepare` phase on that scan frame (no additional cooldown delay). The `\"attack_prepare\"` animation is the player's only warning — there is no guaranteed idle window after a gap in tower presence.\n\n**EC-5.2 — All towers destroyed — BOSS on an empty field**\nSituation: Every tower has been destroyed. BOSS is ACTIVE and walking toward GOAL.\nWhat happens: `Grid.get_towers_in_range()` returns empty every frame. No attack fires; cooldown remains at its current value (B6 decision: held at 0 if already primed — see Rule 17a). BOSS walks to GOAL at full `scaled_speed`. On reaching GOAL: EC-3.2 applies — `boss_died` IS emitted with `cause = \"breached\"`, then `monster_breached` emits. Wave Manager and HUD handle outcome."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 4: Attack Behavior",
+          "start_line": 141,
+          "end_line": 145,
+          "text": "- e. Decrement `boss_attack_cooldown_remaining` by `delta` each frame, clamped to 0.\n\n18. Monster System emits `boss_tower_attack_attempted` and does nothing further regarding tower damage. The Tower System subscribes to this event and applies `base_damage` directly to the target tower's HP (no mitigation, MVP decision). Boss attack damage must be designed within `tower_hp_boss_damage_provisional_range` [40–200 HP/hit]. **Scoping corrected 2026-07-15**: the \"Tier 1 towers fall in 3–5 hits\" target applies to **early-wave bosses only** (base_damage 15–25) — a final-wave boss (base_damage 55–80) always kills a Tier 1 tower in 1–2 hits at any legal authored value, since final-wave `base_damage` starts well above the range needed for a 3–5 hit kill against Tier 1's 80 HP; this was never actually achievable and the prose previously stated it without that scope. The \"Tier 4 towers survive 8–15 hits\" target applies to **final-wave bosses** (see Formula 3's calibration table).\n\n19. A BOSS will attempt to attack a tower even on the frame it breaches. Attack check executes before breach check in the same frame."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Acceptance Criteria > Area 3: BOSS Attack",
+          "start_line": 871,
+          "end_line": 883,
+          "text": "THEN `boss_tower_attack_attempted` is NOT emitted; `boss_attack_cooldown_remaining == 1.4833` (±0.001).\n\n**AC-14** `[Logic · BLOCKING]`\nGIVEN an ACTIVE BOSS with `boss_attack_cooldown_remaining = 0`, `boss_attack_prepare_remaining = 0`, and `Grid.get_towers_in_range()` returning an empty array on the scan,\nWHEN `_physics_process(delta)` runs,\nTHEN `boss_tower_attack_attempted` is NOT emitted; `boss_attack_cooldown_remaining` remains 0 (BOSS stays primed — cooldown is NOT reset when no towers are in range, per Rule 17c design decision); `boss_attack_prepare_remaining` remains 0.\n\n**AC-15** `[Logic · BLOCKING]`\nGIVEN STANDARD (tier=0) and ELITE (tier=1) ACTIVE monsters with towers within any range,\nWHEN `_physics_process(delta)` is called for 10 frames,\nTHEN `boss_tower_attack_attempted` is never emitted from either entity.\n\n---"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Acceptance Criteria > Area 17: BOSS Attack Telegraph",
+          "start_line": 1083,
+          "end_line": 1092,
+          "text": "### Area 17: BOSS Attack Telegraph\n\n**AC-41** `[Logic · BLOCKING]`\nGIVEN an ACTIVE BOSS with `boss_attack_cooldown_remaining = 0`, `boss_attack_prepare_remaining = 0`, `boss_attack_prepare_frames = 4`, and a tower within `boss_attack_range_cells` when the scan executes,\nWHEN `_physics_process(delta)` runs,\nTHEN `boss_attack_prepare_remaining` is set to 4; `boss_tower_attack_attempted` is NOT emitted this frame (prepare phase not yet complete); `boss_attack_cooldown_remaining` remains 0 (cooldown reset happens only when `boss_tower_attack_attempted` actually fires after prepare completes per Rule 17d.1).\n\n**AC-42** `[Logic · BLOCKING]`\nGIVEN an ACTIVE BOSS with `boss_attack_prepare_remaining = 1`, `base_attack_interval = 3.0`, and `_locked_target_id` set to a valid tower_id (prepare phase was entered on a prior frame),\nWHEN `_physics_process(delta)` runs,"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 70,
+          "end_line": 74,
+          "text": "| `lifecycle_state` | `int` enum | SPAWNING / ACTIVE / DEAD / BREACHED |\n   | `boss_attack_cooldown_remaining` | `float` | BOSS only: seconds until next attack attempt. Starts at 0 (BOSS can attack immediately on ACTIVE). |\n   | `boss_attack_prepare_remaining` | `int` | BOSS only: frames remaining in the `\"attack_prepare\"` animation before `boss_tower_attack_attempted` emits. 0 = ready to fire. Set to `boss_attack_prepare_frames` when attack conditions are first met. |\n   | `boss_scan_frames_remaining` | `int` | BOSS only: frames remaining until the next targeting scan executes. Initialized to `0` on ACTIVE entry — scan fires on the very first BOSS Logic Pass. Decremented once per BOSS Logic Pass when `> 0`. Reset to `boss_scan_interval_frames` after each scan fires. |\n   | `hero_windup_remaining` | `float` | ELITE and BOSS (added 2026-09-25): seconds left in a Hero-targeted wind-up; `0` = none in flight. At most one wind-up (tower or Hero) is in flight per monster. |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _pass2_boss_logic",
+          "start_line": 645,
+          "end_line": 650,
+          "text": "entity.resource.base_damage,\n\t\t\t\t\t\tentity.wave_index)\n\t\t\t\tentity.boss_attack_cooldown_remaining = entity.resource.base_attack_interval\n\t\t\t\tentity.boss_locked_target_id = -1\n\t\t# Step 3: tick cooldown\n\t\tentity.boss_attack_cooldown_remaining = maxf(0.0, entity.boss_attack_cooldown_remaining - delta)"
+        },
+        {
+          "path": "src/core/monster/monster_entity.gd",
+          "section": "MonsterEntity > declarations: State, resource, entity_id, current_hp, scaled_hp, scaled_speed, current_path, path_step_index, lifecycle_state, last_hit_source, spawn_wave_reward_scalar, wave_index, monster_instance, swarm_handle, boss_presenter_handle, hit_flash_remaining_seconds, facing_left, walk_",
+          "start_line": 109,
+          "end_line": 132,
+          "text": "## policy) or this entity has no swarm_handle at all (BOSS tier).\nvar walk_clip: CreatureAnimationClip = null\n\n## Seconds accumulated toward walk_clip's frame-cycling since this entity\n## last had a live swarm_handle — mirrors BossCreaturePresenter3D's own\n## _base_elapsed[slot] pattern (src/core/visual_presentation/\n## boss_creature_presenter_3d.gd), just entity-owned instead of slot-array-owned\n## since the swarm path has one MonsterEntity per creature rather than a\n## capped presenter pool.\nvar walk_anim_elapsed_seconds: float = 0.0\n\n# ---- BOSS-only runtime fields (safe to leave at defaults for STANDARD/ELITE) ----\n\n## Frames remaining before next tower scan. Initialized to 0 so BOSS scans on its first frame.\nvar boss_scan_frames_remaining: int = 0\n\n## Frames remaining in the attack-telegraph animation before boss_tower_attack_attempted emits.\nvar boss_attack_prepare_remaining: int = 0\n\n## Seconds until the BOSS can start another attack sequence. Starts at 0 (can attack immediately).\nvar boss_attack_cooldown_remaining: float = 0.0\n\n## tower_id locked in when the prepare phase starts. -1 = no locked target.\nvar boss_locked_target_id: int = -1"
+        }
+      ],
+      "seconds": 8.8
+    },
+    {
+      "claim": "The boss_scan_frames_remaining field is initialized to 0 when a BOSS enters the ACTIVE state.",
+      "quote": "Initialized to `0` on ACTIVE entry",
+      "line": 73,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "b261c120-b3d2-4141-8c55-7e1e50532d87",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D1] states that `boss_scan_frames_remaining` is 'Initialized to 0 on ACTIVE entry'. Implementation source [C1] supports this by declaring the variable with a default value of 0 (`var boss_scan_frames_remaining: int = 0`) in the monster entity, which aligns with the design requirement for initialization upon entering the active state.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 70,
+          "end_line": 74,
+          "text": "| `lifecycle_state` | `int` enum | SPAWNING / ACTIVE / DEAD / BREACHED |\n   | `boss_attack_cooldown_remaining` | `float` | BOSS only: seconds until next attack attempt. Starts at 0 (BOSS can attack immediately on ACTIVE). |\n   | `boss_attack_prepare_remaining` | `int` | BOSS only: frames remaining in the `\"attack_prepare\"` animation before `boss_tower_attack_attempted` emits. 0 = ready to fire. Set to `boss_attack_prepare_frames` when attack conditions are first met. |\n   | `boss_scan_frames_remaining` | `int` | BOSS only: frames remaining until the next targeting scan executes. Initialized to `0` on ACTIVE entry — scan fires on the very first BOSS Logic Pass. Decremented once per BOSS Logic Pass when `> 0`. Reset to `boss_scan_interval_frames` after each scan fires. |\n   | `hero_windup_remaining` | `float` | ELITE and BOSS (added 2026-09-25): seconds left in a Hero-targeted wind-up; `0` = none in flight. At most one wind-up (tower or Hero) is in flight per monster. |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_entity.gd",
+          "section": "MonsterEntity > declarations: State, resource, entity_id, current_hp, scaled_hp, scaled_speed, current_path, path_step_index, lifecycle_state, last_hit_source, spawn_wave_reward_scalar, wave_index, monster_instance, swarm_handle, boss_presenter_handle, hit_flash_remaining_seconds, facing_left, walk_",
+          "start_line": 109,
+          "end_line": 132,
+          "text": "## policy) or this entity has no swarm_handle at all (BOSS tier).\nvar walk_clip: CreatureAnimationClip = null\n\n## Seconds accumulated toward walk_clip's frame-cycling since this entity\n## last had a live swarm_handle — mirrors BossCreaturePresenter3D's own\n## _base_elapsed[slot] pattern (src/core/visual_presentation/\n## boss_creature_presenter_3d.gd), just entity-owned instead of slot-array-owned\n## since the swarm path has one MonsterEntity per creature rather than a\n## capped presenter pool.\nvar walk_anim_elapsed_seconds: float = 0.0\n\n# ---- BOSS-only runtime fields (safe to leave at defaults for STANDARD/ELITE) ----\n\n## Frames remaining before next tower scan. Initialized to 0 so BOSS scans on its first frame.\nvar boss_scan_frames_remaining: int = 0\n\n## Frames remaining in the attack-telegraph animation before boss_tower_attack_attempted emits.\nvar boss_attack_prepare_remaining: int = 0\n\n## Seconds until the BOSS can start another attack sequence. Starts at 0 (can attack immediately).\nvar boss_attack_cooldown_remaining: float = 0.0\n\n## tower_id locked in when the prepare phase starts. -1 = no locked target.\nvar boss_locked_target_id: int = -1"
+        }
+      ],
+      "seconds": 4.7,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The value -2 for boss_locked_target_id indicates the locked target is the Hero.",
+      "quote": "the value `-2` (`MonsterManager.HERO_TARGET_ID`) means the locked target is the Hero.",
+      "line": 75,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "cbbc9479-ca19-4e77-867c-6e96fd75209f",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source [D1] states that the value -2 for `boss_locked_target_id` indicates the locked target is the Hero, directly supporting the claim. Implementation sources [C1], [C3], and others show the variable initialized to -1 or used in logic without contradicting the specific meaning of -2 defined in the design; they do not provide evidence that contradicts the claim nor do they explicitly demonstrate the value -2 in use, thus remaining unrelated to the specific assertion about the sentinel value's meaning.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 75,
+          "end_line": 80,
+          "text": "| `boss_locked_target_id` (Hero sentinel) | `int` | Added 2026-09-25: the value `-2` (`MonsterManager.HERO_TARGET_ID`) means the locked target is the Hero. `boss_attack_cooldown_remaining`, `boss_scan_frames_remaining` and `boss_locked_target_id` are now SHARED by ELITE Hero attacks (the tower attack itself stays BOSS-only). |\n   | `_locked_target_id` | `int` | BOSS only: `tower_id` of the tower selected when the prepare phase was entered. Carries the target across the prepare countdown so the fire step (Rule 17d.1) attacks the correct tower. Initialized to `-1` (no target). Set when `boss_attack_prepare_remaining` is first written. Cleared back to `-1` after `boss_tower_attack_attempted` fires. |\n   | `last_hit_source` | `String` | `\"hero\"` or `\"tower\"`. Derived from `source_type` in `monster_damage_taken` (0→`\"tower\"`, 1→`\"hero\"`); used to populate `kill_source` in `monster_died`. |\n   | `spawn_wave_reward_scalar` | `float` | Cached from the spawning `monster_spawn_requested.wave_reward_scalar` at spawn. Forwarded as-is in `monster_died` payload for Resource Economy. Never applied to combat stats. |\n\n---"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 7.1,
+      "review": {
+        "verdict_correct": false,
+        "note": "Missed: HERO_TARGET_ID := -2 exists (monster_manager.gd:44)."
+      }
+    },
+    {
+      "claim": "boss_attack_cooldown_remaining, boss_scan_frames_remaining, and boss_locked_target_id are shared by ELITE Hero attacks.",
+      "quote": "`boss_attack_cooldown_remaining`, `boss_scan_frames_remaining` and `boss_locked_target_id` are now SHARED by ELITE Hero attacks",
+      "line": 75,
+      "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+      "run_id": "6883e4dd-332a-46c2-bca5-6bc7594c213d",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "The claim is supported by Design sources D1 and D2, which explicitly state that `boss_attack_cooldown_remaining`, `boss_scan_frames_remaining`, and `boss_locked_target_id` are shared by ELITE Hero attacks. Implementation sources C1, C3, and C4 support this by showing these specific fields being checked and modified within the same logic loops for both BOSS and ELITE entities, confirming they operate on a shared state rather than separate instances.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 4: Attack Behavior",
+          "start_line": 145,
+          "end_line": 147,
+          "text": "19. A BOSS will attempt to attack a tower even on the frame it breaches. Attack check executes before breach check in the same frame.\n\n19a. **Hero attacks (ELITE and BOSS)** *(added 2026-09-25)*: an attack-capable monster (ELITE with `base_damage > 0`, or BOSS) that finds the Hero within `boss_attack_range_cells` (Chebyshev, from the monster's cell to the Hero's cached cell) locks the Hero and starts a seconds-based wind-up (`hero_attack_windup_seconds`), emitting `monster_hero_attack_winding_up(entity_id, windup_seconds)`. ELITEs target the Hero only. A BOSS targets the closest of Hero or tower and chooses the Hero only when it is strictly closer than the closest tower (ties go to the tower; when only the Hero is in range, the Hero). The tower path (rules 17-18, the 4-frame prepare) is unchanged. Runtime state: `hero_windup_remaining` (seconds, 0 = none); `boss_locked_target_id = -2` is the sentinel for \"the Hero\"; ELITEs share `boss_attack_cooldown_remaining`, `boss_scan_frames_remaining` and `boss_locked_target_id` with BOSSes (the tower attack itself stays BOSS-only). `monster_hero_attack_winding_up` is emitted deferred."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 1: Monster Entity Data Schema",
+          "start_line": 75,
+          "end_line": 80,
+          "text": "| `boss_locked_target_id` (Hero sentinel) | `int` | Added 2026-09-25: the value `-2` (`MonsterManager.HERO_TARGET_ID`) means the locked target is the Hero. `boss_attack_cooldown_remaining`, `boss_scan_frames_remaining` and `boss_locked_target_id` are now SHARED by ELITE Hero attacks (the tower attack itself stays BOSS-only). |\n   | `_locked_target_id` | `int` | BOSS only: `tower_id` of the tower selected when the prepare phase was entered. Carries the target across the prepare countdown so the fire step (Rule 17d.1) attacks the correct tower. Initialized to `-1` (no target). Set when `boss_attack_prepare_remaining` is first written. Cleared back to `-1` after `boss_tower_attack_attempted` fires. |\n   | `last_hit_source` | `String` | `\"hero\"` or `\"tower\"`. Derived from `source_type` in `monster_damage_taken` (0→`\"tower\"`, 1→`\"hero\"`); used to populate `kill_source` in `monster_died`. |\n   | `spawn_wave_reward_scalar` | `float` | Cached from the spawning `monster_spawn_requested.wave_reward_scalar` at spawn. Forwarded as-is in `monster_died` payload for Resource Economy. Never applied to combat stats. |\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _elite_scan",
+          "start_line": 766,
+          "end_line": 772,
+          "text": "## ELITE scan: locks the Hero when the cooldown is clear, no wind-up is in flight, and the Hero is\n## in range. Elites never target towers.\nfunc _elite_scan(entity: MonsterEntity) -> void:\n\tif entity.boss_attack_cooldown_remaining > 0.0 or entity.hero_windup_remaining > 0.0:\n\t\treturn\n\tif _hero_in_range(entity):\n\t\t_begin_hero_windup(entity)"
+        },
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _pass2b_hero_attacks",
+          "start_line": 775,
+          "end_line": 796,
+          "text": "## Runs after the boss pass. Handles Hero wind-ups for every attack-capable monster and the full\n## scan/cooldown loop for ELITEs (bosses scan and tick their cooldown in _pass2_boss_logic).\n## Order mirrors the boss pass: scan (elites only, when idle), then tick any wind-up in the SAME\n## frame it started, then tick the elite cooldown. Untyped loop variable on purpose (see\n## _on_hero_died): the is_instance_valid() guard must run before any member access.\nfunc _pass2b_hero_attacks(delta: float) -> void:\n\tfor entity in active_monsters:\n\t\tif not is_instance_valid(entity):\n\t\t\tcontinue\n\t\tif entity.lifecycle_state == MonsterEntity.State.DEAD:\n\t\t\tcontinue\n\t\tif entity.resource.tier < 1 or entity.resource.base_damage <= 0.0:\n\t\t\tcontinue\n\t\tif entity.stun_remaining > 0.0:\n\t\t\tcontinue  # stunned: Hero wind-ups freeze (resume when the stun ends)\n\t\tif entity.resource.tier == 1 and entity.hero_windup_remaining <= 0.0:\n\t\t\tif entity.boss_scan_frames_remaining > 0:\n\t\t\t\tentity.boss_scan_frames_remaining -= 1\n\t\t\tif entity.boss_scan_frames_remaining <= 0:\n\t\t\t\t_elite_scan(entity)\n\t\t\t\tentity.boss_scan_frames_remaining = BOSS_SCAN_INTERVAL_FRAMES\n\t\tif entity.hero_windup_remaining > 0.0:"
+        },
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _pass2b_hero_attacks",
+          "start_line": 794,
+          "end_line": 803,
+          "text": "_elite_scan(entity)\n\t\t\t\tentity.boss_scan_frames_remaining = BOSS_SCAN_INTERVAL_FRAMES\n\t\tif entity.hero_windup_remaining > 0.0:\n\t\t\t_hero_windup_tick(entity, delta)\n\t\tif entity.resource.tier == 1:\n\t\t\tentity.boss_attack_cooldown_remaining = maxf(0.0, entity.boss_attack_cooldown_remaining - delta)\n\n# ---------------------------------------------------------------------------\n# Pass 3 — Movement\n# ---------------------------------------------------------------------------"
+        }
+      ],
+      "seconds": 8.7
+    },
+    {
+      "claim": "The Monster System must not apply the wave_reward_scalar value to combat stats.",
+      "quote": "**Monster System must not apply `wave_reward_scalar` to combat stats.**",
+      "line": 84,
+      "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+      "run_id": "dd26e86d-e759-4372-9737-e3a96fd1313c",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "All design sources [D2, D3, D4, D5] explicitly state that `wave_reward_scalar` is for the Resource Economy only and must not influence combat stats like HP or speed. Implementation sources [C2, C5] support this by including comments in the code that reiterate the rule: 'Monster System must NOT apply wave_reward_scalar to combat stats'.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Formulas > F1 — Wave Reward Scalar",
+          "start_line": 248,
+          "end_line": 268,
+          "text": "`wave_reward_scalar` does **not** affect Monster HP, speed, count, or combat behaviour. The two scaling systems are intentionally separate: this formula produces continuous compounding for economy escalation; Monster HP/speed use linear `wave_index` scaling for deterministic budget calculations.\n\n**Runtime validation**: On `mission_launched`, Wave Manager validates `0.10 ≤ r ≤ 0.25`. If violated, logs a content error. The value is not clamped — the mission continues with the authored value so the authoring error surface is visible during playtest. The upper bound is 0.25 (not 0.30) — at r=0.30 the wave 8 output reaches 6.275×, breaking the base drop quality probability cap (see semantic contract above).\n\n**Full boundary table** (for r range 0.15–0.25):\n\n| r | Wave 4 | Wave 8 |\n|---|--------|--------|\n| 0.15 | 1.521× | 2.660× |\n| 0.20 | 1.728× | 3.583× |\n| 0.25 | 1.953× | 4.768× |\n\n**Worked example (default r=0.20):**\n\n| Wave | Calculation | Scalar |\n|------|-------------|--------|\n| 1 | `1.0 × 1.20^0` | 1.00× |\n| 4 | `1.0 × 1.20^3` | 1.73× |\n| 8 | `1.0 × 1.20^7` | 3.583× |\n\n---"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Formulas > F1 — Wave Reward Scalar",
+          "start_line": 225,
+          "end_line": 242,
+          "text": "#### F1 — Wave Reward Scalar\n\n| Variable | Symbol | Type | Range | Description |\n|----------|--------|------|-------|-------------|\n| `wave_index` | `w` | int | 1–8 | Current wave number within the mission |\n| `difficulty_growth_rate` | `r` | float | 0.15–0.25 | Per-wave exponential growth. Authored per `WaveConfig`. Default: 0.20 |\n| `wave_reward_scalar` | `s` | float | 1.00–4.768 | Composite reward scalar passed in `monster_spawn_requested` and surfaced as `wave_difficulty` in `wave_started` |\n\n**Expression:**\n```\nwave_reward_scalar = 1.0 × (1 + r) ^ (w - 1)\n```\n\n**Output range:** 1.00× at wave 1 → up to 4.768× at wave 8 (r=0.25 ceiling).\n\n**Purpose:** Passed as `wave_reward_scalar` in every `monster_spawn_requested` payload. Also emitted as the `wave_difficulty` field in `wave_started` (same value — for Mission HUD display). The Monster System uses `wave_index` directly for its own HP/speed linear scaling — `wave_reward_scalar` is for Resource Economy only and must not influence combat stats.\n\n**Semantic contract — two reward dimensions (resolved):** The Resource Economy GDD must anchor to this scalar for exactly two output dimensions:"
+        },
+        {
+          "path": "design/gdd/event-bus.md",
+          "section": "EventBus System > Detailed Design > Interactions with Other Systems — Event Catalogue > Wave Manager",
+          "start_line": 77,
+          "end_line": 77,
+          "text": "| `monster_spawn_requested` | `MonsterSpawnRequest` Resource: `monster_id: StringName`, `spawn_cell: Vector2i`, `wave_index: int`, `difficulty_tier: int`, `wave_reward_scalar: float`, `is_penultimate_wave: bool` | Monster System (instantiate entity; `is_penultimate_wave` triggers the ELITE HP amplifier, Monster GDD Formula 4) | Per spawn entry during WAVE_ACTIVE, after each `pre_delay` elapses; 6 fields → Resource subclass per Core Rule 4. **`wave_reward_scalar` is consumed by Resource Economy only — Monster System must not apply it to combat stats.** **Corrected 2026-07-15 (`/design-review`)**: added `is_penultimate_wave: bool` — `wave-manager.md`'s own Bidirectionality Notes state this field was added to the payload 2026-05-20 and flagged as an EventBus catalogue update requirement, never carried through until now. Monster System's ELITE-amplifier formula has no valid trigger without it. |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+          "start_line": 82,
+          "end_line": 89,
+          "text": "#### Group 2: Spawn Behavior\n\n6. Monster spawning is initiated exclusively by the **Wave Manager** via the EventBus event `monster_spawn_requested`. Payload (typed Resource subclass — 6 fields): `monster_id: StringName`, `spawn_cell: Vector2i`, `wave_index: int`, `difficulty_tier: int`, `wave_reward_scalar: float`, `is_penultimate_wave: bool`. Monster System subscribes to this event. It does not self-initiate spawning. **Monster System must not apply `wave_reward_scalar` to combat stats.** Monster System caches it in `spawn_wave_reward_scalar` at spawn and forwards it in `monster_died` so Resource Economy can scale drop resolution by wave difficulty.\n\n7. On receiving `monster_spawn_requested`, the Monster System:\n   - a. Looks up the MonsterResource for `monster_id`. If not found: logs an error, aborts — no entity created, no event emitted.\n   - b. Confirms `spawn_cell` is a `SPAWN`-typed cell via `Grid.get_cell_type(spawn_cell)`. If not: logs an error, aborts.\n   - b.1. Checks `active_monsters.size() < MAX_ACTIVE_MONSTERS`. If at cap: logs `\"[MonsterSystem] WARN: active_monsters at cap ({MAX_ACTIVE_MONSTERS}). Spawn of '{monster_id}' discarded.\"`, aborts — no entity created."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/foundation/event_bus/event_payloads/monster_spawn_request.gd",
+          "section": "MonsterSpawnRequest > declarations: monster_id, spawn_cell, wave_index, difficulty_tier, wave_reward_scalar, is_penultimate_wave",
+          "start_line": 1,
+          "end_line": 23,
+          "text": "class_name MonsterSpawnRequest\nextends Resource\n\n## Event-payload Resource for the monster_spawn_requested EventBus signal.\n##\n## ADR-0001 Rule 3: 6 fields — requires Resource subclass payload.\n## ADR-0009: Event-payload Resources are short-lived; never saved as .tres files.\n## GDD source: design/gdd/event-bus.md — Wave Manager event catalogue.\n##\n## Emitted by: Wave Manager (per spawn entry during WAVE_ACTIVE, after pre_delay elapses).\n## Key subscribers: Monster System (instantiate entity).\n##\n## IMPORTANT — wave_reward_scalar:\n##   Consumed by Resource Economy only.\n##   Monster System must NOT apply wave_reward_scalar to combat stats.\n##   Monster System forwards this value unchanged into MonsterDiedEvent.\n\n@export var monster_id: StringName = &\"\"\n@export var spawn_cell: Vector2i = Vector2i(-1, -1)\n@export var wave_index: int = -1\n@export var difficulty_tier: int = 0\n@export var wave_reward_scalar: float = 1.0\n@export var is_penultimate_wave: bool = false"
+        },
+        {
+          "path": "src/foundation/event_bus/event_payloads/monster_died_event.gd",
+          "section": "MonsterDiedEvent > declarations: entity_id, monster_id, tier, drop_table_id, menagerie_attraction_drop_chance, world_position, kill_source, wave_reward_scalar",
+          "start_line": 1,
+          "end_line": 27,
+          "text": "class_name MonsterDiedEvent\nextends Resource\n\n## Event-payload Resource for the monster_died EventBus signal.\n##\n## ADR-0001 Rule 3: 8 fields — requires Resource subclass payload.\n## ADR-0009: Event-payload Resources are short-lived; never saved as .tres files.\n## GDD source: design/gdd/event-bus.md — Monster System event catalogue.\n##\n## Emitted by: Monster System (on HP reaching 0 or wave_completed force-removal).\n## Key subscribers: Resource Economy, Wave Manager, Constellation, Mission HUD.\n##\n## IMPORTANT — wave_reward_scalar:\n##   Forwarded from the original monster_spawn_requested payload.\n##   Monster System must NOT apply it to combat stats.\n##   Resource Economy owns all drop scaling via this field.\n##\n## IMPORTANT — kill_source values:\n##   \"tower\"      — killed by tower damage\n##   \"hero\"       — killed by hero damage\n##   \"wave_end\"   — force-removed at wave_completed\n##   Resource Economy must filter kill_source == \"wave_end\" and suppress drop resolution.\n\n@export var entity_id: int = -1\n@export var monster_id: StringName = &\"\"\n@export var tier: int = 0  ## 0 = STANDARD, 1 = ELITE, 2 = BOSS\n@export var drop_table_id: StringName = &\"\""
+        }
+      ],
+      "seconds": 9.5
+    },
+    {
+      "claim": "The Monster System caches the wave reward scalar in spawn_wave_reward_scalar at spawn time.",
+      "quote": "Monster System caches it in `spawn_wave_reward_scalar` at spawn",
+      "line": 84,
+      "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+      "run_id": "f3c65dfc-2cf8-4055-9f34-9b68caa94aff",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D5] explicitly states that the Monster System 'caches it in `spawn_wave_reward_scalar` at spawn'. Implementation sources [C1] and [C5] support this by defining the `wave_reward_scalar` field in the request payload and the `spawn_wave_reward_scalar` field in the monster entity, respectively. Source [D1] also states this caching behavior is required for forwarding to Resource Economy.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/event-bus.md",
+          "section": "EventBus System > Detailed Design > Interactions with Other Systems — Event Catalogue > Wave Manager",
+          "start_line": 77,
+          "end_line": 77,
+          "text": "| `monster_spawn_requested` | `MonsterSpawnRequest` Resource: `monster_id: StringName`, `spawn_cell: Vector2i`, `wave_index: int`, `difficulty_tier: int`, `wave_reward_scalar: float`, `is_penultimate_wave: bool` | Monster System (instantiate entity; `is_penultimate_wave` triggers the ELITE HP amplifier, Monster GDD Formula 4) | Per spawn entry during WAVE_ACTIVE, after each `pre_delay` elapses; 6 fields → Resource subclass per Core Rule 4. **`wave_reward_scalar` is consumed by Resource Economy only — Monster System must not apply it to combat stats.** **Corrected 2026-07-15 (`/design-review`)**: added `is_penultimate_wave: bool` — `wave-manager.md`'s own Bidirectionality Notes state this field was added to the payload 2026-05-20 and flagged as an EventBus catalogue update requirement, never carried through until now. Monster System's ELITE-amplifier formula has no valid trigger without it. |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+          "start_line": 82,
+          "end_line": 89,
+          "text": "#### Group 2: Spawn Behavior\n\n6. Monster spawning is initiated exclusively by the **Wave Manager** via the EventBus event `monster_spawn_requested`. Payload (typed Resource subclass — 6 fields): `monster_id: StringName`, `spawn_cell: Vector2i`, `wave_index: int`, `difficulty_tier: int`, `wave_reward_scalar: float`, `is_penultimate_wave: bool`. Monster System subscribes to this event. It does not self-initiate spawning. **Monster System must not apply `wave_reward_scalar` to combat stats.** Monster System caches it in `spawn_wave_reward_scalar` at spawn and forwards it in `monster_died` so Resource Economy can scale drop resolution by wave difficulty.\n\n7. On receiving `monster_spawn_requested`, the Monster System:\n   - a. Looks up the MonsterResource for `monster_id`. If not found: logs an error, aborts — no entity created, no event emitted.\n   - b. Confirms `spawn_cell` is a `SPAWN`-typed cell via `Grid.get_cell_type(spawn_cell)`. If not: logs an error, aborts.\n   - b.1. Checks `active_monsters.size() < MAX_ACTIVE_MONSTERS`. If at cap: logs `\"[MonsterSystem] WARN: active_monsters at cap ({MAX_ACTIVE_MONSTERS}). Spawn of '{monster_id}' discarded.\"`, aborts — no entity created."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/foundation/event_bus/event_payloads/monster_spawn_request.gd",
+          "section": "MonsterSpawnRequest > declarations: monster_id, spawn_cell, wave_index, difficulty_tier, wave_reward_scalar, is_penultimate_wave",
+          "start_line": 1,
+          "end_line": 23,
+          "text": "class_name MonsterSpawnRequest\nextends Resource\n\n## Event-payload Resource for the monster_spawn_requested EventBus signal.\n##\n## ADR-0001 Rule 3: 6 fields — requires Resource subclass payload.\n## ADR-0009: Event-payload Resources are short-lived; never saved as .tres files.\n## GDD source: design/gdd/event-bus.md — Wave Manager event catalogue.\n##\n## Emitted by: Wave Manager (per spawn entry during WAVE_ACTIVE, after pre_delay elapses).\n## Key subscribers: Monster System (instantiate entity).\n##\n## IMPORTANT — wave_reward_scalar:\n##   Consumed by Resource Economy only.\n##   Monster System must NOT apply wave_reward_scalar to combat stats.\n##   Monster System forwards this value unchanged into MonsterDiedEvent.\n\n@export var monster_id: StringName = &\"\"\n@export var spawn_cell: Vector2i = Vector2i(-1, -1)\n@export var wave_index: int = -1\n@export var difficulty_tier: int = 0\n@export var wave_reward_scalar: float = 1.0\n@export var is_penultimate_wave: bool = false"
+        },
+        {
+          "path": "src/core/monster/monster_entity.gd",
+          "section": "MonsterEntity > declarations: State, resource, entity_id, current_hp, scaled_hp, scaled_speed, current_path, path_step_index, lifecycle_state, last_hit_source, spawn_wave_reward_scalar, wave_index, monster_instance, swarm_handle, boss_presenter_handle, hit_flash_remaining_seconds, facing_left, walk_",
+          "start_line": 1,
+          "end_line": 33,
+          "text": "class_name MonsterEntity\nextends Area2D\n\n## Runtime instance data for a single monster on the field.\n##\n## GDD source: design/gdd/monster.md — Group 1 (runtime entity fields, Rule 5)\n## ADR-0006: Area2D root. No _physics_process — all per-entity logic runs in\n##   MonsterManager._physics_process (4-pass centralized architecture).\n##\n## lifecycle_state transitions:\n##   SPAWNING → ACTIVE (path received)\n##   ACTIVE   → DEAD    (current_hp <= 0)\n##   ACTIVE   → BREACHED (path exhausted with hp > 0)\n\nenum State { SPAWNING, ACTIVE, DEAD, BREACHED }\n\n## The authoritative definition for this entity's type (immutable after spawn).\nvar resource: MonsterResource = null\n\n## Monotonically incrementing ID, never recycled within a mission.\nvar entity_id: int = -1\n\n## Current HP — starts at scaled_hp; decremented by damage pass.\nvar current_hp: float = 0.0\n\n## Immutable after spawn. Calculated by MonsterManager at spawn time.\nvar scaled_hp: float = 0.0\n\n## Immutable after spawn (cells/sec). Calculated by MonsterManager at spawn time.\nvar scaled_speed: float = 0.0\n\n## Ordered path cells from spawn toward GOAL. Populated at ACTIVE transition.\nvar current_path: Array[Vector2i] = []"
+        }
+      ],
+      "seconds": 8.7,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The Monster System maintains a flat list named active_monsters containing entities in ACTIVE state.",
+      "quote": "`active_monsters: Array[MonsterEntity]` — entities in ACTIVE state.",
+      "line": 98,
+      "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+      "run_id": "ec9d9bab-d026-40c0-b47f-09e7457be0f1",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D3 and D5 explicitly state that the system maintains a list named `active_monsters` containing entities in the ACTIVE state. Implementation sources C1, C2, C3, and C4 support this claim by defining the `lifecycle_state` enum including ACTIVE, checking for it in logic loops, iterating over an `active_monsters` array, and describing the manager's role with active entities.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > States and Transitions",
+          "start_line": 220,
+          "end_line": 232,
+          "text": "### States and Transitions\n\n| State | Entry Condition | Active Behaviors | Terminal? |\n|-------|----------------|-----------------|-----------|\n| `SPAWNING` | `monster_spawn_requested` received; entity instantiated | Path request pending. No movement, attack, or targeting. | No |\n| `ACTIVE` | Path received; `monster_spawned` emitted | Movement (all tiers) + tower attack (BOSS only). Susceptible to `monster_damage_taken`. | No |\n| `DEAD` | `current_hp <= 0` after `monster_damage_taken`, or `wave_completed` force-removal | Death anim plays (if killed, not forced); `monster_died` emitted; queued for free. | Yes |\n| `BREACHED` | `path_step_index >= current_path.size()` | `monster_breached` emitted; node freed immediately. No death anim. | Yes |\n\n| From | To | Trigger | System Action |\n|------|----|---------|--------------|\n| — | `SPAWNING` | `monster_spawn_requested` | Instantiate entity; assign `entity_id`; calculate scaled stats; request path |\n| `SPAWNING` | `ACTIVE` | Path returned from Pathfinding | Add to `active_monsters`; emit `monster_spawned` |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+          "start_line": 90,
+          "end_line": 99,
+          "text": "- c. Calculates `scaled_hp` and `scaled_speed` using wave and difficulty multipliers (see Formulas).\n   - d. Instantiates the monster scene, assigns a new `entity_id`, sets `lifecycle_state = SPAWNING`.\n   - e. Requests the initial path from the Pathfinding System (see Rule 10).\n   - f. Sets `lifecycle_state = ACTIVE`, adds to `active_monsters`, emits `monster_spawned`.\n   - g. Applies any active Tarot `\"monster_speed_scalar\"` modifier to `scaled_speed`.\n   - h. Caches `spawn_wave_reward_scalar = wave_reward_scalar` on the entity instance.\n\n8. The Monster System maintains two flat lists, one input buffer, and two frame-scoped accumulators:\n   - `active_monsters: Array[MonsterEntity]` — entities in ACTIVE state. Cleared when `wave_started` fires.\n   - `spawning_entities: Array[MonsterEntity]` — entities whose initial path request has not yet returned (still in SPAWNING). Maintained separately so `wave_completed` force-removal can clean them up without touching `active_monsters`."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_entity.gd",
+          "section": "MonsterEntity > declarations: State, resource, entity_id, current_hp, scaled_hp, scaled_speed, current_path, path_step_index, lifecycle_state, last_hit_source, spawn_wave_reward_scalar, wave_index, monster_instance, swarm_handle, boss_presenter_handle, hit_flash_remaining_seconds, facing_left, walk_",
+          "start_line": 1,
+          "end_line": 33,
+          "text": "class_name MonsterEntity\nextends Area2D\n\n## Runtime instance data for a single monster on the field.\n##\n## GDD source: design/gdd/monster.md — Group 1 (runtime entity fields, Rule 5)\n## ADR-0006: Area2D root. No _physics_process — all per-entity logic runs in\n##   MonsterManager._physics_process (4-pass centralized architecture).\n##\n## lifecycle_state transitions:\n##   SPAWNING → ACTIVE (path received)\n##   ACTIVE   → DEAD    (current_hp <= 0)\n##   ACTIVE   → BREACHED (path exhausted with hp > 0)\n\nenum State { SPAWNING, ACTIVE, DEAD, BREACHED }\n\n## The authoritative definition for this entity's type (immutable after spawn).\nvar resource: MonsterResource = null\n\n## Monotonically incrementing ID, never recycled within a mission.\nvar entity_id: int = -1\n\n## Current HP — starts at scaled_hp; decremented by damage pass.\nvar current_hp: float = 0.0\n\n## Immutable after spawn. Calculated by MonsterManager at spawn time.\nvar scaled_hp: float = 0.0\n\n## Immutable after spawn (cells/sec). Calculated by MonsterManager at spawn time.\nvar scaled_speed: float = 0.0\n\n## Ordered path cells from spawn toward GOAL. Populated at ACTIVE transition.\nvar current_path: Array[Vector2i] = []"
+        },
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _pass1b_status_effects",
+          "start_line": 540,
+          "end_line": 559,
+          "text": "# from active_monsters -- merely reading .lifecycle_state on an\n\t\t# actually-freed object throws \"Invalid access... on a base object of\n\t\t# type 'previously freed'\", so the DEAD check itself must be guarded\n\t\t# by is_instance_valid() first, mirroring ADR-0007's established\n\t\t# \"is_instance_valid() is the first statement\" convention (there\n\t\t# applied to `self` after an await; here to an iterated collection\n\t\t# entry that may have outlived its own removal).\n\t\tif not is_instance_valid(entity):\n\t\t\tcontinue\n\t\tif entity.lifecycle_state == MonsterEntity.State.DEAD:\n\t\t\tcontinue\n\t\t_tick_dot_instances(entity, delta)\n\t\tif entity.lifecycle_state == MonsterEntity.State.DEAD:\n\t\t\tcontinue  # a DoT tick just killed this entity — skip its slow decay too\n\t\t_decay_slow_instances(entity, delta)\n\t\t# Skill secondary effects (2026-10-07): stun and armor-shred timers.\n\t\tif entity.stun_remaining > 0.0:\n\t\t\tentity.stun_remaining = maxf(0.0, entity.stun_remaining - delta)\n\t\tif entity.vulnerability_remaining > 0.0:\n\t\t\tentity.vulnerability_remaining = maxf(0.0, entity.vulnerability_remaining - delta)"
+        },
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > clear_all_entities",
+          "start_line": 1239,
+          "end_line": 1258,
+          "text": "## Releases and frees every live monster entity WITHOUT emitting monster_died /\n## boss_died (no rewards, no kill credit): unregisters swarm/boss presenter\n## handles, queue_free()s each entity (active and still-spawning), and empties\n## active_monsters / spawning_entities / _entity_lookup. Used by\n## _on_wave_completed() after it has emitted its wave_end deaths, and by\n## _on_mission_launched() so a Retry after a mid-wave DEFEAT (where\n## wave_completed never fires) does not leave the failed attempt's monsters\n## orphaned in the scene.\nfunc clear_all_entities() -> void:\n\tfor entity in active_monsters:\n\t\tif not is_instance_valid(entity):\n\t\t\tcontinue\n\t\t_release_entity(entity)\n\tactive_monsters.clear()\n\tfor entity in spawning_entities:\n\t\tif not is_instance_valid(entity):\n\t\t\tcontinue\n\t\t_release_entity(entity)\n\tspawning_entities.clear()\n\t_entity_lookup.clear()"
+        },
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > declarations: PATH_ARRIVAL_THRESHOLD, MAX_ACTIVE_MONSTERS, BOSS_SCAN_INTERVAL_FRAMES, BOSS_ATTACK_PREPARE_FRAMES, HERO_TARGET_ID, HP_WAVE_GROWTH_RATE, HP_DIFFICULTY_GROWTH_RATE, SPEED_WAVE_GROWTH_RATE, CELL_SIZE, DEATH_BATCH_THRESHOLD, STATUS_TICK_INTERVAL, GROUP_NAME, RECOGNIZED_DO",
+          "start_line": 1,
+          "end_line": 19,
+          "text": "class_name MonsterManager\nextends Node\n\n## Scene-instanced manager for all active monster entities.\n##\n## GDD source: design/gdd/monster.md\n## ADR-0006: centralized _physics_process (amended 2026-08-13 — 5th pass added;\n## amended 2026-08-20 — Epic 15 Story 004 visual-companion sync pass added):\n##   Pass 1  — damage drain       (sets DEAD before Pass 3 checks breach)\n##   Pass 1b — status effects     (burn/poison DoT ticks + slow duration decay —\n##                                 ADR-0006 amendment; see damage-status.md\n##                                 Rule I.3's exception note)\n##   Pass 2  — BOSS logic         (scan throttle, telegraph countdown, cooldown)\n##   Pass 3  — movement           (advance ACTIVE entities via effective speed —\n##                                 scaled_speed x active slow multipliers;\n##                                 detect breach; filter list)\n##   Pass 3c — visual presentation sync  (Epic 15 Story 004 / ADR-0037 for BOSS\n##                                     tier's legacy 3D mesh companion; Epic 16\n##                                     Story 7 / ADR-0038 for STANDARD/ELITE's"
+        }
+      ],
+      "seconds": 8.9,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The Monster System maintains a frame-scoped accumulator named spawning_entities for entities whose initial path request has not yet returned.",
+      "quote": "`spawning_entities: Array[MonsterEntity]` — entities whose initial path request has not yet returned (still in SPAWNING).",
+      "line": 99,
+      "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+      "run_id": "d2de78ca-4911-4f93-a6f4-f716dabc5122",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source [D2] explicitly states that the system maintains a flat list named 'spawning_entities' for entities whose initial path request has not yet returned. Implementation sources [C1] and [C2] define the entity state as 'SPAWNING' but do not declare or reference the specific 'spawning_entities' accumulator variable, making them unrelated to the specific claim about that variable's existence.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+          "start_line": 90,
+          "end_line": 99,
+          "text": "- c. Calculates `scaled_hp` and `scaled_speed` using wave and difficulty multipliers (see Formulas).\n   - d. Instantiates the monster scene, assigns a new `entity_id`, sets `lifecycle_state = SPAWNING`.\n   - e. Requests the initial path from the Pathfinding System (see Rule 10).\n   - f. Sets `lifecycle_state = ACTIVE`, adds to `active_monsters`, emits `monster_spawned`.\n   - g. Applies any active Tarot `\"monster_speed_scalar\"` modifier to `scaled_speed`.\n   - h. Caches `spawn_wave_reward_scalar = wave_reward_scalar` on the entity instance.\n\n8. The Monster System maintains two flat lists, one input buffer, and two frame-scoped accumulators:\n   - `active_monsters: Array[MonsterEntity]` — entities in ACTIVE state. Cleared when `wave_started` fires.\n   - `spawning_entities: Array[MonsterEntity]` — entities whose initial path request has not yet returned (still in SPAWNING). Maintained separately so `wave_completed` force-removal can clean them up without touching `active_monsters`."
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 6.4,
+      "review": {
+        "verdict_correct": false,
+        "note": "Missed: var spawning_entities exists (monster_manager.gd:101)."
+      }
+    },
+    {
+      "claim": "The `_pending_absorbed` dictionary is cleared at the end of every `_physics_process` frame.",
+      "quote": "Frame-scoped: cleared after flush every `_physics_process` frame",
+      "line": 101,
+      "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+      "run_id": "5776cea7-1f80-4680-8bbb-6130e844adf0",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1, D2, D3, and D4 all explicitly state that `_pending_absorbed` is frame-scoped and cleared after the flush pass at the end of every `_physics_process` frame. Implementation source C5 supports this by calling `_pass4_death_and_absorbed_flush()` within `_physics_process`, which corresponds to the described clearing logic.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 5: Death Resolution",
+          "start_line": 166,
+          "end_line": 170,
+          "text": "**`_pending_absorbed` flush (pass 4 of `_physics_process`):** For each `(entity_id, total_absorbed)` in `_pending_absorbed`: emit `monster_hp_absorbed` (payload: `entity_id: int`, `absorbed: int = floor(total_absorbed)`). Then clear `_pending_absorbed` entirely. This dictionary is **frame-scoped** — it is always cleared after the flush, not persisted between frames. The `wave_completed` handler also clears `_pending_absorbed` as a safety measure for the edge case where `wave_completed` fires before the flush pass of the current frame completes. This guarantees at most one `monster_hp_absorbed` per entity per frame regardless of how many hits arrived.\n\n22. Death sequence:\n    - a. Set `lifecycle_state = DEAD`. Remove from `active_monsters`. Stop all movement and attack logic.\n    - b. Play `\"death\"` animation via base-layer `AnimatedSprite2D`. Stop overlay-layer `AnimatedSprite2D`. Instantiate `death_vfx_scene` at world position (deferred — queue as a deferred call to avoid instantiating during physics callback)."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+          "start_line": 100,
+          "end_line": 105,
+          "text": "- `_pending_damage: Array[MonsterDamageTaken]` — input buffer for incoming damage events. The EventBus handler for `monster_damage_taken` appends to this buffer immediately (does NOT apply damage on receipt). The damage pass in `_physics_process` drains this buffer sequentially, applying each event in order. Cleared at the end of the damage pass each frame. This ensures all damage resolution happens within the damage pass, not interleaved with movement or absorbed flush.\n   - `_pending_absorbed: Dictionary[int, float]` — Monster System-level accumulator (not per-entity). Accumulates total `absorbed` HP per `entity_id` during a physics frame. Flushed at end of `_physics_process` as one `monster_hp_absorbed` event per entry. **Frame-scoped: cleared after flush every `_physics_process` frame** (not only on `wave_completed`). On `wave_completed`, any residual entries are cleared before idle transition (handles the edge case where `wave_completed` fires mid-frame before the flush pass runs). An entity is never in this map when `lifecycle_state == DEAD`.\n\n9. Multiple monsters may share the same `spawn_cell` simultaneously. PATH cells are not occupation-exclusive for monsters.\n\n---"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 5: Death Resolution",
+          "start_line": 162,
+          "end_line": 163,
+          "text": "- d. If `current_hp > 0` AND entity is a BOSS: emit `boss_hp_changed` (payload: `entity_id: int`, `current_hp: float`, `max_hp: float`).\n    - e. Accumulate `_pending_absorbed[entity_id] += min(amount, pre_hit_hp)`, **regardless of whether this hit is lethal**. This entry is flushed at the end of the current `_physics_process` frame as a single `monster_hp_absorbed` event, in the same end-of-frame absorbed-flush pass as any non-lethal hit. Multiple hits on the same entity in one frame sum into one event — no coroutine is allocated."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Edge Cases > Category 3: Breach Edge Cases",
+          "start_line": 453,
+          "end_line": 458,
+          "text": "(4) **Absorbed flush pass**: for each entry in `_pending_absorbed`, emit `monster_hp_absorbed`; then clear `_pending_absorbed`.\n\nNo individual monster entity node should define its own `_physics_process`. This centralized order makes the DEAD-priority guarantee implementable and keeps all BOSS logic within a predictable, profiler-visible pass. Note: since `monster_damage_taken` is buffered (not applied immediately on receipt), same-frame lethal-hit + GOAL-arrival should be deterministically ordered: lethal hits are always applied in the damage pass (pass 1), and GOAL-arrival is detected in the movement pass (pass 3) — DEAD always wins.\n\n**EC-3.2 — BOSS reaches GOAL cell**\nSituation: A BOSS entity completes its path."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _physics_process",
+          "start_line": 210,
+          "end_line": 224,
+          "text": "func _physics_process(delta: float) -> void:\n\tif not _is_wave_active:\n\t\treturn\n\t_pass1_damage()\n\t_pass1b_status_effects(delta)\n\t_pass2_boss_logic(delta)\n\t_pass2b_hero_attacks(delta)\n\t_pass2c_archetype_behaviours(delta)\n\t_pass3_movement(delta)\n\t_pass3c_visual_sync(delta)\n\t_pass4_death_and_absorbed_flush()\n\n# ---------------------------------------------------------------------------\n# Pass 1 — Damage\n# ---------------------------------------------------------------------------"
+        }
+      ],
+      "seconds": 5.0,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "An entity is never present in the `_pending_absorbed` map when its `lifecycle_state` is `DEAD`.",
+      "quote": "An entity is never in this map when `lifecycle_state == DEAD`",
+      "line": 101,
+      "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+      "run_id": "41aba5e8-3b06-4fc9-bc65-7c66ece86bc7",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D5] explicitly states that 'An entity is never in this map when lifecycle_state == DEAD', directly supporting the claim. Implementation source [C1] supports this by showing code logic that skips processing (including any potential absorption accumulation) if an entity's state is already DEAD, ensuring it does not participate in the accumulation phase.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 2: Spawn Behavior",
+          "start_line": 100,
+          "end_line": 105,
+          "text": "- `_pending_damage: Array[MonsterDamageTaken]` — input buffer for incoming damage events. The EventBus handler for `monster_damage_taken` appends to this buffer immediately (does NOT apply damage on receipt). The damage pass in `_physics_process` drains this buffer sequentially, applying each event in order. Cleared at the end of the damage pass each frame. This ensures all damage resolution happens within the damage pass, not interleaved with movement or absorbed flush.\n   - `_pending_absorbed: Dictionary[int, float]` — Monster System-level accumulator (not per-entity). Accumulates total `absorbed` HP per `entity_id` during a physics frame. Flushed at end of `_physics_process` as one `monster_hp_absorbed` event per entry. **Frame-scoped: cleared after flush every `_physics_process` frame** (not only on `wave_completed`). On `wave_completed`, any residual entries are cleared before idle transition (handles the edge case where `wave_completed` fires mid-frame before the flush pass runs). An entity is never in this map when `lifecycle_state == DEAD`.\n\n9. Multiple monsters may share the same `spawn_cell` simultaneously. PATH cells are not occupation-exclusive for monsters.\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _pass1b_status_effects",
+          "start_line": 540,
+          "end_line": 559,
+          "text": "# from active_monsters -- merely reading .lifecycle_state on an\n\t\t# actually-freed object throws \"Invalid access... on a base object of\n\t\t# type 'previously freed'\", so the DEAD check itself must be guarded\n\t\t# by is_instance_valid() first, mirroring ADR-0007's established\n\t\t# \"is_instance_valid() is the first statement\" convention (there\n\t\t# applied to `self` after an await; here to an iterated collection\n\t\t# entry that may have outlived its own removal).\n\t\tif not is_instance_valid(entity):\n\t\t\tcontinue\n\t\tif entity.lifecycle_state == MonsterEntity.State.DEAD:\n\t\t\tcontinue\n\t\t_tick_dot_instances(entity, delta)\n\t\tif entity.lifecycle_state == MonsterEntity.State.DEAD:\n\t\t\tcontinue  # a DoT tick just killed this entity — skip its slow decay too\n\t\t_decay_slow_instances(entity, delta)\n\t\t# Skill secondary effects (2026-10-07): stun and armor-shred timers.\n\t\tif entity.stun_remaining > 0.0:\n\t\t\tentity.stun_remaining = maxf(0.0, entity.stun_remaining - delta)\n\t\tif entity.vulnerability_remaining > 0.0:\n\t\t\tentity.vulnerability_remaining = maxf(0.0, entity.vulnerability_remaining - delta)"
+        }
+      ],
+      "seconds": 6.3
+    },
+    {
+      "claim": "Monster movement executes in _physics_process(delta).",
+      "quote": "11. Monster movement executes in `_physics_process(delta)`.",
+      "line": 111,
+      "section": "Monster System > Detailed Design > Core Rules > Group 3: Movement and Pathfinding Contract",
+      "run_id": "28277712-ec46-46ce-8d23-1c65e9603878",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D5] explicitly states that 'Monster movement executes in _physics_process(delta)'. Implementation source [C3] supports this by defining a `_physics_process` function in `MonsterManager` that calls `_pass3_movement(delta)` as part of its execution flow. The other implementation sources ([C1], [C2], [C4]) are unrelated to monster movement logic, focusing instead on tower ticking, projectile updates, and hero handling respectively.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Detailed Design > Core Rules > Group 3: Movement and Pathfinding Contract",
+          "start_line": 107,
+          "end_line": 113,
+          "text": "#### Group 3: Movement and Pathfinding Contract\n\n10. Monster System does **not** own pathfinding or the navmesh. It consumes path data from the Pathfinding System via direct API call: `PathfindingSystem.get_path(from_cell: Vector2i, tier: int) -> Array[Vector2i]`. Called once at spawn, and again when path invalidation is signaled. An empty returned array means no valid path — see Edge Cases.\n\n11. Monster movement executes in `_physics_process(delta)`. Each active monster advances along `current_path` based on `scaled_speed` (cells per second):\n    - a. Compute target world position: `Grid.cell_to_world(current_path[path_step_index])`.\n    - b. Move entity toward target at *effective speed* units/second — `scaled_speed × Π(active slow speed_multiplier instances)` (damage-status.md Formula D6, amended 2026-08-13). `scaled_speed` itself is read here, never mutated — it remains the same immutable-after-spawn value described above regardless of how many slow instances are active or expire. With no active slow instances, effective speed equals `scaled_speed` exactly, so this is a pure extension of the existing rule, not a behavior change for any non-slowed monster."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _physics_process",
+          "start_line": 210,
+          "end_line": 224,
+          "text": "func _physics_process(delta: float) -> void:\n\tif not _is_wave_active:\n\t\treturn\n\t_pass1_damage()\n\t_pass1b_status_effects(delta)\n\t_pass2_boss_logic(delta)\n\t_pass2b_hero_attacks(delta)\n\t_pass2c_archetype_behaviours(delta)\n\t_pass3_movement(delta)\n\t_pass3c_visual_sync(delta)\n\t_pass4_death_and_absorbed_flush()\n\n# ---------------------------------------------------------------------------\n# Pass 1 — Damage\n# ---------------------------------------------------------------------------"
+        }
+      ],
+      "seconds": 6.3,
+      "review": {
+        "verdict_correct": true
+      }
+    }
+  ],
+  "project": "sanctuary"
+}

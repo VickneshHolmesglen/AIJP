@@ -7,7 +7,13 @@ from collections.abc import Callable
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 
-from app.ingestion.code_loaders import load_gdscript, load_json, load_python, load_yaml
+from app.ingestion.code_loaders import (
+    load_gdscript,
+    load_json,
+    load_python,
+    load_tres,
+    load_yaml,
+)
 from app.ingestion.errors import InvalidDocumentError
 from app.ingestion.textutil import decode_text, stem
 from app.ingestion.types import ExtractedDocument, Segment
@@ -94,6 +100,7 @@ LOADERS: dict[str, Loader] = {
     "gd": load_gdscript,
     "json": load_json,
     "yaml": load_yaml,
+    "tres": load_tres,
 }
 
 

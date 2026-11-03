@@ -216,16 +216,66 @@ def test_json_deep_nesting_is_rejected_not_crashed() -> None:
         extract("json", b"[" * 100_000 + b"]" * 100_000, "deep.json")
 
 
+# ------------------------------------------------------------------ Godot .tres
+
+TRES = b"""[gd_resource type="Resource" script_class="TowerBlueprintData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/core/tower/tower_blueprint_data.gd" id="1"]
+
+[sub_resource type="Resource" id="Weapon_arcane"]
+component_id = "weap_arcane_t3"
+weapon_damage = 30.0
+
+[resource]
+script = ExtResource("1")
+tower_id = &"arcane_lance"
+display_name = "Arcane Lance"
+weapon = SubResource("Weapon_arcane")
+"""
+
+
+def test_tres_is_one_segment_named_after_its_resource_id() -> None:
+    doc = extract("tres", TRES, "blueprint_arcane_lance.tres")
+    assert sections(doc) == ["TowerBlueprintData > arcane_lance"]
+    seg = doc.segments[0]
+    assert seg.start_line == 1 and seg.text.rstrip().endswith(
+        'weapon = SubResource("Weapon_arcane")'
+    )
+    assert seg.text.startswith("[gd_resource")
+    assert "weapon_damage = 30.0" in seg.text and "Arcane Lance" in seg.text
+
+
+def test_tres_without_an_id_falls_back_to_the_script_class_then_none() -> None:
+    no_id = (
+        b'[gd_resource type="Resource" script_class="AudioCueEntry" format=3]\n\n'
+        b'[resource]\nbus = &"UI"\n'
+    )
+    assert sections(extract("tres", no_id, "cue.tres")) == ["AudioCueEntry"]
+    bare = b'[gd_resource type="Theme" format=3]\n\n[resource]\nfoo = 1\n'
+    assert sections(extract("tres", bare, "t.tres")) == [None]
+
+
+def test_tres_sub_resource_ids_do_not_name_the_file() -> None:
+    # component_id lives in a sub-resource; only the [resource] block names the file.
+    src = TRES.replace(b'tower_id = &"arcane_lance"\n', b"")
+    assert sections(extract("tres", src, "b.tres")) == ["TowerBlueprintData"]
+
+
+def test_tres_must_look_like_a_godot_resource() -> None:
+    with pytest.raises(InvalidDocumentError, match="Godot"):
+        extract("tres", b"a = 1\nb = 2\n", "fake.tres")
+
+
 # ------------------------------------------------------------------ shared
 
 
-@pytest.mark.parametrize("file_type", ["py", "gd", "yaml", "json"])
+@pytest.mark.parametrize("file_type", ["py", "gd", "yaml", "json", "tres"])
 def test_whitespace_only_file_has_no_text(file_type: str) -> None:
     with pytest.raises(InvalidDocumentError):
         extract(file_type, b"  \n\n", f"x.{file_type}")
 
 
-@pytest.mark.parametrize("file_type", ["py", "gd", "yaml"])
+@pytest.mark.parametrize("file_type", ["py", "gd", "yaml", "tres"])
 def test_non_utf8_is_rejected(file_type: str) -> None:
     with pytest.raises(InvalidDocumentError, match="UTF-8"):
         extract(file_type, b"\xff\xfe\x00bad", f"x.{file_type}")

@@ -132,7 +132,7 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   `ast` (parse only, never executed), GDScript via an indentation-aware line scanner (approximate,
   no parser), YAML by top-level key (line scan, no parser), JSON by top-level key (validated with
   json.loads). Symbol path goes in `Chunk.section` ("Enemy > take_damage"); no schema change.
-  Supported extensions: .pdf .txt .md .py .gd .json .yaml .yml. Syntax-broken Python falls back to
+  Supported extensions: .pdf .txt .md .py .gd .json .yaml .yml (+ .tres since M29). Syntax-broken Python falls back to
   one plain segment. Known limits: GDScript multi-line strings at column 0 can split a function
   early; chunk text is embedded without its section name (worth testing in the eval milestone).
 - M4 design: `app/llm.py` (LLMProvider Protocol + OllamaLLM), `app/qa.py` (retrieve -> retrieval
@@ -626,6 +626,43 @@ in `Claude Code Handoff — AI Project Intelligence Portfolio.md`. Read it befor
   README.md committed: that repo had another session's uncommitted work). BOTH REPOS ARE PRIVATE, so
   the links 404 for anyone else until the user makes them public (their decision; this repo still
   needs the Dependabot-PR history purge noted under GITHUB before going public).
+- M29 DESIGN AUDIT DEMO (2026-11-03, NOT in the handoff doc; user: "portfolio first, start with the
+  game design checker demo", then "just start, use your judgment"; every design call below is MINE).
+  Product idea: check a game's design docs against its code, demoed on the user's game Sanctuary
+  Defenders (G:\TDef, public repo TDEF). Built: (1) `load_tres` in code_loaders.py (`.tres` Godot
+  text resources; ONE segment per file on purpose, so a stat in a sub-resource stays with the entity
+  name; section "<script_class> > <*_id in [resource]>"; must start with `[gd_resource`); `tres` added
+  to validation, IMPLEMENTATION_TYPES, symbols.CODE_FILE_TYPES, the UI upload list. (2)
+  `app/agent/claims.py`: the model proposes claims per design passage, each kept ONLY if its quote is
+  really in the passage (whitespace/markdown-insensitive match), which gives it a line number.
+  (3) `app/design_audit.py` CLI ingest|run|render; `run` passes each claim's own passage as
+  `source_chunk_id` to `run_consistency_check` (new optional param: added as design evidence with
+  origin `claim_source`, counts for the design gate, recorded in run.input; another project's chunk
+  fails the run); a passage the model fails on is skipped and listed in `passages_failed`.
+  (4) `app/audit_report.py`: one static HTML page, no script, everything html.escape'd, optional
+  per-claim hand `review`. (5) the Ollama client error now carries Ollama's own short `error`
+  reason (e.g. "prediction aborted, token repeat limit reached": qwen3.5 at temp 0 loops on some
+  prompts, deterministically; Ollama returns 500).
+  TWO WORKFLOW FIXES THAT ALSO AFFECT THE BENCHMARKED CONSISTENCY CHECK (published consistency
+  reports predate them; not re-run): (a) `extract_identifiers` also takes whole backticked names
+  (`bulwark`); no benchmark claim contains a backtick (checked). (b) BUG: a symbol match that
+  search had ALREADY returned was deduplicated away and did not count for the evidence gate, so the
+  gate could reject the code side although the named symbol was found; now `symbol_found` counts.
+  RESULT (`docs/demo/`: 5 JSON reports + index.html; dev DB `aijp`, project `sanctuary`, 686 files
+  / 6958 chunks, per_source judge, real local models): 68 claims from 5 sections, 2 possible
+  mismatch / 45 consistent / 21 not enough evidence. HAND-CHECKED 33 against the TDef source
+  (chosen: every mismatch + every insufficient I could check, so NOT a random sample): 25 right.
+  ONE REAL FINDING: damage-status.md says crit_multiplier_effective 1.75-3.25 (base 1.75), code and
+  the redesigned hero.md use base 1.5 + bonus cap 2.0 (hero.gd:116, :63) -> the damage doc is
+  stale (the verdict cited the wrong code variable). ONE FALSE ALARM: monster armor formula (judge
+  confused it with the Hero's own armor table in hero.md; judge NOT tuned, M19 protocol). Errors are
+  mostly misses (insufficient where the constant exists). A deterministic table-vs-.tres diff
+  (scratchpad) showed the tower catalogue has NO drift, matching the tool's verdicts there.
+  PUBLISHED (user approved 2026-11-03): page copied to G:\Portfolio\site\design-audit\index.html
+  (https://vickneshholmesglen.github.io/design-audit/) with project card P-05 in projects.js; README
+  section "On a real game". The site copy is a COPY: after re-rendering docs/demo/index.html, copy
+  it again. Render command flags: --title --intro --footer --link "Label=https://..." (https only).
+  634 tests pass.
 - NEXT STEP on resume: the handoff roadmap (M1-M11) plus M12-M17 are complete, so ask the user what
   next. Open follow-ups, roughly by value: (1) CI is green on GitHub and the Dependabot backlog is
   merged and actions bumped to Node 24 (checkout v7, setup-uv v10.3.0, 2026-10-17) and the READMEs are cross-linked; left: making the

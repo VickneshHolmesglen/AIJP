@@ -11,7 +11,7 @@ own evaluation tooling.
 the real latency is in each answer's header (13.1 s and 6.0 s here).</sub>
 
 **Stack:** Python 3.11 · FastAPI · PostgreSQL + pgvector · Ollama (local `qwen3.5` +
-`nomic-embed-text`) or any OpenAI-compatible API · MCP · Docker · 602 tests
+`nomic-embed-text`) or any OpenAI-compatible API · MCP · Docker · 634 tests
 **Runs fully local:** no API keys, no data leaves the machine.
 
 ## What it does
@@ -22,7 +22,7 @@ the real latency is in each answer's header (13.1 s and 6.0 s here).</sub>
 - **Refuses instead of guessing.** Off-topic questions are stopped by an evidence gate before the
   model is called; on-topic questions whose fact is missing are declined with a reason.
 - **Understands code, not just prose.** Python is split by symbol (`ast`, parse only), GDScript,
-  YAML and JSON by structure, so a citation says *which function*.
+  Godot `.tres` data, YAML and JSON by structure, so a citation says *which function*.
 - **Design-vs-code check (agent workflow).** State a claim ("selling refunds 60%"); a fixed workflow
   gathers evidence from the docs and from the code, and the model's verdict needs citations on both
   sides. A discrepancy can only *draft* a task that a human approves.
@@ -56,6 +56,27 @@ JSON). Every number comes from a report in [`eval/results/`](eval/results/).
 | Retrieval (vector) | recall@5 0.946, MRR@10 0.875 |
 | Design-vs-code: seeded mismatches found | 4/6, with **0/6 false alarms** |
 | Median answer latency (local GPU) | 1.1 s |
+
+### On a real game: design audit of Sanctuary Defenders
+
+**[Live demo page →](https://vickneshholmesglen.github.io/design-audit/)**
+
+The design-vs-code check, run on my own Godot game
+([TDEF](https://github.com/VickneshHolmesglen/TDEF): 42 design docs, 181 GDScript files, 466 `.tres`
+data resources). `python -m app.design_audit` has the model pull checkable claims out of each design
+passage. A claim is kept only if its quote really appears in that passage, so every claim has a
+line number. Each claim then goes through the consistency check above.
+
+| | Result |
+|---|---|
+| Claims checked | 68 from 5 design sections |
+| Verdicts | 2 possible mismatch · 45 consistent · 21 not enough evidence |
+| Checked by hand against the source | **25 of 33 right** (I chose every mismatch and every "not enough evidence" I could check, so this is not a random sample) |
+| Real finding | `damage-status.md` still gives the hero's crit multiplier as 1.75–3.25; the code and the redesigned `hero.md` use 1.5–3.5 |
+| False alarm | 1: the model confused two armor mechanics |
+
+Most of the errors are misses (a value exists in the code but the tool did not find it), not false
+accusations. The reports behind the page are in [`docs/demo/`](docs/demo/).
 
 **How I evaluate changes:** new ideas are tested on question sets written and committed *before*
 the feature existed, each variant runs once, and a paired comparison (sign test, 95% intervals)

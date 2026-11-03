@@ -14,13 +14,15 @@ from sqlalchemy.orm import Session
 
 from app.models import Chunk, Document
 
-CODE_FILE_TYPES = ("py", "gd")
+CODE_FILE_TYPES = ("py", "gd", "tres")
 SymbolKind = Literal["definition", "declaration"]
 _DECLARATIONS = "declarations: "  # section label the GDScript loader gives grouped declarations
 _CANDIDATE_LIMIT = 500
 
 # snake_case with an underscore, SCREAMING_CASE with an underscore, or CamelCase.
 _IDENTIFIER = re.compile(r"\b(?:[A-Za-z]+(?:_[A-Za-z0-9]+)+|[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]+)+)\b")
+# A whole backticked name (`bulwark`): the writer marked it as code, so a plain word counts too.
+_BACKTICKED = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)`")
 
 
 @dataclass(frozen=True)
@@ -81,7 +83,9 @@ def extract_identifiers(text: str, limit: int = 5) -> list[str]:
 
     Plain words ("poison") are deliberately not identifiers; only names that look like code
     (take_damage, POISON_MAX_STACKS, WaveSpawner)."""
+    found = [(m.start(), m.group(1)) for m in _BACKTICKED.finditer(text)]
+    found += [(m.start(), m.group(0)) for m in _IDENTIFIER.finditer(text)]
     seen: dict[str, None] = {}
-    for match in _IDENTIFIER.finditer(text):
-        seen.setdefault(match.group(0), None)
+    for _, name in sorted(found):
+        seen.setdefault(name, None)
     return list(seen)[:limit]

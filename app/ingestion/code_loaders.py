@@ -241,6 +241,39 @@ def _json_top_level_keys(text: str) -> list[tuple[int, str]]:
     return keys
 
 
+# --------------------------------------------------------------------------- Godot .tres
+
+_TRES_HEADER = re.compile(r"^\[gd_resource\b")
+_TRES_SCRIPT_CLASS = re.compile(r'\bscript_class="(\w+)"')
+_TRES_ID = re.compile(r'^\w+_id\s*=\s*&?"([^"]+)"')
+
+
+def load_tres(content: bytes, filename: str) -> ExtractedDocument:
+    """A Godot text resource (game data: tower stats, monsters, waves) as ONE segment.
+
+    Kept whole on purpose: a resource's numbers live in sub-resources that never name the entity,
+    and splitting them off would cut the stat from the name a design doc uses for it (the bridge
+    problem the retrieval experiments ran into). The section is "<script class> > <resource id>",
+    so the symbol lookup finds the file when a design claim mentions the id (`arcane_lance`).
+    Scanned line by line, never loaded by Godot."""
+    text = decode_text(content)
+    lines = text.split("\n")
+    if not _TRES_HEADER.match(text.lstrip()):
+        raise InvalidDocumentError("File does not look like a Godot text resource (.tres)")
+    m = _TRES_SCRIPT_CLASS.search(lines[0])
+    script_class = m.group(1) if m else None
+    resource_id = None
+    in_resource = False
+    for line in lines:
+        if line.startswith("["):
+            in_resource = line.strip() == "[resource]"
+        elif in_resource and (m := _TRES_ID.match(line)):
+            resource_id = m.group(1)
+            break
+    section = " > ".join(p for p in (script_class, resource_id) if p) or None
+    return _from_starts(lines, [(1, section)], filename)
+
+
 def load_json(content: bytes, filename: str) -> ExtractedDocument:
     text = decode_text(content)
     try:

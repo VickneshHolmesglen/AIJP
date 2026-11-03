@@ -67,6 +67,13 @@ class OllamaLLM:
             response.raise_for_status()
             body = response.json()
             content = body["message"]["content"]
+        except httpx.HTTPStatusError as exc:
+            # Ollama explains its own failures in {"error": "..."} (e.g. "prediction aborted, token
+            # repeat limit reached" when a greedy model loops); local server, short and capped.
+            raise LLMError(
+                f"Ollama request failed: HTTP {exc.response.status_code}"
+                + _ollama_reason(exc.response)
+            ) from exc
         except httpx.HTTPError as exc:
             raise LLMError(f"Ollama request failed: {exc}") from exc
         except (KeyError, ValueError) as exc:
@@ -79,6 +86,14 @@ class OllamaLLM:
             prompt_tokens=_count(body.get("prompt_eval_count")),
             completion_tokens=_count(body.get("eval_count")),
         )
+
+
+def _ollama_reason(response: httpx.Response) -> str:
+    try:
+        error = response.json().get("error")
+    except (ValueError, AttributeError):
+        return ""
+    return f" ({error[:160]})" if isinstance(error, str) and error else ""
 
 
 def _count(value: object) -> int | None:

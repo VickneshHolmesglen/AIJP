@@ -16,6 +16,7 @@ ALLOWED_EXTENSIONS: dict[str, str] = {
     ".json": "json",
     ".yaml": "yaml",
     ".yml": "yaml",
+    ".tres": "tres",
 }
 _CONTROL_CHARS = re.compile(r"[\x00-\x1f\x7f]")
 

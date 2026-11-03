@@ -1,0 +1,514 @@
+{
+  "document": "design/gdd/tower-content-catalogue.md",
+  "section_filter": null,
+  "generated": "2026-11-03T06:25:11+00:00",
+  "model": "qwen3.5",
+  "embedding_model": "nomic-embed-text",
+  "judge_mode": "per_source",
+  "evidence_gate": 0.6,
+  "passages_read": 7,
+  "passages_failed": [],
+  "minutes": 1.4,
+  "counts": {
+    "consistent": 10,
+    "insufficient_evidence": 2
+  },
+  "claims": [
+    {
+      "claim": "The `placement_cost` for a blueprint loaded through `GameDataRegistry` must equal `round(base_cost × archetype_cost_factor × tier_cost_factor)`.",
+      "quote": "`placement_cost` must equal `round(base_cost × archetype_cost_factor × tier_cost_factor)`",
+      "line": 17,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "a0709aeb-1300-4f8e-8ca9-a89209226f87",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1, D3, and D4 explicitly state that for static blueprints loaded via GameDataRegistry, the placement cost must equal round(base_cost × archetype_cost_factor × tier_cost_factor). Implementation source C1 supports this by defining a validation function that calculates 'expected_cost' using exactly this formula and compares it against the stored 'placement_cost'. Source C2 further supports the claim by triggering an error if these values do not match. Source C3 is unrelated as it describes a different pricing formula for dynamically assembled towers.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Formulas > Formula 4: Tower Placement Cost",
+          "start_line": 625,
+          "end_line": 636,
+          "text": "`placement_cost = round(base_cost × archetype_cost_factor × tier_cost_factor)`\n\n**Variables:**\n\n| Variable | Symbol | Type | Range | Description |\n|----------|--------|------|-------|-------------|\n| Base cost | `base_cost` | int | 10–60 | Baseline cost for a Tier 1 tower of any archetype. Provisional default: 20. |\n| Archetype cost factor | `archetype_cost_factor` | float | **[0.5–2.0]**, all archetypes = **1.0** at MVP | Per-archetype tuning multiplier. MVP default is 1.0 for all archetypes. Range [0.5, 2.0] available for post-MVP balance (see Tuning Knobs). Must be in range [0.5, 2.0] — values at or below 0.0 are load-time errors. |\n| Tier cost factor | `tier_cost_factor` | float | 1.0–4.0 | Tier 1 = 1.0×, Tier 2 = 1.5×, Tier 3 = 2.0×, Tier 4 = 4.0×. |\n| Placement cost | `placement_cost` | int | **5**–240 | Resource deducted on confirmed placement. Refund on removal: `round(placement_cost × 0.4)`. |\n\n**Output Range:** Minimum 5 (`round(10 × 0.5 × 1.0) = 5` — minimum `base_cost` with minimum `archetype_cost_factor`). The previously stated floor of 10 was incorrect; the actual formula minimum at MVP is 5 because `archetype_cost_factor` can be as low as 0.5 (Tuning Knob range)."
+        },
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Formulas > Formula 4: Tower Placement Cost",
+          "start_line": 619,
+          "end_line": 623,
+          "text": "### Formula 4: Tower Placement Cost\n\n*(Provisional — the Resource Economy GDD defines the total mission budget and earning rate. These costs are proportional to that budget, not absolute.)*\n\n**Scope (added 2026-08-28, `TD-tower-009`):** This formula, and its load-time enforcement (`FoundationComponent.base_cost` + `TowerBlueprintData.validate_placement_cost_matches_formula_4()`), applies to **static, content-authored blueprints** (the `.tres` catalogue under `assets/data/towers/blueprints/`, loaded via `GameDataRegistry`). It does **not** apply to `TowerAssembly.assemble_tower()`'s player-facing quick-spec feature (`design/quick-specs/tower-assembly-2026-08-11.md`), which intentionally prices assembled towers via its own formula (`BASE_ASSEMBLY_COST × tier_cost_factor × 1.75`, an assembly markup) from the same `FoundationComponent.base_cost` field — a deliberate, separate pricing model this GDD does not own. Found while implementing TD-tower-009: folding the Formula 4 check into `TowerBlueprintData`'s general-purpose `validate()` broke this real feature; the check now lives in a separately-callable method wired only into the `GameDataRegistry` content-load path."
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 15,
+          "end_line": 20,
+          "text": "## The 18 Towers\n\n**Cost note (2026-08-28):** `Cost`/`base_cost` below reflect the values *after* `TD-tower-009`'s fix landed (see Coverage Gaps §3) — a real `base_cost: int` field now exists on `FoundationComponent`, and for any blueprint loaded through `GameDataRegistry`'s content catalogue, `placement_cost` must equal `round(base_cost × archetype_cost_factor × tier_cost_factor)` or it fails validation (this check is content-load-only, not part of general `TowerBlueprintData.validate()` — see Formula 4's own Scope note in `tower.md` for why). 4 of the 5 towers this catalogue's follow-up pass authored needed a ±2 gold adjustment from their original design values to satisfy that new integer constraint (`warbreaker` 25→26, `firestorm_spire`/`railgun_emplacement` 30→32, `grand_rally_spire` 30→28) — cosmetic, not a balance decision.\n\n| `tower_id` | Display Name | Archetype | Tier | `base_cost` | Cost | HP | Weapon DMG | Atk Speed | Range (cells) | Projectile | AoE (cells) | Targeting | Status Effect | Pre-Placement Perk |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/tower/tower_blueprint_data.gd",
+          "section": "TowerBlueprintData > validate_placement_cost_matches_formula_4",
+          "start_line": 75,
+          "end_line": 91,
+          "text": "## Formula 4 (tower.md): placement_cost must equal round(base_cost *\n## archetype_cost_factor * tier_cost_factor) for STATIC, content-authored\n## blueprints (the .tres catalogue under assets/data/towers/blueprints/).\n## Deliberately NOT folded into validate() above -- TowerAssembly.gd's\n## assemble_tower() produces TowerBlueprintData at runtime using its own,\n## intentionally different pricing formula (BASE_ASSEMBLY_COST *\n## tier_cost_factor * 1.75, a \"quick-spec\" assembly markup unrelated to\n## Formula 4) from the same FoundationComponent.base_cost field, which is\n## legitimately correct and must still pass validate() (see\n## tower_assembly_test.gd::test_assembled_blueprint_is_immediately_registered_and_placeable).\n## Call this only at the GameDataRegistry content-load boundary (TD-tower-009,\n## docs/tech-debt-register.md), never on a dynamically-assembled blueprint.\nfunc validate_placement_cost_matches_formula_4() -> bool:\n\tif foundation == null:\n\t\treturn true  # validate() already reports the null-foundation error\n\tvar expected_cost: int = roundi(foundation.base_cost * foundation.archetype_cost_factor * foundation.tier_cost_factor)\n\tif placement_cost != expected_cost:"
+        },
+        {
+          "path": "src/core/tower/tower_blueprint_data.gd",
+          "section": "TowerBlueprintData > validate_placement_cost_matches_formula_4",
+          "start_line": 91,
+          "end_line": 94,
+          "text": "if placement_cost != expected_cost:\n\t\tpush_error(\"[TowerBlueprintData '%s'] placement_cost %d does not match Formula 4 (base_cost %d * archetype_cost_factor %.2f * tier_cost_factor %.2f = %d)\" % [tower_id, placement_cost, foundation.base_cost, foundation.archetype_cost_factor, foundation.tier_cost_factor, expected_cost])\n\t\treturn false\n\treturn true"
+        }
+      ],
+      "seconds": 5.2,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "A real `base_cost` field of type `int` exists on `FoundationComponent`.",
+      "quote": "a real `base_cost: int` field now exists on `FoundationComponent`",
+      "line": 17,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "9835996e-9fdb-450a-bfc4-4e450e62382e",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D5] states that a real `base_cost: int` field now exists on `FoundationComponent`. Implementation sources [C2] and [C3] support this by declaring the variable `base_cost` in the GDScript class and using it in validation logic, respectively.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 15,
+          "end_line": 20,
+          "text": "## The 18 Towers\n\n**Cost note (2026-08-28):** `Cost`/`base_cost` below reflect the values *after* `TD-tower-009`'s fix landed (see Coverage Gaps §3) — a real `base_cost: int` field now exists on `FoundationComponent`, and for any blueprint loaded through `GameDataRegistry`'s content catalogue, `placement_cost` must equal `round(base_cost × archetype_cost_factor × tier_cost_factor)` or it fails validation (this check is content-load-only, not part of general `TowerBlueprintData.validate()` — see Formula 4's own Scope note in `tower.md` for why). 4 of the 5 towers this catalogue's follow-up pass authored needed a ±2 gold adjustment from their original design values to satisfy that new integer constraint (`warbreaker` 25→26, `firestorm_spire`/`railgun_emplacement` 30→32, `grand_rally_spire` 30→28) — cosmetic, not a balance decision.\n\n| `tower_id` | Display Name | Archetype | Tier | `base_cost` | Cost | HP | Weapon DMG | Atk Speed | Range (cells) | Projectile | AoE (cells) | Targeting | Status Effect | Pre-Placement Perk |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/tower/foundation_component.gd",
+          "section": "FoundationComponent > declarations: component_id, archetype, hp_base, tier, tier_multiplier, tier_dps_multiplier, tier_cost_factor, tier_boss_dps_multiplier, footprint, pre_placement_perk, perk_power, base_cost, archetype_cost_factor, bonus_damage_vs_tags, damaged",
+          "start_line": 1,
+          "end_line": 22,
+          "text": "class_name FoundationComponent\nextends Resource\n\n## Foundation slot component (ADR-0008 Amendment 2026-07-19 — implementation\n## catch-up). Schema per design/gdd/tower.md's Foundation table (lines ~50-63).\n## Governs archetype/tier/HP/cost. Deep-copied per placed tower instance via\n## Resource.duplicate_deep() (ADR-0008 Component Deep-Copy Policy) — mutations\n## on the mission-instance copy (e.g. `damaged`) never write back to the\n## inventory-owned original.\n\n## Content-authored identifier for this specific named component asset\n## (e.g. \"found_basic\") — distinct from the stat fields below. Added Sprint 7\n## S7-implement-story-008 to satisfy build_signature's Formula 4, which\n## derives from WHICH named component is equipped, not from stat values\n## directly (two components with identical stats but different authored\n## identities must still resolve to different signatures per that formula's\n## intent).\n@export var component_id: String = \"\"\n\n@export var archetype: String = \"physical\"          # physical | ranged | elemental | support\n@export var hp_base: float = 100.0                   # [80.0, 400.0]\n@export var tier: int = 1                            # 1-4"
+        },
+        {
+          "path": "src/core/tower/tower_blueprint_data.gd",
+          "section": "TowerBlueprintData > validate_placement_cost_matches_formula_4",
+          "start_line": 91,
+          "end_line": 94,
+          "text": "if placement_cost != expected_cost:\n\t\tpush_error(\"[TowerBlueprintData '%s'] placement_cost %d does not match Formula 4 (base_cost %d * archetype_cost_factor %.2f * tier_cost_factor %.2f = %d)\" % [tower_id, placement_cost, foundation.base_cost, foundation.archetype_cost_factor, foundation.tier_cost_factor, expected_cost])\n\t\treturn false\n\treturn true"
+        }
+      ],
+      "seconds": 6.5,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The cost validation check is content-load-only and not part of general `TowerBlueprintData.validate()`.",
+      "quote": "this check is content-load-only, not part of general `TowerBlueprintData.validate()`",
+      "line": 17,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "bf576e11-f109-48e6-8ef7-d4b0d7399188",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D2], and [D3] explicitly state that the Formula 4 cost validation check is separated from the general `validate()` method to avoid breaking player-facing assembly features. Implementation sources [C1] and [C2] confirm this separation in code, showing that `validate_placement_cost_matches_formula_4()` is called specifically at the `GameDataRegistry` content-load boundary rather than inside the general `validate()` function.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Formulas > Formula 4: Tower Placement Cost",
+          "start_line": 619,
+          "end_line": 623,
+          "text": "### Formula 4: Tower Placement Cost\n\n*(Provisional — the Resource Economy GDD defines the total mission budget and earning rate. These costs are proportional to that budget, not absolute.)*\n\n**Scope (added 2026-08-28, `TD-tower-009`):** This formula, and its load-time enforcement (`FoundationComponent.base_cost` + `TowerBlueprintData.validate_placement_cost_matches_formula_4()`), applies to **static, content-authored blueprints** (the `.tres` catalogue under `assets/data/towers/blueprints/`, loaded via `GameDataRegistry`). It does **not** apply to `TowerAssembly.assemble_tower()`'s player-facing quick-spec feature (`design/quick-specs/tower-assembly-2026-08-11.md`), which intentionally prices assembled towers via its own formula (`BASE_ASSEMBLY_COST × tier_cost_factor × 1.75`, an assembly markup) from the same `FoundationComponent.base_cost` field — a deliberate, separate pricing model this GDD does not own. Found while implementing TD-tower-009: folding the Formula 4 check into `TowerBlueprintData`'s general-purpose `validate()` broke this real feature; the check now lives in a separately-callable method wired only into the `GameDataRegistry` content-load path."
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 15,
+          "end_line": 20,
+          "text": "## The 18 Towers\n\n**Cost note (2026-08-28):** `Cost`/`base_cost` below reflect the values *after* `TD-tower-009`'s fix landed (see Coverage Gaps §3) — a real `base_cost: int` field now exists on `FoundationComponent`, and for any blueprint loaded through `GameDataRegistry`'s content catalogue, `placement_cost` must equal `round(base_cost × archetype_cost_factor × tier_cost_factor)` or it fails validation (this check is content-load-only, not part of general `TowerBlueprintData.validate()` — see Formula 4's own Scope note in `tower.md` for why). 4 of the 5 towers this catalogue's follow-up pass authored needed a ±2 gold adjustment from their original design values to satisfy that new integer constraint (`warbreaker` 25→26, `firestorm_spire`/`railgun_emplacement` 30→32, `grand_rally_spire` 30→28) — cosmetic, not a balance decision.\n\n| `tower_id` | Display Name | Archetype | Tier | `base_cost` | Cost | HP | Weapon DMG | Atk Speed | Range (cells) | Projectile | AoE (cells) | Targeting | Status Effect | Pre-Placement Perk |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > Coverage Gaps (still real, not filled by this pass)",
+          "start_line": 66,
+          "end_line": 66,
+          "text": "3. **RESOLVED (2026-08-28)** — `tower_blueprint_data.gd` had no `base_cost` field or T4-cost-cap validation at all, despite `tower.md` Formula 4 describing both. Logged and fixed same-day as `TD-tower-009` (`docs/tech-debt-register.md`): `FoundationComponent` gained a real `base_cost: int` field, validated per-tier (`[10,60]` for T1-T3, `[7,30]` for T4 — the T4 floor was lowered from the general 10 to match what this project's own already-shipped T4 towers actually needed, rather than silently re-costing them upward to a theoretical 40+ minimum). A new `TowerBlueprintData.validate_placement_cost_matches_formula_4()` checks `placement_cost == round(base_cost × archetype_cost_factor × tier_cost_factor)` — **deliberately separate from `validate()` itself**: a first attempt folded this into `validate()` and broke `TowerAssembly`'s real, pre-existing player-facing assembly feature, which legitimately prices towers via its own different formula from the same `base_cost` field. The Formula 4 check now runs only at `GameDataRegistry`'s content-load boundary. All 18 blueprints migrated and re-verified valid; the exact AC boundary cases (`tier=4, base_cost=35` → error; `tier=4, base_cost=30`"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/game_data_registry.gd",
+          "section": "GameDataRegistry > _load_tower_blueprints",
+          "start_line": 597,
+          "end_line": 610,
+          "text": "if not blueprint.validate():\n\t\t\tpush_error(\"[GameDataRegistry] %s: TowerBlueprintData failed validation (see errors above).\" % file_name)\n\t\t# TD-tower-009: Formula 4 cross-check applies only to static, content-authored\n\t\t# .tres blueprints -- see validate_placement_cost_matches_formula_4()'s own\n\t\t# doc comment for why this is not part of validate() itself.\n\t\tif not blueprint.validate_placement_cost_matches_formula_4():\n\t\t\tpush_error(\"[GameDataRegistry] %s: TowerBlueprintData failed Formula 4 cost validation (see error above).\" % file_name)\n\t\t# TD-tower-004: Rule 12a's equip-time \"wasted benefit\" warning — see\n\t\t# warn_if_perk_benefit_wasted()'s own doc comment for why this is a\n\t\t# separate, non-validate()-blocking, content-load-boundary-only call.\n\t\tblueprint.warn_if_perk_benefit_wasted()\n\t\tif _tower_blueprints.has(blueprint.tower_id):\n\t\t\tpush_error(\"[GameDataRegistry] %s: duplicate tower_id '%s' — overwriting previous entry.\" % [file_name, blueprint.tower_id])\n\t\t_tower_blueprints[blueprint.tower_id] = blueprint"
+        },
+        {
+          "path": "src/core/tower/tower_blueprint_data.gd",
+          "section": "TowerBlueprintData > validate_placement_cost_matches_formula_4",
+          "start_line": 75,
+          "end_line": 91,
+          "text": "## Formula 4 (tower.md): placement_cost must equal round(base_cost *\n## archetype_cost_factor * tier_cost_factor) for STATIC, content-authored\n## blueprints (the .tres catalogue under assets/data/towers/blueprints/).\n## Deliberately NOT folded into validate() above -- TowerAssembly.gd's\n## assemble_tower() produces TowerBlueprintData at runtime using its own,\n## intentionally different pricing formula (BASE_ASSEMBLY_COST *\n## tier_cost_factor * 1.75, a \"quick-spec\" assembly markup unrelated to\n## Formula 4) from the same FoundationComponent.base_cost field, which is\n## legitimately correct and must still pass validate() (see\n## tower_assembly_test.gd::test_assembled_blueprint_is_immediately_registered_and_placeable).\n## Call this only at the GameDataRegistry content-load boundary (TD-tower-009,\n## docs/tech-debt-register.md), never on a dynamically-assembled blueprint.\nfunc validate_placement_cost_matches_formula_4() -> bool:\n\tif foundation == null:\n\t\treturn true  # validate() already reports the null-foundation error\n\tvar expected_cost: int = roundi(foundation.base_cost * foundation.archetype_cost_factor * foundation.tier_cost_factor)\n\tif placement_cost != expected_cost:"
+        }
+      ],
+      "seconds": 4.3,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The tower `warbreaker` had its original design value adjusted from 25 to 26 gold.",
+      "quote": "`warbreaker` 25→26",
+      "line": 17,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "203d020c-2333-45d1-bc4a-271cf424653a",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D5] explicitly states that `warbreaker` required a '±2 gold adjustment' from its original design value of 25 to 26 to satisfy integer constraints. Implementation source [C4] supports this by showing the final `placement_cost` is set to 26 in the blueprint data, confirming the adjustment described in the documentation.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 15,
+          "end_line": 20,
+          "text": "## The 18 Towers\n\n**Cost note (2026-08-28):** `Cost`/`base_cost` below reflect the values *after* `TD-tower-009`'s fix landed (see Coverage Gaps §3) — a real `base_cost: int` field now exists on `FoundationComponent`, and for any blueprint loaded through `GameDataRegistry`'s content catalogue, `placement_cost` must equal `round(base_cost × archetype_cost_factor × tier_cost_factor)` or it fails validation (this check is content-load-only, not part of general `TowerBlueprintData.validate()` — see Formula 4's own Scope note in `tower.md` for why). 4 of the 5 towers this catalogue's follow-up pass authored needed a ±2 gold adjustment from their original design values to satisfy that new integer constraint (`warbreaker` 25→26, `firestorm_spire`/`railgun_emplacement` 30→32, `grand_rally_spire` 30→28) — cosmetic, not a balance decision.\n\n| `tower_id` | Display Name | Archetype | Tier | `base_cost` | Cost | HP | Weapon DMG | Atk Speed | Range (cells) | Projectile | AoE (cells) | Targeting | Status Effect | Pre-Placement Perk |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "assets/data/towers/blueprints/blueprint_warbreaker.tres",
+          "section": "TowerBlueprintData > warbreaker",
+          "start_line": 1,
+          "end_line": 36,
+          "text": "[gd_resource type=\"Resource\" script_class=\"TowerBlueprintData\" load_steps=6 format=3]\n\n[ext_resource type=\"Script\" path=\"res://src/core/tower/tower_blueprint_data.gd\" id=\"1\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/foundation_component.gd\" id=\"2\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/weapon_component.gd\" id=\"3\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/focus_component.gd\" id=\"4\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/power_component.gd\" id=\"5\"]\n\n[sub_resource type=\"Resource\" id=\"Foundation_warbreaker\"]\nscript = ExtResource(\"2\")\ncomponent_id = \"found_warbreaker_t3\"\narchetype = \"physical\"\nhp_base = 150.0\ntier = 3\ntier_multiplier = 2.0\ntier_dps_multiplier = 2.4\ntier_cost_factor = 2.0\ntier_boss_dps_multiplier = 1.0\nfootprint = Vector2i(1, 1)\npre_placement_perk = \"\"\nbase_cost = 13\narchetype_cost_factor = 1.0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Weapon_warbreaker\"]\nscript = ExtResource(\"3\")\ncomponent_id = \"weap_warbreaker_t3\"\nweapon_damage = 28.0\nattack_speed = 0.9\nprojectile_type = \"BALLISTIC\"\nelement = \"\"\naura_effect_type = \"\"\naura_effect_value = 0.0\naura_radius_cells = 0\naoe_radius_cells = 0\ndamaged = false"
+        }
+      ],
+      "seconds": 6.5,
+      "review": {
+        "verdict_correct": true,
+        "note": "Only the current value can be checked: warbreaker costs 26."
+      }
+    },
+    {
+      "claim": "The Rally Banner provides a damage buff aura with a value of +0.15.",
+      "quote": "AURA (damage_buff +0.15)",
+      "line": 26,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "afc4958b-443d-4b41-a5b9-ed8450752137",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1 and D5 explicitly state that the Rally Banner provides a damage buff with a value of +0.15 (D1: 'damage_buff +0.15', D5: 'aura_effect_value = 0.15'). Implementation source C1 supports this claim by showing the exact same value in the blueprint data ('aura_effect_value = 0.15'). Other sources describe different towers or general rules unrelated to the specific value of the Rally Banner.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/hero-class-catalogue.md",
+          "section": "Hero Class Catalogue > The 4 Classes > `support` — Support",
+          "start_line": 55,
+          "end_line": 65,
+          "text": "### `support` — Support\n\n**Archetype match**: Support towers (`barrier_ward`, `rally_banner`).\n**Flavor**: A hero who reinforces the team the way support towers reinforce the field — utility and sustain over raw damage.\n\n| Perk | Effect | Mechanism | Safe Range |\n|---|---|---|---|\n| **Primary — Field Medic** | % Lifesteal bonus | `additive_bonus_total` on Hero stat #10 (Lifesteal) | +8% – +15% (respects the 40% Lifesteal cap already in `hero.md` Tuning Knobs) |\n| **Secondary — Efficient Casting** | % Cooldown Reduction bonus | `additive_bonus_total` on Hero stat #4 (CDR) | +8% – +15% (respects the 75% CDR cap already in `hero.md` Tuning Knobs) |\n\n---"
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 20,
+          "end_line": 28,
+          "text": "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| `archer` | Archer Tower | physical | 1 | 10 | 10 | 100 | 20 | 1.0 | 3 | BALLISTIC | 0 | CLOSEST_TO_GOAL | — | RANGE_BOOST |\n| `firebolt_turret` | Firebolt Turret | elemental | 1 | 10 | 10 | 90 | 14 | 0.7 | 4 | BALLISTIC | 2 | LOWEST_HP | burn (0.10) | — |\n| `frostbolt_turret` | Frostbolt Turret | elemental | 1 | 10 | 10 | 90 | 16 | 0.8 | 4 | BALLISTIC | 2 | LOWEST_HP | slow (0.15) | — |\n| `venomdart_turret` | Venom Dart Turret | elemental | 1 | 10 | 10 | 90 | 12 | 0.9 | 4 | HOMING | 0 | LOWEST_HP | poison (0.08) | — |\n| `longshot_sniper` | Longshot Sniper | ranged | 1 | 12 | 12 | 85 | 32 | 0.6 | 6 | HOMING | 0 | HIGHEST_HP | — | DAMAGE_BOOST |\n| `rally_banner` | Rally Banner | support | 1 | 12 | 12 | 100 | 8 | 1.0 | 1 | AURA (damage_buff +0.15) | 0 | CLOSEST_TO_GOAL | — | — |\n| `bulwark` | Bulwark | physical | 2 | 14 | 21 | 160 | 22 | 0.8 | 4 | BALLISTIC | 0 | SPAWN_ORDER | — | — |\n| `storm_turret` | Storm Turret | elemental | 2 | 13 | 20 | 100 | 15 | 0.75 | 4 | BALLISTIC | 2 | LOWEST_HP | — | SPEED_BOOST |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "assets/data/towers/blueprints/blueprint_rally_banner.tres",
+          "section": "TowerBlueprintData > rally_banner",
+          "start_line": 30,
+          "end_line": 63,
+          "text": "projectile_type = \"AURA\"\naura_effect_type = \"damage_buff\"\naura_effect_value = 0.15\naura_radius_cells = 3\naoe_radius_cells = 0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Focus_rally\"]\nscript = ExtResource(\"4\")\ncomponent_id = \"focus_rally_t1\"\ntargeting_mode = \"CLOSEST_TO_GOAL\"\nattack_range_cells = 1\ncone_half_angle = 180.0\nfacing_direction = \"N\"\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Power_rally\"]\nscript = ExtResource(\"5\")\ncomponent_id = \"power_none\"\neffect_type = \"\"\neffect_value = 0.0\neffect_duration = 0.0\nconstellation_eligibility_tag = \"\"\ndamaged = false\n\n[resource]\nscript = ExtResource(\"1\")\ntower_id = &\"rally_banner\"\ndisplay_name = \"Rally Banner\"\nplacement_cost = 12\nfoundation = SubResource(\"Foundation_rally\")\nweapon = SubResource(\"Weapon_rally\")\nfocus = SubResource(\"Focus_rally\")\npower = SubResource(\"Power_rally\")"
+        }
+      ],
+      "seconds": 9.4,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The Venom Dart Turret applies poison at a rate of 0.08.",
+      "quote": "poison (0.08)",
+      "line": 24,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "b89c17dc-db5d-4689-a23f-3dff89d7b9b0",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "The design source D5 explicitly lists the Venom Dart Turret's poison effect value as 0.08 in its catalogue table. The implementation source C1 confirms this exact value within the tower's blueprint data, where `effect_value` is set to 0.08 for the poison power component.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 20,
+          "end_line": 28,
+          "text": "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| `archer` | Archer Tower | physical | 1 | 10 | 10 | 100 | 20 | 1.0 | 3 | BALLISTIC | 0 | CLOSEST_TO_GOAL | — | RANGE_BOOST |\n| `firebolt_turret` | Firebolt Turret | elemental | 1 | 10 | 10 | 90 | 14 | 0.7 | 4 | BALLISTIC | 2 | LOWEST_HP | burn (0.10) | — |\n| `frostbolt_turret` | Frostbolt Turret | elemental | 1 | 10 | 10 | 90 | 16 | 0.8 | 4 | BALLISTIC | 2 | LOWEST_HP | slow (0.15) | — |\n| `venomdart_turret` | Venom Dart Turret | elemental | 1 | 10 | 10 | 90 | 12 | 0.9 | 4 | HOMING | 0 | LOWEST_HP | poison (0.08) | — |\n| `longshot_sniper` | Longshot Sniper | ranged | 1 | 12 | 12 | 85 | 32 | 0.6 | 6 | HOMING | 0 | HIGHEST_HP | — | DAMAGE_BOOST |\n| `rally_banner` | Rally Banner | support | 1 | 12 | 12 | 100 | 8 | 1.0 | 1 | AURA (damage_buff +0.15) | 0 | CLOSEST_TO_GOAL | — | — |\n| `bulwark` | Bulwark | physical | 2 | 14 | 21 | 160 | 22 | 0.8 | 4 | BALLISTIC | 0 | SPAWN_ORDER | — | — |\n| `storm_turret` | Storm Turret | elemental | 2 | 13 | 20 | 100 | 15 | 0.75 | 4 | BALLISTIC | 2 | LOWEST_HP | — | SPEED_BOOST |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "assets/data/towers/blueprints/blueprint_venomdart_turret.tres",
+          "section": "TowerBlueprintData > venomdart_turret",
+          "start_line": 31,
+          "end_line": 64,
+          "text": "element = \"poison\"\naura_effect_type = \"\"\naura_effect_value = 0.0\naura_radius_cells = 0\naoe_radius_cells = 0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Focus_venomdart\"]\nscript = ExtResource(\"4\")\ncomponent_id = \"focus_venomdart_t1\"\ntargeting_mode = \"LOWEST_HP\"\nattack_range_cells = 4\ncone_half_angle = 90.0\nfacing_direction = \"N\"\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Power_venomdart\"]\nscript = ExtResource(\"5\")\ncomponent_id = \"power_venomdart_poison_t1\"\neffect_type = \"poison\"\neffect_value = 0.08\neffect_duration = 4.0\nconstellation_eligibility_tag = \"elemental_poison\"\ndamaged = false\n\n[resource]\nscript = ExtResource(\"1\")\ntower_id = &\"venomdart_turret\"\ndisplay_name = \"Venom Dart Turret\"\nplacement_cost = 10\nfoundation = SubResource(\"Foundation_venomdart\")\nweapon = SubResource(\"Weapon_venomdart\")\nfocus = SubResource(\"Focus_venomdart\")\npower = SubResource(\"Power_venomdart\")"
+        }
+      ],
+      "seconds": 6.9,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The barrier_ward applies an AURA with damage_buff +0.20.",
+      "quote": "AURA (damage_buff +0.20)",
+      "line": 29,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "680a4702-24bb-4a13-a773-4ff2c6fd866f",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source D5 explicitly lists the barrier_ward as a support tower with an AURA effect of 'damage_buff +0.20'. Implementation source C1 confirms this by setting aura_effect_type to 'damage_buff' and aura_effect_value to 0.20 in the blueprint data.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 28,
+          "end_line": 36,
+          "text": "| `storm_turret` | Storm Turret | elemental | 2 | 13 | 20 | 100 | 15 | 0.75 | 4 | BALLISTIC | 2 | LOWEST_HP | — | SPEED_BOOST |\n| `barrier_ward` | Barrier Ward | support | 2 | 16 | 24 | 120 | 8 | 0.8 | 1 | AURA (damage_buff +0.20) | 0 | CLOSEST_TO_GOAL | — | AURA_EXTEND |\n| `volley_crossbow` | Volley Crossbow | ranged | 2 | 15 | 23 | 90 | 18 | 1.2 | 5 | HOMING | 0 | SCATTER | — | — |\n| `arcane_lance` | Arcane Lance | elemental | 3 | 12 | 24 | 110 | 30 | 1.0 | 5 | BALLISTIC | 1 | LOWEST_HP | — | — |\n| `warbreaker` | Warbreaker | physical | 3 | 13 | 26 | 150 | 28 | 0.9 | 4 | BALLISTIC | 0 | HIGHEST_HP | — | — |\n| `piercing_ballista` | Piercing Ballista | ranged | 3 | 13 | 26 | 90 | 26 | 1.0 | 6 | HOMING | 0 | HIGHEST_HP | — | — |\n| `sanctified_standard` | Sanctified Standard | support | 3 | 14 | 28 | 140 | 9 | 0.9 | 1 | AURA (damage_buff +0.25) | 0 | CLOSEST_TO_GOAL | — | AURA_EXTEND |\n| `siege_cannon` | Siege Cannon | physical | 4 | 7 | 28 | 140 | 100 | 0.5 | 5 | HOMING | 0 | LOWEST_HP | — | — |\n| `firestorm_spire` | Firestorm Spire | elemental | 4 | 8 | 32 | 130 | 45 | 0.6 | 4 | BALLISTIC | 3 | CLOSEST_TO_GOAL | burn (0.15) | — |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "assets/data/towers/blueprints/blueprint_barrier_ward.tres",
+          "section": "TowerBlueprintData > barrier_ward",
+          "start_line": 30,
+          "end_line": 65,
+          "text": "attack_speed = 0.8\nprojectile_type = \"AURA\"\nelement = \"\"\naura_effect_type = \"damage_buff\"\naura_effect_value = 0.20\naura_radius_cells = 4\naoe_radius_cells = 0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Focus_barrier\"]\nscript = ExtResource(\"4\")\ncomponent_id = \"focus_barrier_t2\"\ntargeting_mode = \"CLOSEST_TO_GOAL\"\nattack_range_cells = 1\ncone_half_angle = 180.0\nfacing_direction = \"N\"\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Power_barrier\"]\nscript = ExtResource(\"5\")\ncomponent_id = \"power_none\"\neffect_type = \"\"\neffect_value = 0.0\neffect_duration = 0.0\nconstellation_eligibility_tag = \"support_barrier\"\ndamaged = false\n\n[resource]\nscript = ExtResource(\"1\")\ntower_id = &\"barrier_ward\"\ndisplay_name = \"Barrier Ward\"\nplacement_cost = 24\nfoundation = SubResource(\"Foundation_barrier\")\nweapon = SubResource(\"Weapon_barrier\")\nfocus = SubResource(\"Focus_barrier\")\npower = SubResource(\"Power_barrier\")"
+        }
+      ],
+      "seconds": 7.2,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The grand_rally_spire tower applies an AURA buff that increases damage by 0.30.",
+      "quote": "AURA (damage_buff +0.30)",
+      "line": 38,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "1fffa872-631d-4a5f-8585-f013408a7c29",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1] and [D2] explicitly state that the `grand_rally_spire` provides a damage buff of +0.30. Implementation sources [C1] and [C5] confirm this by setting the `aura_effect_value` to 0.30 in the blueprint data.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > Coverage Grid (Archetype × Tier)",
+          "start_line": 58,
+          "end_line": 60,
+          "text": "- **`grand_rally_spire`** (support T4): completes the aura escalation to +0.30 at `aura_radius_cells = 4` and takes `AURA_EXTEND` at its max `perk_power = 0.25` (+2 cells), placing at exactly the schema's radius ceiling of 6. **2026-10-04:** base radius was 6, which left the +2 perk entirely wasted against the 6 cap (boot warning); lowered to 4 so the perk does real work — placed radius is unchanged at 6, so no balance change.\n- All 5 costed within the precedent bands observed in the original 13 (T3 ≈ 24–28, T4 ≈ 28–32, the T4 `base_cost ≤ 30` figure from `tower.md` Revision 20/OQ-11 — **now actually enforced in code**, see Coverage Gaps §3/`TD-tower-009`). None use a pre-existing perk type beyond `AURA_EXTEND` on the two support towers (matching the established \"≤1 perk type demo per family\" pattern) or introduce a new `aura_effect_type`, `targeting_mode`, `projectile_type`, or footprint value — every field uses vocabulary the schema and its `validate()` already recognize.\n- Verified via a headless load-and-validate pass (not just written and assumed correct): all 18 blueprints load as `TowerBlueprintData` and pass `validate()` with zero errors."
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 36,
+          "end_line": 40,
+          "text": "| `firestorm_spire` | Firestorm Spire | elemental | 4 | 8 | 32 | 130 | 45 | 0.6 | 4 | BALLISTIC | 3 | CLOSEST_TO_GOAL | burn (0.15) | — |\n| `railgun_emplacement` | Railgun Emplacement | ranged | 4 | 8 | 32 | 90 | 95 | 0.5 | 7 | HOMING | 0 | HIGHEST_HP | — | — |\n| `grand_rally_spire` | Grand Rally Spire | support | 4 | 7 | 28 | 150 | 10 | 1.0 | 1 | AURA (damage_buff +0.30) | 0 | CLOSEST_TO_GOAL | — | AURA_EXTEND |\n\n*(All 18 have `footprint = Vector2i(1, 1)` — see Coverage Gaps §3, still open.)*"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "assets/data/towers/blueprints/blueprint_grand_rally_spire.tres",
+          "section": "TowerBlueprintData > grand_rally_spire",
+          "start_line": 30,
+          "end_line": 65,
+          "text": "attack_speed = 1.0\nprojectile_type = \"AURA\"\nelement = \"\"\naura_effect_type = \"damage_buff\"\naura_effect_value = 0.30\naura_radius_cells = 4\naoe_radius_cells = 0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Focus_grandrally\"]\nscript = ExtResource(\"4\")\ncomponent_id = \"focus_grandrally_t4\"\ntargeting_mode = \"CLOSEST_TO_GOAL\"\nattack_range_cells = 1\ncone_half_angle = 180.0\nfacing_direction = \"N\"\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Power_grandrally\"]\nscript = ExtResource(\"5\")\ncomponent_id = \"power_none\"\neffect_type = \"\"\neffect_value = 0.0\neffect_duration = 0.0\nconstellation_eligibility_tag = \"support_grand_rally\"\ndamaged = false\n\n[resource]\nscript = ExtResource(\"1\")\ntower_id = &\"grand_rally_spire\"\ndisplay_name = \"Grand Rally Spire\"\nplacement_cost = 28\nfoundation = SubResource(\"Foundation_grandrally\")\nweapon = SubResource(\"Weapon_grandrally\")\nfocus = SubResource(\"Focus_grandrally\")\npower = SubResource(\"Power_grandrally\")"
+        },
+        {
+          "path": "assets/data/towers/blueprints/blueprint_grand_rally_spire.tres",
+          "section": "TowerBlueprintData > grand_rally_spire",
+          "start_line": 1,
+          "end_line": 35,
+          "text": "[gd_resource type=\"Resource\" script_class=\"TowerBlueprintData\" load_steps=6 format=3]\n\n[ext_resource type=\"Script\" path=\"res://src/core/tower/tower_blueprint_data.gd\" id=\"1\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/foundation_component.gd\" id=\"2\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/weapon_component.gd\" id=\"3\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/focus_component.gd\" id=\"4\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/power_component.gd\" id=\"5\"]\n\n[sub_resource type=\"Resource\" id=\"Foundation_grandrally\"]\nscript = ExtResource(\"2\")\ncomponent_id = \"found_grandrally_t4\"\narchetype = \"support\"\nhp_base = 150.0\ntier = 4\ntier_multiplier = 2.5\ntier_dps_multiplier = 4.0\ntier_cost_factor = 4.0\ntier_boss_dps_multiplier = 2.0\nfootprint = Vector2i(1, 1)\npre_placement_perk = \"AURA_EXTEND\"\nperk_power = 0.25\nbase_cost = 7\narchetype_cost_factor = 1.0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Weapon_grandrally\"]\nscript = ExtResource(\"3\")\ncomponent_id = \"weap_grandrally_t4\"\nweapon_damage = 10.0\nattack_speed = 1.0\nprojectile_type = \"AURA\"\nelement = \"\"\naura_effect_type = \"damage_buff\"\naura_effect_value = 0.30\naura_radius_cells = 4"
+        }
+      ],
+      "seconds": 3.2,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "All towers in the catalogue have a footprint defined as Vector2i(1, 1).",
+      "quote": "(All 18 have `footprint = Vector2i(1, 1)` — see Coverage Gaps §3, still open.)",
+      "line": 40,
+      "section": "Tower Content Catalogue > The 18 Towers",
+      "run_id": "e2815ff9-0af2-40bf-a2c7-37d5107f6e25",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources D1, D2, and D5 explicitly state that all 18 shipped blueprints use `footprint = Vector2i(1, 1)` and confirm zero precedent for a 2x2 tower. Implementation source C4 defines the signal signature for placement previews but does not specify the actual footprint values used by towers, making it unrelated to the specific claim about catalogue values.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Open Questions",
+          "start_line": 1178,
+          "end_line": 1178,
+          "text": "| OQ-6 | **2×2 footprint towers — which archetypes use them? Still open, now with hard evidence (2026-08-27, evidence base grew 2026-08-28).** The Grid System and this GDD both establish that 2×2 footprints are valid. `tower-content-catalogue.md` confirms **all 18 currently shipped blueprints use `footprint = Vector2i(1, 1)`** (13 original + 5 authored 2026-08-27 to close OQ-4's coverage gaps, all also 1×1) — zero precedent for a 2×2 tower exists anywhere in the real catalogue. This GDD also has no footprint-based cost multiplier defined, so a 2×2 tower isn't a drop-in retrofit — it needs a deliberate design pass (placement-cost scaling, grid-occupancy balance), not just picking an existing blueprint to resize. | Game Designer | Deferred to content catalogue — genuinely open, evidence-backed |"
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > Coverage Gaps (still real, not filled by this pass)",
+          "start_line": 62,
+          "end_line": 64,
+          "text": "## Coverage Gaps (still real, not filled by this pass)\n\n1. **`tower.md` OQ-6 (\"2×2 footprint towers — which archetypes use them?\") remains open, now with even stronger evidence**: all 18 shipped blueprints (13 original + the 5 just added) use `footprint = Vector2i(1, 1)`. Zero precedent exists for a 2×2 tower anywhere in the catalogue. This remains a Level Designer / Game Designer decision (per `tower.md`'s own OQ-6 ownership) — a 2×2 footprint has real grid-occupancy and placement-cost implications (`tower.md` doesn't currently define a footprint-based cost multiplier) that need a deliberate design pass, not a retrofit onto an existing 1×1 blueprint. Deliberately not addressed by this pass — inventing a 2×2 tower's cost/balance implications without that design pass would be guessing, not designing."
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 36,
+          "end_line": 40,
+          "text": "| `firestorm_spire` | Firestorm Spire | elemental | 4 | 8 | 32 | 130 | 45 | 0.6 | 4 | BALLISTIC | 3 | CLOSEST_TO_GOAL | burn (0.15) | — |\n| `railgun_emplacement` | Railgun Emplacement | ranged | 4 | 8 | 32 | 90 | 95 | 0.5 | 7 | HOMING | 0 | HIGHEST_HP | — | — |\n| `grand_rally_spire` | Grand Rally Spire | support | 4 | 7 | 28 | 150 | 10 | 1.0 | 1 | AURA (damage_buff +0.30) | 0 | CLOSEST_TO_GOAL | — | AURA_EXTEND |\n\n*(All 18 have `footprint = Vector2i(1, 1)` — see Coverage Gaps §3, still open.)*"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 3.9,
+      "review": {
+        "verdict_correct": false,
+        "note": "Missed: all 18 blueprints use footprint = Vector2i(1, 1)."
+      }
+    },
+    {
+      "claim": "The elemental archetype has 6 total units across tiers T1–T4.",
+      "quote": "| elemental | 3 (firebolt/frostbolt/venomdart) | 1 (storm_turret) | 1 (arcane_lance) | 1 (firestorm_spire) | 6 |",
+      "line": 48,
+      "section": "Tower Content Catalogue > Coverage Grid (Archetype × Tier)",
+      "run_id": "e4ab72d5-1982-4fbe-b771-b1106bcde4dc",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source [D3] explicitly states in its 'Coverage Grid' that the 'elemental' archetype has a total of 6 units across tiers T1–T4 (3 at T1, 1 at T2, 1 at T3, and 1 at T4). No implementation sources were provided to verify this count against actual code values.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > Coverage Grid (Archetype × Tier)",
+          "start_line": 42,
+          "end_line": 54,
+          "text": "## Coverage Grid (Archetype × Tier)\n\n| Archetype | T1 | T2 | T3 | T4 | Total |\n|---|---|---|---|---|---|\n| physical | 1 (archer) | 1 (bulwark) | 1 (warbreaker) | 1 (siege_cannon) | 4 |\n| ranged | 1 (longshot_sniper) | 1 (volley_crossbow) | 1 (piercing_ballista) | 1 (railgun_emplacement) | 4 |\n| elemental | 3 (firebolt/frostbolt/venomdart) | 1 (storm_turret) | 1 (arcane_lance) | 1 (firestorm_spire) | 6 |\n| support | 1 (rally_banner) | 1 (barrier_ward) | 1 (sanctified_standard) | 1 (grand_rally_spire) | 4 |\n| **Total** | **6** | **4** | **4** | **4** | **18** |\n\n**Full T1–T4 coverage now exists for every archetype** — the two real gaps this catalogue's first pass named (no T3 physical/ranged/support, no T4 ranged/support) were closed same-day (2026-08-27). Design notes on the 5 additions, to explain the choices rather than just the numbers:\n\n- **`warbreaker`** (physical T3): fills the \"efficient mid-game\" niche Formula 1 assigns to T3 (best DPS/cost ratio) — `HIGHEST_HP` targeting gives it a distinct tank-breaker role vs. `bulwark`'s `SPAWN_ORDER` and `archer`'s `CLOSEST_TO_GOAL`."
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 1.9,
+      "review": {
+        "verdict_correct": false,
+        "note": "Missed: 6 blueprints have archetype = \"elemental\"."
+      }
+    },
+    {
+      "claim": "The `warbreaker` unit targets the enemy with the highest HP.",
+      "quote": "`HIGHEST_HP` targeting gives it a distinct tank-breaker role",
+      "line": 54,
+      "section": "Tower Content Catalogue > Coverage Grid (Archetype × Tier)",
+      "run_id": "a469a7f3-36c7-449b-9d04-e6182b359010",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D1] explicitly lists `warbreaker` with the targeting mode `HIGHEST_HP`, and [D4] confirms this role fills a specific niche. Implementation source [C1] supports this claim by setting the `targeting_mode` property to `\"HIGHEST_HP\"` in the blueprint data. Sources [D2], [D3], [C2], [C3], and [C4] are unrelated to the specific targeting logic of the `warbreaker` unit.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > The 18 Towers",
+          "start_line": 28,
+          "end_line": 36,
+          "text": "| `storm_turret` | Storm Turret | elemental | 2 | 13 | 20 | 100 | 15 | 0.75 | 4 | BALLISTIC | 2 | LOWEST_HP | — | SPEED_BOOST |\n| `barrier_ward` | Barrier Ward | support | 2 | 16 | 24 | 120 | 8 | 0.8 | 1 | AURA (damage_buff +0.20) | 0 | CLOSEST_TO_GOAL | — | AURA_EXTEND |\n| `volley_crossbow` | Volley Crossbow | ranged | 2 | 15 | 23 | 90 | 18 | 1.2 | 5 | HOMING | 0 | SCATTER | — | — |\n| `arcane_lance` | Arcane Lance | elemental | 3 | 12 | 24 | 110 | 30 | 1.0 | 5 | BALLISTIC | 1 | LOWEST_HP | — | — |\n| `warbreaker` | Warbreaker | physical | 3 | 13 | 26 | 150 | 28 | 0.9 | 4 | BALLISTIC | 0 | HIGHEST_HP | — | — |\n| `piercing_ballista` | Piercing Ballista | ranged | 3 | 13 | 26 | 90 | 26 | 1.0 | 6 | HOMING | 0 | HIGHEST_HP | — | — |\n| `sanctified_standard` | Sanctified Standard | support | 3 | 14 | 28 | 140 | 9 | 0.9 | 1 | AURA (damage_buff +0.25) | 0 | CLOSEST_TO_GOAL | — | AURA_EXTEND |\n| `siege_cannon` | Siege Cannon | physical | 4 | 7 | 28 | 140 | 100 | 0.5 | 5 | HOMING | 0 | LOWEST_HP | — | — |\n| `firestorm_spire` | Firestorm Spire | elemental | 4 | 8 | 32 | 130 | 45 | 0.6 | 4 | BALLISTIC | 3 | CLOSEST_TO_GOAL | burn (0.15) | — |"
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > Coverage Grid (Archetype × Tier)",
+          "start_line": 42,
+          "end_line": 54,
+          "text": "## Coverage Grid (Archetype × Tier)\n\n| Archetype | T1 | T2 | T3 | T4 | Total |\n|---|---|---|---|---|---|\n| physical | 1 (archer) | 1 (bulwark) | 1 (warbreaker) | 1 (siege_cannon) | 4 |\n| ranged | 1 (longshot_sniper) | 1 (volley_crossbow) | 1 (piercing_ballista) | 1 (railgun_emplacement) | 4 |\n| elemental | 3 (firebolt/frostbolt/venomdart) | 1 (storm_turret) | 1 (arcane_lance) | 1 (firestorm_spire) | 6 |\n| support | 1 (rally_banner) | 1 (barrier_ward) | 1 (sanctified_standard) | 1 (grand_rally_spire) | 4 |\n| **Total** | **6** | **4** | **4** | **4** | **18** |\n\n**Full T1–T4 coverage now exists for every archetype** — the two real gaps this catalogue's first pass named (no T3 physical/ranged/support, no T4 ranged/support) were closed same-day (2026-08-27). Design notes on the 5 additions, to explain the choices rather than just the numbers:\n\n- **`warbreaker`** (physical T3): fills the \"efficient mid-game\" niche Formula 1 assigns to T3 (best DPS/cost ratio) — `HIGHEST_HP` targeting gives it a distinct tank-breaker role vs. `bulwark`'s `SPAWN_ORDER` and `archer`'s `CLOSEST_TO_GOAL`."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "assets/data/towers/blueprints/blueprint_warbreaker.tres",
+          "section": "TowerBlueprintData > warbreaker",
+          "start_line": 30,
+          "end_line": 64,
+          "text": "projectile_type = \"BALLISTIC\"\nelement = \"\"\naura_effect_type = \"\"\naura_effect_value = 0.0\naura_radius_cells = 0\naoe_radius_cells = 0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Focus_warbreaker\"]\nscript = ExtResource(\"4\")\ncomponent_id = \"focus_warbreaker_t3\"\ntargeting_mode = \"HIGHEST_HP\"\nattack_range_cells = 4\ncone_half_angle = 90.0\nfacing_direction = \"N\"\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Power_warbreaker\"]\nscript = ExtResource(\"5\")\ncomponent_id = \"power_none\"\neffect_type = \"\"\neffect_value = 0.0\neffect_duration = 0.0\nconstellation_eligibility_tag = \"physical_warbreaker\"\ndamaged = false\n\n[resource]\nscript = ExtResource(\"1\")\ntower_id = &\"warbreaker\"\ndisplay_name = \"Warbreaker\"\nplacement_cost = 26\nfoundation = SubResource(\"Foundation_warbreaker\")\nweapon = SubResource(\"Weapon_warbreaker\")\nfocus = SubResource(\"Focus_warbreaker\")\npower = SubResource(\"Power_warbreaker\")"
+        }
+      ],
+      "seconds": 4.0,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The `bulwark` unit is assigned to SPAWN_ORDER.",
+      "quote": "vs. `bulwark`'s `SPAWN_ORDER`",
+      "line": 54,
+      "section": "Tower Content Catalogue > Coverage Grid (Archetype × Tier)",
+      "run_id": "dbf54050-9751-40b0-8898-d989a70c50b1",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source D1 states that the `SPAWN_ORDER` mode targets the enemy with the lowest `entity_id`, and D5 confirms the `bulwark` archetype fills a niche distinct from `archer`'s `CLOSEST_TO_GOAL`. Implementation sources C2 and C6 explicitly show the code logic for finding the lowest ID target and the blueprint data setting `targeting_mode = \"SPAWN_ORDER\"` for the Bulwark, which supports the claim.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Detailed Design > Core Rules > Group 4: Targeting",
+          "start_line": 276,
+          "end_line": 279,
+          "text": "| Mode | Behavior |\n    |------|----------|\n    | `CLOSEST_TO_GOAL` | Furthest along path (default if no Focus) |\n    | `SPAWN_ORDER` | Targets the enemy with the **lowest `entity_id`** currently in range and cone that is alive. `entity_id` is assigned sequentially at spawn — lower IDs = earlier spawns in the mission. Among valid candidates, the earliest-spawned living monster in range is always selected. This is fully deterministic from `_monster_cache` with no additional per-tower state. If the current lowest-id target dies or exits range, the tower immediately selects the next-lowest-id alive target in range on the next attack cycle. Resets naturally via cache — no per-wave list management required. **SPAWN_ORDER determinism dependency:** Entity IDs are only deterministic if the Monster System processes `monster_spawn_requested` synchronously (not deferred). If monster spawning is batched or deferred, `entity_id` assignment order may diverge from emission order, breaking SPAWN_ORDER stability. The Monster System must process `monster_spawn_requested` synchronously and assign `entity_id` at the moment of `monster_spawned` emission — this is a cross-system contract. **Cross-doc verification required:** Monster GDD must explicitly state that `entity_id` is assigned synchronously at spawn. Add"
+        },
+        {
+          "path": "design/gdd/tower-content-catalogue.md",
+          "section": "Tower Content Catalogue > Coverage Grid (Archetype × Tier)",
+          "start_line": 42,
+          "end_line": 54,
+          "text": "## Coverage Grid (Archetype × Tier)\n\n| Archetype | T1 | T2 | T3 | T4 | Total |\n|---|---|---|---|---|---|\n| physical | 1 (archer) | 1 (bulwark) | 1 (warbreaker) | 1 (siege_cannon) | 4 |\n| ranged | 1 (longshot_sniper) | 1 (volley_crossbow) | 1 (piercing_ballista) | 1 (railgun_emplacement) | 4 |\n| elemental | 3 (firebolt/frostbolt/venomdart) | 1 (storm_turret) | 1 (arcane_lance) | 1 (firestorm_spire) | 6 |\n| support | 1 (rally_banner) | 1 (barrier_ward) | 1 (sanctified_standard) | 1 (grand_rally_spire) | 4 |\n| **Total** | **6** | **4** | **4** | **4** | **18** |\n\n**Full T1–T4 coverage now exists for every archetype** — the two real gaps this catalogue's first pass named (no T3 physical/ranged/support, no T4 ranged/support) were closed same-day (2026-08-27). Design notes on the 5 additions, to explain the choices rather than just the numbers:\n\n- **`warbreaker`** (physical T3): fills the \"efficient mid-game\" niche Formula 1 assigns to T3 (best DPS/cost ratio) — `HIGHEST_HP` targeting gives it a distinct tank-breaker role vs. `bulwark`'s `SPAWN_ORDER` and `archer`'s `CLOSEST_TO_GOAL`."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/tower/tower_system.gd",
+          "section": "TowerSystem > _find_spawn_order_target",
+          "start_line": 643,
+          "end_line": 651,
+          "text": "## tower.md Rule 15 — SPAWN_ORDER: lowest entity_id among valid candidates.\n## Fully deterministic on its own; entity_id is a total order, so no\n## separate tiebreaker chain is needed (Rule 15's own wording).\nfunc _find_spawn_order_target(state: TowerMissionState) -> int:\n\tvar best_id: int = -1\n\tfor entity_id: int in _candidates_in_range(state):\n\t\tif best_id == -1 or entity_id < best_id:\n\t\t\tbest_id = entity_id\n\treturn best_id"
+        },
+        {
+          "path": "assets/data/towers/blueprints/blueprint_bulwark.tres",
+          "section": "TowerBlueprintData > bulwark",
+          "start_line": 1,
+          "end_line": 36,
+          "text": "[gd_resource type=\"Resource\" script_class=\"TowerBlueprintData\" load_steps=6 format=3]\n\n[ext_resource type=\"Script\" path=\"res://src/core/tower/tower_blueprint_data.gd\" id=\"1\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/foundation_component.gd\" id=\"2\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/weapon_component.gd\" id=\"3\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/focus_component.gd\" id=\"4\"]\n[ext_resource type=\"Script\" path=\"res://src/core/tower/power_component.gd\" id=\"5\"]\n\n[sub_resource type=\"Resource\" id=\"Foundation_bulwark\"]\nscript = ExtResource(\"2\")\ncomponent_id = \"found_bulwark_t2\"\narchetype = \"physical\"\nhp_base = 160.0\ntier = 2\ntier_multiplier = 1.5\ntier_dps_multiplier = 1.6\ntier_cost_factor = 1.5\ntier_boss_dps_multiplier = 1.0\nfootprint = Vector2i(1, 1)\npre_placement_perk = \"\"\nbase_cost = 14\narchetype_cost_factor = 1.0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Weapon_bulwark\"]\nscript = ExtResource(\"3\")\ncomponent_id = \"weap_bulwark_t2\"\nweapon_damage = 22.0\nattack_speed = 0.8\nprojectile_type = \"BALLISTIC\"\nelement = \"\"\naura_effect_type = \"\"\naura_effect_value = 0.0\naura_radius_cells = 0\naoe_radius_cells = 0\ndamaged = false"
+        },
+        {
+          "path": "assets/data/towers/blueprints/blueprint_bulwark.tres",
+          "section": "TowerBlueprintData > bulwark",
+          "start_line": 30,
+          "end_line": 64,
+          "text": "projectile_type = \"BALLISTIC\"\nelement = \"\"\naura_effect_type = \"\"\naura_effect_value = 0.0\naura_radius_cells = 0\naoe_radius_cells = 0\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Focus_bulwark\"]\nscript = ExtResource(\"4\")\ncomponent_id = \"focus_bulwark_t2\"\ntargeting_mode = \"SPAWN_ORDER\"\nattack_range_cells = 4\ncone_half_angle = 90.0\nfacing_direction = \"N\"\ndamaged = false\n\n[sub_resource type=\"Resource\" id=\"Power_bulwark\"]\nscript = ExtResource(\"5\")\ncomponent_id = \"power_none\"\neffect_type = \"\"\neffect_value = 0.0\neffect_duration = 0.0\nconstellation_eligibility_tag = \"physical_bulwark\"\ndamaged = false\n\n[resource]\nscript = ExtResource(\"1\")\ntower_id = &\"bulwark\"\ndisplay_name = \"Bulwark\"\nplacement_cost = 21\nfoundation = SubResource(\"Foundation_bulwark\")\nweapon = SubResource(\"Weapon_bulwark\")\nfocus = SubResource(\"Focus_bulwark\")\npower = SubResource(\"Power_bulwark\")"
+        }
+      ],
+      "seconds": 10.8,
+      "review": {
+        "verdict_correct": true
+      }
+    }
+  ],
+  "project": "sanctuary"
+}

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import metrics, retrieval, symbols
@@ -35,7 +36,7 @@ log = logging.getLogger("app.agent")
 
 WORKFLOW = "consistency_check"
 DESIGN_TYPES = ("md", "txt", "pdf")
-IMPLEMENTATION_TYPES = ("py", "gd", "yaml", "json")  # code and the configuration it reads
+IMPLEMENTATION_TYPES = ("py", "gd", "yaml", "json", "tres")  # code and the configuration it reads
 
 Verdict = Literal["consistent", "potential_discrepancy", "insufficient_evidence"]
 VERDICTS: tuple[Verdict, ...] = ("consistent", "potential_discrepancy", "insufficient_evidence")
@@ -115,7 +116,8 @@ _IMPLEMENTATION_STANCES = ("supports", "contradicts", "unrelated")
 class Evidence:
     ref: str  # "D1" / "C2": what the model cites
     side: Literal["design", "implementation"]
-    origin: Literal["search", "symbol"]
+    # claim_source: the design passage the claim was extracted from (design audits only)
+    origin: Literal["search", "symbol", "claim_source"]
     chunk: Chunk
     document: Document
     score: float | None
@@ -351,6 +353,24 @@ def _search_side(
     ]
 
 
+def _with_claim_source(
+    session: Session, design: list[Evidence], chunk_id: uuid.UUID, project_id: uuid.UUID
+) -> tuple[list[Evidence], bool]:
+    """Add the passage the claim was taken from to the design evidence (if search missed it).
+    It IS the design statement, so it counts as relevant design evidence for the gate."""
+    if any(e.chunk.id == chunk_id for e in design):
+        return design, True
+    row = session.execute(
+        select(Chunk, Document)
+        .join(Document, Document.id == Chunk.document_id)
+        .where(Chunk.id == chunk_id, Document.project_id == project_id)
+    ).first()
+    if row is None:  # never cross the project boundary, not even for an internal caller
+        raise ValueError("the claim's source passage is not in this project")
+    source = Evidence(f"D{len(design) + 1}", "design", "claim_source", row[0], row[1], None, None)
+    return [*design, source], True
+
+
 def _finish(session: Session, run: AgentRun, status: str, **fields: Any) -> None:
     run.status = status
     run.finished_at = datetime.now(UTC)
@@ -368,13 +388,15 @@ def run_consistency_check(
     *,
     project_id: uuid.UUID,
     requested_by: str | None = None,
+    source_chunk_id: uuid.UUID | None = None,
 ) -> AgentRun:
     """Execute the workflow and return the persisted run. Expected failures (Ollama or the model
     unavailable) end the run as `failed` with the audit trail intact rather than raising."""
     run = AgentRun(
         project_id=project_id,
         workflow=WORKFLOW,
-        input={"claim": claim},
+        input={"claim": claim}
+        | ({"source_chunk_id": str(source_chunk_id)} if source_chunk_id else {}),
         status="running",
         requested_by=requested_by,
     )
@@ -382,7 +404,7 @@ def run_consistency_check(
     session.commit()
     rec = RunRecorder(session, run)
     try:
-        return _run(session, embedder, llm, settings, claim, run, rec)
+        return _run(session, embedder, llm, settings, claim, run, rec, source_chunk_id)
     except (EmbeddingError, LLMError) as exc:
         metrics.record_dependency_error("embedding" if isinstance(exc, EmbeddingError) else "llm")
         session.rollback()  # earlier steps were committed one by one; only leftovers are dropped
@@ -402,13 +424,24 @@ def _run(
     claim: str,
     run: AgentRun,
     rec: RunRecorder,
+    source_chunk_id: uuid.UUID | None = None,
 ) -> AgentRun:
     evidence: list[Evidence] = []
 
-    with rec.step("search_design", claim_chars=len(claim), file_types=list(DESIGN_TYPES)) as step:
+    has_source = False
+    with rec.step(
+        "search_design",
+        claim_chars=len(claim),
+        file_types=list(DESIGN_TYPES),
+        claim_source=source_chunk_id is not None,
+    ) as step:
         design = _search_side(
             session, embedder, settings, claim, DESIGN_TYPES, "design", run.project_id
         )
+        if source_chunk_id is not None:
+            design, has_source = _with_claim_source(
+                session, design, source_chunk_id, run.project_id
+            )
         evidence += design
         step.output = {"passages": [evidence_summary(e) for e in design]}
 
@@ -429,6 +462,7 @@ def _run(
 
     identifiers = symbols.extract_identifiers(claim)
     symbol_evidence: list[Evidence] = []
+    symbol_found = False  # also true when search had already returned the symbol's chunk
     with rec.step("lookup_symbols", identifiers=identifiers) as step:
         if not identifiers:
             step.skip("the claim names no code identifiers")
@@ -437,6 +471,7 @@ def _run(
             n = len(implementation)
             for name in identifiers:
                 for hit in symbols.find_symbols(session, name, limit=2, project_id=run.project_id):
+                    symbol_found = True
                     if hit.chunk.id in have:
                         continue
                     have.add(hit.chunk.id)
@@ -452,14 +487,15 @@ def _run(
     design_best = max((e.cosine for e in design if e.cosine is not None), default=None)
     impl_best = max((e.cosine for e in implementation if e.cosine is not None), default=None)
     gate = settings.consistency_min_cosine
-    design_ok = design_best is not None and design_best >= gate
+    design_ok = has_source or (design_best is not None and design_best >= gate)
     # A symbol found in the code is direct evidence even if the claim's wording is far from it.
-    impl_ok = bool(symbol_evidence) or (impl_best is not None and impl_best >= gate)
+    impl_ok = symbol_found or (impl_best is not None and impl_best >= gate)
     with rec.step("evidence_gate", min_cosine=gate) as step:
         step.output = {
             "design_best_cosine": round(design_best, 4) if design_best is not None else None,
             "implementation_best_cosine": round(impl_best, 4) if impl_best is not None else None,
             "symbol_matches": len(symbol_evidence),
+            "symbol_found": symbol_found,
             "design_ok": design_ok,
             "implementation_ok": impl_ok,
         }

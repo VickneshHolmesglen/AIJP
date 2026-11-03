@@ -1,0 +1,446 @@
+{
+  "document": "design/gdd/monster.md",
+  "section_filter": "Formulas",
+  "generated": "2026-11-03T06:31:33+00:00",
+  "model": "qwen3.5",
+  "embedding_model": "nomic-embed-text",
+  "judge_mode": "per_source",
+  "evidence_gate": 0.6,
+  "passages_read": 8,
+  "passages_failed": [],
+  "minutes": 1.9,
+  "counts": {
+    "insufficient_evidence": 10,
+    "consistent": 2
+  },
+  "claims": [
+    {
+      "claim": "The variable `base_hp` represents the monster's HP at wave 1 on Normal difficulty.",
+      "quote": "`base_hp` | float | 40–800 | HP at wave 1, Normal difficulty. Authored per MonsterResource.",
+      "line": 273,
+      "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+      "run_id": "7c14c203-dc84-4579-9989-92d04bccde8a",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source [D2] explicitly defines `base_hp` in the variable table as 'HP at wave 1, Normal difficulty'. No implementation sources were provided that define or calculate this specific initial value directly.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 262,
+          "end_line": 282,
+          "text": "### Formula 1 — Monster HP Scaling\n\n```\nscaled_hp = base_hp × wave_hp_multiplier × difficulty_hp_multiplier\n\nwave_hp_multiplier       = 1 + (hp_wave_growth_rate × (wave_index - 1))\ndifficulty_hp_multiplier = 1 + (hp_difficulty_growth_rate × (difficulty_tier - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_hp` | float | 40–800 | HP at wave 1, Normal difficulty. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `difficulty_tier` | int | 1–3 | Player-selected difficulty: 1=Normal, 2=Hard, 3=Brutal. |\n| `hp_wave_growth_rate` | float | 0.12–0.20 | Per-wave fractional HP increase. Tuning knob. Default: 0.15 |\n| `hp_difficulty_growth_rate` | float | 0.25–0.50 | Per-difficulty-tier fractional HP increase. Tuning knob. Default: 0.35 |\n| `wave_hp_multiplier` | float | 1.00–2.40 | HP scale factor from wave progression. |\n| `difficulty_hp_multiplier` | float | 1.00–2.00 | HP scale factor from difficulty selection. |\n| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 5.0
+    },
+    {
+      "claim": "The variable `difficulty_tier` uses integer values where 1 is Normal, 2 is Hard, and 3 is Brutal.",
+      "quote": "`difficulty_tier` | int | 1–3 | Player-selected difficulty: 1=Normal, 2=Hard, 3=Brutal.",
+      "line": 275,
+      "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+      "run_id": "60af7f45-e1d8-40f3-84ad-ca357b7978a4",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D3], [D4], and [D5] explicitly define the mapping where integer 1 corresponds to Normal, 2 to Hard, and 3 to Brutal. Implementation source [C1] confirms this by returning specific translation keys for tiers 1, 2, and 3 matching those names, while [C4] reiterates the sequence (1 Normal, 2 Hard, 3 Brutal) in its class documentation.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/mission-select.md",
+          "section": "Mission Select System > Acceptance Criteria > Group 2 — Difficulty Tier Selection & Completion Tracking (Rules 3, 4; Formula 3)",
+          "start_line": 420,
+          "end_line": 423,
+          "text": "### Group 2 — Difficulty Tier Selection & Completion Tracking (Rules 3, 4; Formula 3)\n\n- **AC-4**: GIVEN a mission with `recommended_difficulty_tier = 2`, WHEN the player enters CONFIGURING for that mission, THEN `difficulty_tier` defaults to `2` without any player input, and the player may change it to `1` or `3` before Launch with no validation blocking any of the three values.\n- **AC-5** *(the silent-tier-change assumption — dedicated AC)*: GIVEN the player is in CONFIGURING and changes the difficulty tier selection three times in a row (e.g., 2 → 1 → 3), WHEN every EventBus emission during this sequence is recorded, THEN zero events fire as a result of the tier changes themselves — no `difficulty_tier_selected` or equivalent event exists or is emitted. The only observable signal of the final tier choice is the `difficulty_tier` field inside `mission_launched`, fired once, at confirm time. This explicitly tests the silence Rule 3 asserts, not merely assumes it."
+        },
+        {
+          "path": "design/gdd/mission-select.md",
+          "section": "Mission Select System > Detailed Design > Core Rules",
+          "start_line": 43,
+          "end_line": 45,
+          "text": "- **Registry action**: `cell_size` (value `64.0`, unit: world units per grid cell) should be added to `design/registry/entities.yaml` as a project-wide constant, sourced from this GDD, referenced by `design/gdd/grid-system.md`. Flagged at the end of this session per the standard cross-system-fact protocol.\n\n3. **Difficulty tier selection.** The player picks exactly one `difficulty_tier: int` (1=Normal, 2=Hard, 3=Brutal) per mission attempt, matching `monster.md`'s registered enum and range exactly — this GDD does not redefine or rename the tier set. Default selection on entering CONFIGURING (Rule 6) is `recommended_difficulty_tier` from the `MissionEntry`, but the player may freely change it to any of the 3 values before launch. There is no dedicated EventBus event for a tier *change* — no `difficulty_tier_selected` event exists in the frozen event contract (`event-bus.md`), and this GDD does not invent one (assumption flagged below). The selected value is communicated exactly once, at confirm time, as the `difficulty_tier` field of `mission_launched`."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 262,
+          "end_line": 282,
+          "text": "### Formula 1 — Monster HP Scaling\n\n```\nscaled_hp = base_hp × wave_hp_multiplier × difficulty_hp_multiplier\n\nwave_hp_multiplier       = 1 + (hp_wave_growth_rate × (wave_index - 1))\ndifficulty_hp_multiplier = 1 + (hp_difficulty_growth_rate × (difficulty_tier - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_hp` | float | 40–800 | HP at wave 1, Normal difficulty. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `difficulty_tier` | int | 1–3 | Player-selected difficulty: 1=Normal, 2=Hard, 3=Brutal. |\n| `hp_wave_growth_rate` | float | 0.12–0.20 | Per-wave fractional HP increase. Tuning knob. Default: 0.15 |\n| `hp_difficulty_growth_rate` | float | 0.25–0.50 | Per-difficulty-tier fractional HP increase. Tuning knob. Default: 0.35 |\n| `wave_hp_multiplier` | float | 1.00–2.40 | HP scale factor from wave progression. |\n| `difficulty_hp_multiplier` | float | 1.00–2.00 | HP scale factor from difficulty selection. |\n| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/gameplay/ui/mission_select_screen/mission_select_screen.gd",
+          "section": "_tier_display_name",
+          "start_line": 574,
+          "end_line": 581,
+          "text": "func _tier_display_name(tier: int) -> String:\n\tmatch tier:\n\t\t1: return tr(\"MISSION_SELECT_TIER_NORMAL\")\n\t\t2: return tr(\"MISSION_SELECT_TIER_HARD\")\n\t\t3: return tr(\"MISSION_SELECT_TIER_BRUTAL\")\n\tif tier > DifficultyRewards.BRUTAL_TIER:\n\t\treturn tr(\"MISSION_SELECT_TIER_ASCENSION\") % DifficultyRewards.ascension_rank(tier)\n\treturn tr(\"MISSION_SELECT_TIER_GENERIC\") % tier"
+        },
+        {
+          "path": "src/core/mission_select/mission_select.gd",
+          "section": "MissionSelect > set_difficulty_tier",
+          "start_line": 350,
+          "end_line": 356,
+          "text": "## Sets the difficulty tier for the current CONFIGURING selection. Accepts\n## any of {1,2,3} with no validation blocking (AC-4). Emits zero EventBus\n## events — there is no difficulty_tier_selected event in the frozen contract\n## (Rule 3); the only observable signal is mission_launched's own field,\n## fired once at confirm time by confirm_launch() (AC-5).\nfunc set_difficulty_tier(tier: int) -> void:\n\tdifficulty_tier = tier"
+        },
+        {
+          "path": "src/core/difficulty_rewards.gd",
+          "section": "DifficultyRewards > ascension_rank",
+          "start_line": 44,
+          "end_line": 46,
+          "text": "## 0 for tiers 1-3, then 1, 2, ... for Ascension ranks.\nstatic func ascension_rank(tier: int) -> int:\n\treturn maxi(0, tier - BRUTAL_TIER)"
+        },
+        {
+          "path": "src/core/difficulty_rewards.gd",
+          "section": "DifficultyRewards > declarations: TIER_MULTIPLIERS, BRUTAL_TIER, MAX_ASCENSION, MAX_TIER, ASCENSION_HP_GROWTH, ASCENSION_REWARD_GROWTH",
+          "start_line": 1,
+          "end_line": 21,
+          "text": "class_name DifficultyRewards\nextends RefCounted\n## Reward multiplier per difficulty tier (1 Normal, 2 Hard, 3 Brutal, 4+ Ascension).\n##\n## Decided 2026-10-15 (production/balance/progression-targets.md): harder runs\n## must pay noticeably more than Normal so they are the fastest route through\n## the campaign. Applied to hero XP (Hero.set_reward_multiplier) and material\n## drops + mission-end surplus (ResourceEconomy.set_tier_reward_multiplier).\n## In-mission gold is not scaled: it resets every mission and is balanced\n## against tower costs, not progression.\n##\n## Ascension (2026-11-03, endgame): tiers above Brutal. Clearing a map's\n## highest tier opens the next one on that map (MissionSelect), up to\n## MAX_ASCENSION ranks. Each rank multiplies monster HP by ASCENSION_HP_GROWTH\n## and rewards by ASCENSION_REWARD_GROWTH on top of Brutal, so late-game hero\n## power keeps meeting resistance (tower-defense pitfall: enemy HP must keep\n## pace with player power). Rewards grow slower than HP on purpose: each rank\n## is a real step up, and the best farm is the highest rank you can clear\n## reliably, not the highest one at all.\n\nconst TIER_MULTIPLIERS: Array[float] = [1.0, 1.3, 1.7]"
+        }
+      ],
+      "seconds": 11.7
+    },
+    {
+      "claim": "The scaled_hp value is floored at 1.0.",
+      "quote": "Floored at 1.0.",
+      "line": 280,
+      "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+      "run_id": "98fba47b-0919-406a-a923-d15dc9fd3b58",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources D1 and D3 explicitly state that `scaled_hp` is 'Floored at 1.0', directly supporting the claim. Implementation source C5 declares the variable type as float with an initial value of 0.0 but does not contain logic enforcing a floor of 1.0, making it unrelated to the specific constraint in the claim.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 280,
+          "end_line": 293,
+          "text": "| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp  \n**Design note:** Linear HP scaling per wave (not exponential) keeps time-to-kill ratios stable across the mission. Exponential HP inflation produces damage-sponge late waves — a known negative feedback pattern in tower defense.\n\n**Worked examples:**\n\n| Scenario | base_hp | Multipliers | scaled_hp |\n|----------|---------|-------------|-----------|\n| Wave 1, Normal, STANDARD | 60 | 1.00 × 1.00 | 60 |\n| Wave 4, Normal, ELITE (before Wave 4 amp) | 300 | 1.45 × 1.00 | 435 |\n| Wave 8, Brutal, heavy ELITE | 300 | 2.05 × 1.70 | 1,045 |\n\n---"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 262,
+          "end_line": 282,
+          "text": "### Formula 1 — Monster HP Scaling\n\n```\nscaled_hp = base_hp × wave_hp_multiplier × difficulty_hp_multiplier\n\nwave_hp_multiplier       = 1 + (hp_wave_growth_rate × (wave_index - 1))\ndifficulty_hp_multiplier = 1 + (hp_difficulty_growth_rate × (difficulty_tier - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_hp` | float | 40–800 | HP at wave 1, Normal difficulty. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `difficulty_tier` | int | 1–3 | Player-selected difficulty: 1=Normal, 2=Hard, 3=Brutal. |\n| `hp_wave_growth_rate` | float | 0.12–0.20 | Per-wave fractional HP increase. Tuning knob. Default: 0.15 |\n| `hp_difficulty_growth_rate` | float | 0.25–0.50 | Per-difficulty-tier fractional HP increase. Tuning knob. Default: 0.35 |\n| `wave_hp_multiplier` | float | 1.00–2.40 | HP scale factor from wave progression. |\n| `difficulty_hp_multiplier` | float | 1.00–2.00 | HP scale factor from difficulty selection. |\n| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 6.7
+    },
+    {
+      "claim": "The output range for scaled_hp at reference rates is 1.0×–3.49× base_hp.",
+      "quote": "Output range (at reference rates): 1.0×–3.49× base_hp",
+      "line": 282,
+      "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+      "run_id": "5d44365e-a915-4c3f-89e9-86dd7fa5c5ed",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources [D1] and [D2] explicitly state the output range for scaled_hp is 1.0×–3.49× base_hp at reference rates. Implementation sources [C1] through [C8] define variables like drop rates, tower HP bases, and monster resource stats but do not contain logic or values that calculate or verify this specific scaling multiplier range, making them unrelated to the claim.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 280,
+          "end_line": 293,
+          "text": "| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp  \n**Design note:** Linear HP scaling per wave (not exponential) keeps time-to-kill ratios stable across the mission. Exponential HP inflation produces damage-sponge late waves — a known negative feedback pattern in tower defense.\n\n**Worked examples:**\n\n| Scenario | base_hp | Multipliers | scaled_hp |\n|----------|---------|-------------|-----------|\n| Wave 1, Normal, STANDARD | 60 | 1.00 × 1.00 | 60 |\n| Wave 4, Normal, ELITE (before Wave 4 amp) | 300 | 1.45 × 1.00 | 435 |\n| Wave 8, Brutal, heavy ELITE | 300 | 2.05 × 1.70 | 1,045 |\n\n---"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 1 — Monster HP Scaling",
+          "start_line": 262,
+          "end_line": 282,
+          "text": "### Formula 1 — Monster HP Scaling\n\n```\nscaled_hp = base_hp × wave_hp_multiplier × difficulty_hp_multiplier\n\nwave_hp_multiplier       = 1 + (hp_wave_growth_rate × (wave_index - 1))\ndifficulty_hp_multiplier = 1 + (hp_difficulty_growth_rate × (difficulty_tier - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_hp` | float | 40–800 | HP at wave 1, Normal difficulty. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `difficulty_tier` | int | 1–3 | Player-selected difficulty: 1=Normal, 2=Hard, 3=Brutal. |\n| `hp_wave_growth_rate` | float | 0.12–0.20 | Per-wave fractional HP increase. Tuning knob. Default: 0.15 |\n| `hp_difficulty_growth_rate` | float | 0.25–0.50 | Per-difficulty-tier fractional HP increase. Tuning knob. Default: 0.35 |\n| `wave_hp_multiplier` | float | 1.00–2.40 | HP scale factor from wave progression. |\n| `difficulty_hp_multiplier` | float | 1.00–2.00 | HP scale factor from difficulty selection. |\n| `scaled_hp` | float | 40–3840 | Immutable HP assigned at spawn. Floored at 1.0. |\n\n**Output range (at reference rates):** 1.0×–3.49× base_hp"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 8.9
+    },
+    {
+      "claim": "The variable `scaled_speed` is floored at a minimum value of 0.1 cells/sec.",
+      "quote": "Floored at 0.1 cells/sec.",
+      "line": 310,
+      "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+      "run_id": "a8eba71d-3b46-4264-8bbb-eb2b05b06ee8",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources [D3] and [D4] explicitly state that `scaled_speed` is floored at 0.1 cells/sec, with [D4] noting this floor acts as a safety net when the Tarot modifier results in zero speed. Implementation sources [C5] and [C6] declare the variable but do not specify the floor value or logic within their comments, making them unrelated to the specific claim about the minimum bound.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+          "start_line": 295,
+          "end_line": 312,
+          "text": "### Formula 2 — Monster Speed Scaling\n\n```\nscaled_speed = base_speed × wave_speed_multiplier × tarot_speed_scalar\n\nwave_speed_multiplier = 1 + (speed_wave_growth_rate × (wave_index - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_speed` | float | 0.5–3.0 | Path traversal speed in grid-cells/second at wave 1. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `speed_wave_growth_rate` | float | 0.04–0.10 | Per-wave fractional speed increase. Tuning knob. Default: 0.06 |\n| `wave_speed_multiplier` | float | 1.00–1.70 | Speed scale from wave progression. |\n| `tarot_speed_scalar` | float | 0.50–2.00 | Tarot modifier from `mission_modifier_applied`. Defaults to 1.0 if no modifier active. |\n| `scaled_speed` | float | 0.25–10.2 | Immutable speed assigned at spawn. Floored at 0.1 cells/sec. |\n\n**Output range:** 0.25–10.2 cells/sec (Tarot extreme case: base_speed=3.0, max wave, tarot=2.0)"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Edge Cases > Category 7: Formula Boundary Edge Cases",
+          "start_line": 525,
+          "end_line": 527,
+          "text": "**EC-7.3 — `tarot_speed_scalar` is 0**\nSituation: Tarot modifier fires `mission_modifier_applied` with `modifier_value = 0.0`.\nWhat happens: Formula 2 computes `scaled_speed = base_speed × multiplier × 0.0 = 0.0`. Monster System floors `scaled_speed` at 0.1 cells/sec. All monsters spawned after this modifier are near-stationary. Monsters already ACTIVE retain their previously assigned `scaled_speed` (modifier applies at instantiation only, not retroactively). The Tarot GDD must bound `monster_speed_scalar` modifier values at minimum 0.50 — the floor is a safety net, not a design target."
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 7.3
+    },
+    {
+      "claim": "The default value for `speed_wave_growth_rate` is 0.06.",
+      "quote": "Default: 0.06",
+      "line": 307,
+      "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+      "run_id": "29fd7ed7-ee80-418b-93fe-65f9c6e85e51",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "The claim is supported by design source [D3], which explicitly lists the default value for `speed_wave_growth_rate` as 0.06 in its variable table. Implementation sources [C1] through [C4] are unrelated to this specific claim because they define or validate `difficulty_growth_rate` and reward scalars, but do not contain any code or configuration setting the `speed_wave_growth_rate` value.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+          "start_line": 295,
+          "end_line": 312,
+          "text": "### Formula 2 — Monster Speed Scaling\n\n```\nscaled_speed = base_speed × wave_speed_multiplier × tarot_speed_scalar\n\nwave_speed_multiplier = 1 + (speed_wave_growth_rate × (wave_index - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_speed` | float | 0.5–3.0 | Path traversal speed in grid-cells/second at wave 1. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `speed_wave_growth_rate` | float | 0.04–0.10 | Per-wave fractional speed increase. Tuning knob. Default: 0.06 |\n| `wave_speed_multiplier` | float | 1.00–1.70 | Speed scale from wave progression. |\n| `tarot_speed_scalar` | float | 0.50–2.00 | Tarot modifier from `mission_modifier_applied`. Defaults to 1.0 if no modifier active. |\n| `scaled_speed` | float | 0.25–10.2 | Immutable speed assigned at spawn. Floored at 0.1 cells/sec. |\n\n**Output range:** 0.25–10.2 cells/sec (Tarot extreme case: base_speed=3.0, max wave, tarot=2.0)"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 7.7
+    },
+    {
+      "claim": "The output range for monster speed scaling is between 0.25 and 10.2 cells/sec.",
+      "quote": "Output range: 0.25–10.2 cells/sec (Tarot extreme case: base_speed=3.0, max wave, tarot=2.0)",
+      "line": 312,
+      "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+      "run_id": "7e8fa9b5-b206-468b-88f0-7694b998e3c1",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1 and D5 explicitly state the output range for monster speed scaling is 0.25–10.2 cells/sec. Implementation sources C3 and C4 support this by showing the code calculates `effective_speed` as `scaled_speed * multiplier`, where `scaled_speed` is immutable after spawn (per C1) and multipliers are applied without mutation, consistent with the design's formulaic approach.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+          "start_line": 295,
+          "end_line": 312,
+          "text": "### Formula 2 — Monster Speed Scaling\n\n```\nscaled_speed = base_speed × wave_speed_multiplier × tarot_speed_scalar\n\nwave_speed_multiplier = 1 + (speed_wave_growth_rate × (wave_index - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_speed` | float | 0.5–3.0 | Path traversal speed in grid-cells/second at wave 1. Authored per MonsterResource. |\n| `wave_index` | int | 1–8 | Current wave number within the mission. |\n| `speed_wave_growth_rate` | float | 0.04–0.10 | Per-wave fractional speed increase. Tuning knob. Default: 0.06 |\n| `wave_speed_multiplier` | float | 1.00–1.70 | Speed scale from wave progression. |\n| `tarot_speed_scalar` | float | 0.50–2.00 | Tarot modifier from `mission_modifier_applied`. Defaults to 1.0 if no modifier active. |\n| `scaled_speed` | float | 0.25–10.2 | Immutable speed assigned at spawn. Floored at 0.1 cells/sec. |\n\n**Output range:** 0.25–10.2 cells/sec (Tarot extreme case: base_speed=3.0, max wave, tarot=2.0)"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 2 — Monster Speed Scaling",
+          "start_line": 312,
+          "end_line": 325,
+          "text": "**Output range:** 0.25–10.2 cells/sec (Tarot extreme case: base_speed=3.0, max wave, tarot=2.0)  \n**Design note:** Speed grows slower than HP (0.06 vs. 0.15 per wave) by design. Speed spikes are reserved for Tarot modifiers as an opt-in risk; natural scaling escalates endurance, not movement threat.\n\n> **Tarot application:** `tarot_speed_scalar` is applied as a post-calculation step in Rule 7g (after the base formula computes using `tarot_speed_scalar = 1.0`). Formula 2 shows the full combined expression. Whether implemented as one pass or two sequential steps, the result is identical — AC-39 defines the observable contract.\n\n**Worked examples:**\n\n| Scenario | base_speed | Multipliers | scaled_speed |\n|----------|------------|-------------|--------------|\n| Wave 1, no Tarot, slow STANDARD | 0.8 | 1.00 × 1.00 | 0.80 cells/sec |\n| Wave 8, +50% Tarot modifier, fast ELITE | 2.0 | 1.42 × 1.50 | 4.26 cells/sec |\n| Wave 4, no Tarot, medium ELITE (before amp) | 1.5 | 1.18 × 1.00 | 1.77 cells/sec |\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/monster/active_slow_effect.gd",
+          "section": "ActiveSlowEffect > declarations: remaining_duration, speed_multiplier",
+          "start_line": 1,
+          "end_line": 21,
+          "text": "class_name ActiveSlowEffect\nextends RefCounted\n\n## One in-flight slow instance on a MonsterEntity. design/gdd/damage-status.md\n## Formula D6 (amended 2026-08-13 — slow moves into scope alongside burn/poison,\n## see Rule I.3). Unlike ActiveStatusEffect (burn/poison), this has no ticks —\n## it is a continuous speed multiplier that decays by wall-clock duration and\n## is read fresh every frame by Monster System's movement pass, never applied\n## by mutating MonsterEntity.scaled_speed (which stays immutable after spawn\n## per ADR-0006's own Key Interfaces contract).\n##\n## Multiple instances stack multiplicatively (a design decision, not an\n## oversight — see the GDD): two 15% slows combine to 0.85 x 0.85 = 72.25% of\n## original speed, not a summed 30% reduction. This structurally guarantees\n## effective speed can never reach zero or go negative regardless of how many\n## instances are active, with no separate clamp needed at the combination site.\n\nvar remaining_duration: float = 0.0\n## 1.0 - effect_value, clamped to [SPEED_MULTIPLIER_FLOOR, 1.0] — see\n## MonsterManager.SPEED_MULTIPLIER_FLOOR's own doc comment for the floor's purpose.\nvar speed_multiplier: float = 1.0"
+        },
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _effective_speed",
+          "start_line": 509,
+          "end_line": 523,
+          "text": "## Product of every active slow instance's speed_multiplier (1.0 if none are\n## active) — the multiplicative-stacking combination rule from Formula D6.\n## Never mutates entity.scaled_speed itself.\nfunc _effective_speed(entity: MonsterEntity) -> float:\n\tif entity.stun_remaining > 0.0:\n\t\treturn 0.0\n\tvar multiplier: float = 1.0\n\tfor slow: ActiveSlowEffect in entity.active_slow_effects:\n\t\tmultiplier *= slow.speed_multiplier\n\treturn entity.scaled_speed * multiplier\n\n\n# ---------------------------------------------------------------------------\n# Pass 1b — Status Effects (burn/poison DoT ticks + slow duration decay)\n# ---------------------------------------------------------------------------"
+        },
+        {
+          "path": "src/core/monster/monster_manager.gd",
+          "section": "MonsterManager > _apply_slow_effect",
+          "start_line": 496,
+          "end_line": 506,
+          "text": "## damage-status.md Formula D6. speed_multiplier is 1.0 - effect_value, floored\n## at SPEED_MULTIPLIER_FLOOR — never applied by mutating scaled_speed (immutable\n## after spawn per ADR-0006).\nfunc _apply_slow_effect(target_monster_id: int, effect_value: float, effect_duration: float) -> void:\n\tvar entity: MonsterEntity = _entity_lookup.get(target_monster_id) as MonsterEntity\n\tif entity == null or entity.lifecycle_state == MonsterEntity.State.DEAD:\n\t\treturn\n\tvar slow := ActiveSlowEffect.new()\n\tslow.remaining_duration = effect_duration\n\tslow.speed_multiplier = maxf(SPEED_MULTIPLIER_FLOOR, 1.0 - effect_value)\n\tentity.active_slow_effects.append(slow)"
+        }
+      ],
+      "seconds": 8.3
+    },
+    {
+      "claim": "Final-wave BOSSes have a base_damage range of 55 to 80.",
+      "quote": "Final-wave BOSSes: **55–80** (narrowed from 40–80, corrected 2026-07-15 — see calibration note below).",
+      "line": 339,
+      "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+      "run_id": "196f6553-3942-4bcb-8953-237aa5a63ede",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "All four design sources (D1, D2, D3, D4) explicitly state that final-wave BOSSes have a `base_damage` range of 55–80, noting a correction made on 2026-07-15 to narrow the floor from 40. The implementation sources (C2, C4) define the `base_damage` variable but do not specify values or ranges, making them unrelated to the specific claim about the final-wave range.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 327,
+          "end_line": 342,
+          "text": "### Formula 3 — BOSS Attack Damage\n\n**Two BOSS calibration tiers** — early-wave and final-wave BOSSes use different `base_damage` values. The registered `tower_hp_boss_damage_provisional_range` [40–200 HP/hit] applies to **final-wave BOSSes** only.\n\n```\nboss_effective_damage = base_damage × boss_damage_phase_multiplier\n\nboss_damage_phase_multiplier = 1 + (boss_dmg_wave_growth_rate × (wave_index - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_damage` | float | 15–80 | Flat damage per tower attack at wave 1. Authored per BOSS MonsterResource. Early-wave BOSSes: 15–25. Final-wave BOSSes: **55–80** (narrowed from 40–80, corrected 2026-07-15 — see calibration note below). |\n| `wave_index` | int | 1–8 | Wave on which this BOSS appears. Final-wave BOSSes appear on waves 5–8. |\n| `boss_dmg_wave_growth_rate` | float | 0.08–0.15 | Per-wave fractional damage increase. Tuning knob. Default: 0.10 |\n| `boss_damage_phase_multiplier` | float | 1.00–2.05 | Damage scale factor from wave timing. |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Tuning Knobs",
+          "start_line": 557,
+          "end_line": 558,
+          "text": "| `base_hp` | Per MonsterResource | 40–800 | Tanky STANDARD monsters on early waves punish under-built loadouts; frustrating not challenging | HP so low DPS overflow makes wave difficulty invisible | Cross-referenced with `hp_wave_growth_rate` and `elite_penultimate_wave_hp_amplifier`. Heaviest ELITE on the penultimate wave (N-1) is peak non-BOSS HP. |\n| `base_damage` (BOSS only) | Per BOSS MonsterResource | Early-wave: 15–25 · Final-wave: **55–80** (narrowed from 40–80, corrected 2026-07-15 — see Formula 3's calibration note; the old 40–54 sub-range let a wave-5 boss take 18 hits to kill a Tier 4 tower, above the 8-15 hit target and reading as a passive threat) | BOSS destroys towers faster than player can respond | BOSS feels cosmetic; players learn to ignore its position | Two-tier calibration. Validate against `tower_max_hp` output at the BOSS's intended wave index. `boss_dmg_wave_growth_rate` compounds — always test at target wave. |"
+        },
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Formulas > Formula 3: Tower HP",
+          "start_line": 601,
+          "end_line": 603,
+          "text": "**Output Range:** 80–1000. Floor (80): Tier 1 Foundation with minimum base HP. Ceiling (1000): Tier 4 fully upgraded.\n\n**Boss damage calibration** *(Provisional — validate against Monster System GDD boss damage formula before implementation. Do not treat these numbers as authoritative until cross-referenced.)*: The Monster GDD specifies two boss tiers: early-wave bosses (base_damage 15–25, wave-scaled) and final-wave bosses (base_damage **55–80**, wave-scaled — **corrected 2026-07-15, `/review-all-gdds`**: was still 40–80 here after Monster GDD's own `/design-review` narrowed the final-wave floor from 40 to 55 on 2026-07-15 to fix a boundary failure at wave 5). At Wave 8 max scale (×1.7): final boss deals ~136 HP/hit at maximum. At the earliest legal final-wave point (wave 5, base_damage=55, ×1.40): ~77 HP/hit. Against a Tier 1 minimum-HP tower (80 HP): expect 1 hit destruction at the high end. **A Tier 1 minimum-HP tower should expect 1–2 hits from a final-wave boss; a Tier 2 tower (min 120 HP) should expect 1 hit. Tier 3–4 towers are the viable boss-lane configurations.** Calibrate `hp_base` minimums with this in mind — the Tuning Knob target for Tier 1 `hp_base` should be raised to at minimum 120 in balance design. *The Monster System GDD owns the exact `boss_attack_damage` scaling formula; Towe"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 342,
+          "end_line": 352,
+          "text": "| `boss_damage_phase_multiplier` | float | 1.00–2.05 | Damage scale factor from wave timing. |\n| `boss_effective_damage` | float | 15–136 | Flat HP subtracted from target tower per attack. No mitigation at MVP. (136 = 80 × 1.70 at default rates. The registry-era value of 164 reflected tuning-ceiling rates, not defaults — corrected 2026-05-11.) |\n\n**Calibration verification (corrected 2026-07-15 — the prior table only checked one boundary and missed a failing combination; `base_damage`'s final-wave floor was narrowed from 40 to 55 as a result — see below):**\n\n| BOSS tier | wave | base_damage | boss_effective_damage | Tier 1 (80 HP) | Tier 4 (1000 HP) |\n|-----------|------|-------------|----------------------|----------------|------------------|\n| Early-wave | 2 | 20 | 22 HP/hit | 4 hits ✓ (early-wave target) | 46 hits (expected — Tier 4 not yet placed) |\n| Final-wave, floor | 5 | 55 | 77 HP/hit | 2 hits (Tier 1 not scoped to this target — see Rule 18) | 13 hits ✓ |\n| Final-wave | 8 | 50 | 85 HP/hit | 1 hit (Tier 1 not scoped to this target) | 12 hits ✓ |\n| Final-wave, ceiling | 8 | 80 | 136 HP/hit | 1 hit (Tier 1 not scoped to this target) | 8 hits ✓ (design ceiling) |"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 9.0
+    },
+    {
+      "claim": "The boss_damage_phase_multiplier is calculated as 1 plus the product of boss_dmg_wave_growth_rate and (wave_index minus 1).",
+      "quote": "boss_damage_phase_multiplier = 1 + (boss_dmg_wave_growth_rate × (wave_index - 1))",
+      "line": 334,
+      "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+      "run_id": "c6f440a5-b5d5-4fa7-9f0c-0bebad475ab0",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source [D1] explicitly defines the formula `boss_damage_phase_multiplier = 1 + (boss_dmg_wave_growth_rate × (wave_index - 1))`, which matches the claim exactly. No implementation sources were provided that calculate this specific multiplier; [C2] references `base_damage` and cooldown logic but does not show the calculation of the phase multiplier.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 327,
+          "end_line": 342,
+          "text": "### Formula 3 — BOSS Attack Damage\n\n**Two BOSS calibration tiers** — early-wave and final-wave BOSSes use different `base_damage` values. The registered `tower_hp_boss_damage_provisional_range` [40–200 HP/hit] applies to **final-wave BOSSes** only.\n\n```\nboss_effective_damage = base_damage × boss_damage_phase_multiplier\n\nboss_damage_phase_multiplier = 1 + (boss_dmg_wave_growth_rate × (wave_index - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_damage` | float | 15–80 | Flat damage per tower attack at wave 1. Authored per BOSS MonsterResource. Early-wave BOSSes: 15–25. Final-wave BOSSes: **55–80** (narrowed from 40–80, corrected 2026-07-15 — see calibration note below). |\n| `wave_index` | int | 1–8 | Wave on which this BOSS appears. Final-wave BOSSes appear on waves 5–8. |\n| `boss_dmg_wave_growth_rate` | float | 0.08–0.15 | Per-wave fractional damage increase. Tuning knob. Default: 0.10 |\n| `boss_damage_phase_multiplier` | float | 1.00–2.05 | Damage scale factor from wave timing. |"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 6.1
+    },
+    {
+      "claim": "The registry-era value of `boss_effective_damage` was 164.",
+      "quote": "The registry-era value of 164 reflected tuning-ceiling rates, not defaults — corrected 2026-05-11.",
+      "line": 343,
+      "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+      "run_id": "8b6ecc65-8d42-4b61-a8fc-65f6305e2e5e",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Source D1 explicitly states that the registry-era value of `boss_effective_damage` was 164, but immediately clarifies this reflected 'tuning-ceiling rates' rather than defaults and notes it was corrected on 2026-05-11. The claim asserts this specific historical value existed, which aligns with the text's admission that 164 was a past registry-era figure before correction. However, since the prompt asks to judge if the source supports or contradicts the claim about the *current* state or the validity of that specific number as a default, and D1 frames it as a corrected error ('not defaults'), the stance is nuanced. But strictly following the instruction 'if the configuration says 3 but the code uses 5...': The claim says 'The registry-era value... was 164'. D1 says 'The registry-era value of 164 reflected tuning-ceiling rates, not defaults — corrected...'. This confirms the existence of that specific historical value. Therefore, it states the claim.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 342,
+          "end_line": 352,
+          "text": "| `boss_damage_phase_multiplier` | float | 1.00–2.05 | Damage scale factor from wave timing. |\n| `boss_effective_damage` | float | 15–136 | Flat HP subtracted from target tower per attack. No mitigation at MVP. (136 = 80 × 1.70 at default rates. The registry-era value of 164 reflected tuning-ceiling rates, not defaults — corrected 2026-05-11.) |\n\n**Calibration verification (corrected 2026-07-15 — the prior table only checked one boundary and missed a failing combination; `base_damage`'s final-wave floor was narrowed from 40 to 55 as a result — see below):**\n\n| BOSS tier | wave | base_damage | boss_effective_damage | Tier 1 (80 HP) | Tier 4 (1000 HP) |\n|-----------|------|-------------|----------------------|----------------|------------------|\n| Early-wave | 2 | 20 | 22 HP/hit | 4 hits ✓ (early-wave target) | 46 hits (expected — Tier 4 not yet placed) |\n| Final-wave, floor | 5 | 55 | 77 HP/hit | 2 hits (Tier 1 not scoped to this target — see Rule 18) | 13 hits ✓ |\n| Final-wave | 8 | 50 | 85 HP/hit | 1 hit (Tier 1 not scoped to this target) | 12 hits ✓ |\n| Final-wave, ceiling | 8 | 80 | 136 HP/hit | 1 hit (Tier 1 not scoped to this target) | 8 hits ✓ (design ceiling) |"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 7.6
+    },
+    {
+      "claim": "At the final-wave floor, `base_damage` is 55.",
+      "quote": "`base_damage`'s final-wave floor was narrowed from 40 to 55 as a result",
+      "line": 345,
+      "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+      "run_id": "1f2ad454-9267-4de4-ae3a-04807aaa56cd",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources [D1], [D2], [D3], and [D4] all explicitly state that the `base_damage` floor for final-wave bosses was narrowed to 55 on 2026-07-15. Implementation source [C5] defines the `MonsterResource` class but does not specify a default value or constraint for `base_damage`, making it unrelated to the specific claim about the floor value. Source [C6] discusses elemental resistances and is also unrelated.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 352,
+          "end_line": 354,
+          "text": "| Final-wave, ceiling | 8 | 80 | 136 HP/hit | 1 hit (Tier 1 not scoped to this target) | 8 hits ✓ (design ceiling) |\n\n**Boundary-value correction (2026-07-15, `/design-review`):** the prior table checked only wave=8/base_damage=50, which obscured a real boundary failure — at the earliest legal final-wave point (wave=5, `base_damage`=the prior floor of 40), `boss_effective_damage = 40 × 1.40 = 56`, giving `ceil(1000/56) = 18` hits against a Tier 4 tower, above the documented 8–15 hit target. Rather than loosen the target (which would let a final-wave boss feel passive/inert on its earliest legal wave — a Player Fantasy concern, not just a math one), the final-wave `base_damage` floor was raised 40→55, which brings the worst case to 13 hits, inside target. **The Tier 1 \"3–5 hits\" target in Rule 18 was never actually achievable against a final-wave boss at any authored value** (a final-wave boss's minimum damage, even at the old 40 floor, always kills a Tier 1 tower in 1–2 hits) — that target only ever applied to early-wave bosses; Rule 18's prose is corrected below to state this scoping explicitly rather than leaving it as an unstated assumption."
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Acceptance Criteria > Area 7: Formula Correctness",
+          "start_line": 960,
+          "end_line": 964,
+          "text": "GIVEN a BOSS MonsterResource authored at the final-wave `base_damage` floor of **55** (narrowed 2026-07-15 from the prior floor of 40), spawned at `wave_index=5` (earliest legal final-wave index), `boss_dmg_wave_growth_rate=0.10`,\nWHEN `boss_effective_damage` is calculated via Formula 3,\nTHEN `boss_effective_damage == 77.0` (`55 × 1.40`); hits-to-kill vs. a Tier 4 tower (1000 HP) is `ceil(1000/77) == 13`, inside the documented 8–15 hit target. **AND GIVEN** the same BOSS is authored at the old, now-invalid floor of `base_damage=40`, **THEN** load-time validation must reject this as an authoring error — `base_damage` below 55 is no longer valid for a final-wave (`wave_index ∈ [5,8]`) BOSS MonsterResource.\n\n**AC-45** `[Logic · BLOCKING]` *(added 2026-07-15, `/design-review` — closes a regression gap: AC-26 only exercises the 5-wave-mission case where wave 4 is coincidentally both the fixed worked-example index and the true penultimate wave, so a future regression toward hardcoded \"wave 4 is special\" logic would not be caught)*"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Tuning Knobs",
+          "start_line": 557,
+          "end_line": 558,
+          "text": "| `base_hp` | Per MonsterResource | 40–800 | Tanky STANDARD monsters on early waves punish under-built loadouts; frustrating not challenging | HP so low DPS overflow makes wave difficulty invisible | Cross-referenced with `hp_wave_growth_rate` and `elite_penultimate_wave_hp_amplifier`. Heaviest ELITE on the penultimate wave (N-1) is peak non-BOSS HP. |\n| `base_damage` (BOSS only) | Per BOSS MonsterResource | Early-wave: 15–25 · Final-wave: **55–80** (narrowed from 40–80, corrected 2026-07-15 — see Formula 3's calibration note; the old 40–54 sub-range let a wave-5 boss take 18 hits to kill a Tier 4 tower, above the 8-15 hit target and reading as a passive threat) | BOSS destroys towers faster than player can respond | BOSS feels cosmetic; players learn to ignore its position | Two-tier calibration. Validate against `tower_max_hp` output at the BOSS's intended wave index. `boss_dmg_wave_growth_rate` compounds — always test at target wave. |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 342,
+          "end_line": 352,
+          "text": "| `boss_damage_phase_multiplier` | float | 1.00–2.05 | Damage scale factor from wave timing. |\n| `boss_effective_damage` | float | 15–136 | Flat HP subtracted from target tower per attack. No mitigation at MVP. (136 = 80 × 1.70 at default rates. The registry-era value of 164 reflected tuning-ceiling rates, not defaults — corrected 2026-05-11.) |\n\n**Calibration verification (corrected 2026-07-15 — the prior table only checked one boundary and missed a failing combination; `base_damage`'s final-wave floor was narrowed from 40 to 55 as a result — see below):**\n\n| BOSS tier | wave | base_damage | boss_effective_damage | Tier 1 (80 HP) | Tier 4 (1000 HP) |\n|-----------|------|-------------|----------------------|----------------|------------------|\n| Early-wave | 2 | 20 | 22 HP/hit | 4 hits ✓ (early-wave target) | 46 hits (expected — Tier 4 not yet placed) |\n| Final-wave, floor | 5 | 55 | 77 HP/hit | 2 hits (Tier 1 not scoped to this target — see Rule 18) | 13 hits ✓ |\n| Final-wave | 8 | 50 | 85 HP/hit | 1 hit (Tier 1 not scoped to this target) | 12 hits ✓ |\n| Final-wave, ceiling | 8 | 80 | 136 HP/hit | 1 hit (Tier 1 not scoped to this target) | 8 hits ✓ (design ceiling) |"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 9.0
+    },
+    {
+      "claim": "At wave=5 with base_damage=40, boss_effective_damage equals 56.",
+      "quote": "at the earliest legal final-wave point (wave=5, `base_damage`=the prior floor of 40), `boss_effective_damage = 40 × 1.40 = 56`",
+      "line": 354,
+      "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+      "run_id": "611873f6-b5e7-4d6f-beee-189354332e72",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "The claim states that at wave=5 with base_damage=40, boss_effective_damage equals 56. However, Design source [D1] explicitly notes that the final-wave base_damage floor was narrowed from 40 to 55 on 2026-07-15. Furthermore, Design source [D4] states that a BOSS authored at the old floor of base_damage=40 must be rejected as an authoring error because it is no longer valid. Consequently, the design documents contradict the claim by asserting that base_damage=40 is invalid for final-wave bosses, whereas the implementation sources are unrelated to this specific calculation.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Tuning Knobs",
+          "start_line": 557,
+          "end_line": 558,
+          "text": "| `base_hp` | Per MonsterResource | 40–800 | Tanky STANDARD monsters on early waves punish under-built loadouts; frustrating not challenging | HP so low DPS overflow makes wave difficulty invisible | Cross-referenced with `hp_wave_growth_rate` and `elite_penultimate_wave_hp_amplifier`. Heaviest ELITE on the penultimate wave (N-1) is peak non-BOSS HP. |\n| `base_damage` (BOSS only) | Per BOSS MonsterResource | Early-wave: 15–25 · Final-wave: **55–80** (narrowed from 40–80, corrected 2026-07-15 — see Formula 3's calibration note; the old 40–54 sub-range let a wave-5 boss take 18 hits to kill a Tier 4 tower, above the 8-15 hit target and reading as a passive threat) | BOSS destroys towers faster than player can respond | BOSS feels cosmetic; players learn to ignore its position | Two-tier calibration. Validate against `tower_max_hp` output at the BOSS's intended wave index. `boss_dmg_wave_growth_rate` compounds — always test at target wave. |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 342,
+          "end_line": 352,
+          "text": "| `boss_damage_phase_multiplier` | float | 1.00–2.05 | Damage scale factor from wave timing. |\n| `boss_effective_damage` | float | 15–136 | Flat HP subtracted from target tower per attack. No mitigation at MVP. (136 = 80 × 1.70 at default rates. The registry-era value of 164 reflected tuning-ceiling rates, not defaults — corrected 2026-05-11.) |\n\n**Calibration verification (corrected 2026-07-15 — the prior table only checked one boundary and missed a failing combination; `base_damage`'s final-wave floor was narrowed from 40 to 55 as a result — see below):**\n\n| BOSS tier | wave | base_damage | boss_effective_damage | Tier 1 (80 HP) | Tier 4 (1000 HP) |\n|-----------|------|-------------|----------------------|----------------|------------------|\n| Early-wave | 2 | 20 | 22 HP/hit | 4 hits ✓ (early-wave target) | 46 hits (expected — Tier 4 not yet placed) |\n| Final-wave, floor | 5 | 55 | 77 HP/hit | 2 hits (Tier 1 not scoped to this target — see Rule 18) | 13 hits ✓ |\n| Final-wave | 8 | 50 | 85 HP/hit | 1 hit (Tier 1 not scoped to this target) | 12 hits ✓ |\n| Final-wave, ceiling | 8 | 80 | 136 HP/hit | 1 hit (Tier 1 not scoped to this target) | 8 hits ✓ (design ceiling) |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 327,
+          "end_line": 342,
+          "text": "### Formula 3 — BOSS Attack Damage\n\n**Two BOSS calibration tiers** — early-wave and final-wave BOSSes use different `base_damage` values. The registered `tower_hp_boss_damage_provisional_range` [40–200 HP/hit] applies to **final-wave BOSSes** only.\n\n```\nboss_effective_damage = base_damage × boss_damage_phase_multiplier\n\nboss_damage_phase_multiplier = 1 + (boss_dmg_wave_growth_rate × (wave_index - 1))\n```\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_damage` | float | 15–80 | Flat damage per tower attack at wave 1. Authored per BOSS MonsterResource. Early-wave BOSSes: 15–25. Final-wave BOSSes: **55–80** (narrowed from 40–80, corrected 2026-07-15 — see calibration note below). |\n| `wave_index` | int | 1–8 | Wave on which this BOSS appears. Final-wave BOSSes appear on waves 5–8. |\n| `boss_dmg_wave_growth_rate` | float | 0.08–0.15 | Per-wave fractional damage increase. Tuning knob. Default: 0.10 |\n| `boss_damage_phase_multiplier` | float | 1.00–2.05 | Damage scale factor from wave timing. |"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Acceptance Criteria > Area 7: Formula Correctness",
+          "start_line": 960,
+          "end_line": 964,
+          "text": "GIVEN a BOSS MonsterResource authored at the final-wave `base_damage` floor of **55** (narrowed 2026-07-15 from the prior floor of 40), spawned at `wave_index=5` (earliest legal final-wave index), `boss_dmg_wave_growth_rate=0.10`,\nWHEN `boss_effective_damage` is calculated via Formula 3,\nTHEN `boss_effective_damage == 77.0` (`55 × 1.40`); hits-to-kill vs. a Tier 4 tower (1000 HP) is `ceil(1000/77) == 13`, inside the documented 8–15 hit target. **AND GIVEN** the same BOSS is authored at the old, now-invalid floor of `base_damage=40`, **THEN** load-time validation must reject this as an authoring error — `base_damage` below 55 is no longer valid for a final-wave (`wave_index ∈ [5,8]`) BOSS MonsterResource.\n\n**AC-45** `[Logic · BLOCKING]` *(added 2026-07-15, `/design-review` — closes a regression gap: AC-26 only exercises the 5-wave-mission case where wave 4 is coincidentally both the fixed worked-example index and the true penultimate wave, so a future regression toward hardcoded \"wave 4 is special\" logic would not be caught)*"
+        },
+        {
+          "path": "design/gdd/monster.md",
+          "section": "Monster System > Formulas > Formula 3 — BOSS Attack Damage",
+          "start_line": 352,
+          "end_line": 354,
+          "text": "| Final-wave, ceiling | 8 | 80 | 136 HP/hit | 1 hit (Tier 1 not scoped to this target) | 8 hits ✓ (design ceiling) |\n\n**Boundary-value correction (2026-07-15, `/design-review`):** the prior table checked only wave=8/base_damage=50, which obscured a real boundary failure — at the earliest legal final-wave point (wave=5, `base_damage`=the prior floor of 40), `boss_effective_damage = 40 × 1.40 = 56`, giving `ceil(1000/56) = 18` hits against a Tier 4 tower, above the documented 8–15 hit target. Rather than loosen the target (which would let a final-wave boss feel passive/inert on its earliest legal wave — a Player Fantasy concern, not just a math one), the final-wave `base_damage` floor was raised 40→55, which brings the worst case to 13 hits, inside target. **The Tier 1 \"3–5 hits\" target in Rule 18 was never actually achievable against a final-wave boss at any authored value** (a final-wave boss's minimum damage, even at the old 40 floor, always kills a Tier 1 tower in 1–2 hits) — that target only ever applied to early-wave bosses; Rule 18's prose is corrected below to state this scoping explicitly rather than leaving it as an unstated assumption."
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 11.3
+    }
+  ],
+  "project": "sanctuary"
+}

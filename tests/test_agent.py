@@ -16,6 +16,7 @@ from app.agent.consistency import (
     Finding,
     build_judge_prompt,
     draft_task_payload,
+    run_consistency_check,
     validate_verdict,
 )
 from app.api.ask import get_llm
@@ -23,7 +24,7 @@ from app.api.search import get_embedder
 from app.config import Settings, get_settings
 from app.llm import LLMError
 from app.main import app
-from app.models import AgentAction, AgentRun, Task
+from app.models import AgentAction, AgentRun, Chunk, Document, Task
 from app.symbols import extract_identifiers
 from tests.fakes import DownEmbedder, FakeEmbedder, ScriptedLLM
 
@@ -111,6 +112,10 @@ def test_unknown_and_duplicate_refs_are_dropped_and_explanation_is_capped() -> N
         ("poison stacks up to three times", []),  # plain words are not identifiers
         ("Towers cost 50 gold", []),
         ("a_b c_d e_f g_h i_j k_l", ["a_b", "c_d", "e_f", "g_h", "i_j"]),  # capped at 5
+        # backticks mark code even for a one-word name; prose words stay plain
+        ("The `bulwark` uses SPAWN_ORDER, the bulwark is slow", ["bulwark", "SPAWN_ORDER"]),
+        ("`warbreaker` and `take_damage` then take_damage", ["warbreaker", "take_damage"]),
+        ("`round(a * b)` and `x.y`, `9lives`", []),  # expressions, paths, non-names
     ],
 )
 def test_extract_identifiers(text, expected) -> None:
@@ -312,6 +317,64 @@ def test_decide_rereads_an_action_the_session_already_loaded(env, db_engine) -> 
         with pytest.raises(actions.ActionConflictError):
             actions.decide(late, action_id, True)
     assert env.api.get("/agent/tasks").json()["total"] == 1
+
+
+def _design_chunk(session: Session) -> Chunk:
+    return session.scalars(
+        select(Chunk)
+        .join(Document)
+        .where(Document.source_path == "docs/towers.md", Chunk.content.contains("Poison stacks"))
+    ).one()
+
+
+@pytest.mark.integration
+def test_the_claims_source_passage_is_design_evidence_even_below_the_gate(env, db_engine) -> None:
+    # The gate is set so high that search alone finds nothing relevant on either side; the code
+    # side passes through the symbol lookup, the design side only through the claim's source.
+    strict = Settings(consistency_min_cosine=0.999)
+    claim = "apply_poison allows at most 3 stacks"
+    with Session(db_engine, expire_on_commit=False) as session:
+        project_id = projects.get_or_create_default(session).id
+        source = _design_chunk(session)
+        reply = {**DISCREPANCY, "design_refs": ["D1"], "implementation_refs": ["C1"]}
+        without = run_consistency_check(
+            session, FakeEmbedder(), ScriptedLLM(reply), strict, claim, project_id=project_id
+        )
+        gate = next(s for s in without.steps if s.name == "evidence_gate").output
+        assert gate["implementation_ok"] and not gate["design_ok"], gate
+        assert without.verdict == "insufficient_evidence"
+
+        run = run_consistency_check(
+            session,
+            FakeEmbedder(),
+            ScriptedLLM(reply),
+            strict,
+            claim,
+            project_id=project_id,
+            source_chunk_id=source.id,
+        )
+        steps = {s.name: s.output for s in run.steps}
+    assert run.verdict == "potential_discrepancy", steps
+    assert run.input["source_chunk_id"] == str(source.id)
+    [cited] = [e for e in run.result["design_evidence"] if e["cited"]]
+    assert cited["chunk_id"] == str(source.id)
+
+
+@pytest.mark.integration
+def test_a_claim_source_from_another_project_fails_the_run(env, db_engine) -> None:
+    with Session(db_engine, expire_on_commit=False) as session:
+        source = _design_chunk(session)
+        other = projects.create_project(session, "other", "Other")
+        run = run_consistency_check(
+            session,
+            FakeEmbedder(),
+            ScriptedLLM(DISCREPANCY),
+            Settings(),
+            CLAIM,
+            project_id=other.id,
+            source_chunk_id=source.id,
+        )
+    assert run.status == "failed" and run.verdict is None
 
 
 @pytest.mark.integration

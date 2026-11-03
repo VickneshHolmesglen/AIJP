@@ -1,0 +1,500 @@
+{
+  "document": "design/gdd/damage-status.md",
+  "section_filter": "Formulas",
+  "generated": "2026-11-03T06:35:17+00:00",
+  "model": "qwen3.5",
+  "embedding_model": "nomic-embed-text",
+  "judge_mode": "per_source",
+  "evidence_gate": 0.6,
+  "passages_read": 7,
+  "passages_failed": [],
+  "minutes": 1.7,
+  "counts": {
+    "insufficient_evidence": 4,
+    "consistent": 7,
+    "potential_discrepancy": 1
+  },
+  "claims": [
+    {
+      "claim": "The variable raw_damage is a float with a range of 5 to 200.",
+      "quote": "`raw_damage` | float | 5–200",
+      "line": 186,
+      "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+      "run_id": "0dd79206-3566-4566-95ce-7bad9e261759",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source D1 explicitly defines the variable `raw_damage` as a float with a range of 5–200 in its description table. No implementation sources were provided that define or use this specific variable, so no code evidence could be compared.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+          "start_line": 182,
+          "end_line": 193,
+          "text": "#### D1 — Tower Damage Resolution\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `raw_damage` | float | 5–200 | Weapon component base damage; read from `tower_attacked` payload field `damage_amount`. **As of Tower Stats System Phase 1 (2026-08-16), this already reflects Tower System's own crit/vs-tag/boss-multiplier/elemental-resistance resolution — see `tower.md` Formula 1b — before it ever reaches D&S.** |\n| `is_armored` | bool | — | Pre-resolved by Tower System from target's `archetype_tag`; `true` when `archetype_tag == &\"armored\"` |\n| `armor_penetration` | float | [0.0, 1.0] | **Added Phase 1.** From the firing weapon's `WeaponComponent.armor_penetration`, read from `tower_attacked` payload field `armor_penetration`. Fraction of `armored_mitigation_multiplier` this hit negates; irrelevant when `is_armored == false`. |\n| `final_damage` | int | 2–200 | Damage applied to monster HP via `monster_damage_taken` |\n\n**Expression** (extended Phase 1 — collapses to the original formula when `armor_penetration = 0.0`, the default for all pre-Phase-1 content):\n```\neffective_mitigation = clamp("
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 4.5
+    },
+    {
+      "claim": "The variable final_damage is an int with a range of 2 to 200.",
+      "quote": "`final_damage` | int | 2–200",
+      "line": 189,
+      "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+      "run_id": "9389e390-1d0d-409c-9217-ec4b053b437e",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D4] explicitly defines the variable `final_damage` as an integer with a range of 2–200 in its documentation. Implementation source [C3] supports this by declaring `final_damage` as an `int` and calculating it via `floori(resolved)`, which aligns with the documented type and logic, although the specific runtime bounds (2-200) are enforced by upstream inputs rather than the calculation line itself.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+          "start_line": 182,
+          "end_line": 193,
+          "text": "#### D1 — Tower Damage Resolution\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `raw_damage` | float | 5–200 | Weapon component base damage; read from `tower_attacked` payload field `damage_amount`. **As of Tower Stats System Phase 1 (2026-08-16), this already reflects Tower System's own crit/vs-tag/boss-multiplier/elemental-resistance resolution — see `tower.md` Formula 1b — before it ever reaches D&S.** |\n| `is_armored` | bool | — | Pre-resolved by Tower System from target's `archetype_tag`; `true` when `archetype_tag == &\"armored\"` |\n| `armor_penetration` | float | [0.0, 1.0] | **Added Phase 1.** From the firing weapon's `WeaponComponent.armor_penetration`, read from `tower_attacked` payload field `armor_penetration`. Fraction of `armored_mitigation_multiplier` this hit negates; irrelevant when `is_armored == false`. |\n| `final_damage` | int | 2–200 | Damage applied to monster HP via `monster_damage_taken` |\n\n**Expression** (extended Phase 1 — collapses to the original formula when `armor_penetration = 0.0`, the default for all pre-Phase-1 content):\n```\neffective_mitigation = clamp("
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _on_tower_attacked",
+          "start_line": 123,
+          "end_line": 143,
+          "text": "_effect_duration: float, armor_penetration: float, is_crit: bool) -> void:\n\tvar mitigation: float = 1.0\n\tif is_armored:\n\t\tmitigation = clampf(\n\t\t\tARMORED_MITIGATION_MULTIPLIER + (1.0 - ARMORED_MITIGATION_MULTIPLIER) * armor_penetration,\n\t\t\tARMORED_MITIGATION_MULTIPLIER, 1.0\n\t\t)\n\tvar resolved: float = damage_amount * mitigation\n\tvar final_damage: int = floori(resolved)\n\tif final_damage <= 0:\n\t\treturn\n\tawait get_tree().process_frame\n\tif not is_instance_valid(self):\n\t\treturn\n\tvar ev: MonsterDamageTaken = MonsterDamageTaken.new()\n\tev.entity_id = target_monster_id\n\tev.amount = final_damage\n\tev.source_type = 0  # 0 = tower (see MonsterDamageTaken source_type values)\n\tev.is_crit = is_crit\n\tev.hero_bonus_tier = 0\n\tGEventBus.monster_damage_taken.emit(ev)"
+        }
+      ],
+      "seconds": 5.2
+    },
+    {
+      "claim": "The default value for armored_mitigation_multiplier is 0.50.",
+      "quote": "`armored_mitigation_multiplier` defaults to `0.50`",
+      "line": 201,
+      "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+      "run_id": "607d34f4-8611-48da-8c8f-e3d1e6676ff4",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source D1 explicitly states that `armored_mitigation_multiplier` defaults to `0.50`. No implementation sources were provided that define this specific constant value, so only the design source is evaluated.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+          "start_line": 192,
+          "end_line": 210,
+          "text": "```\neffective_mitigation = clamp(\n    armored_mitigation_multiplier + (1.0 - armored_mitigation_multiplier) × armor_penetration,\n    armored_mitigation_multiplier, 1.0\n) if is_armored else 1.0\nresolved_damage = raw_damage × effective_mitigation\nfinal_damage    = floor(resolved_damage)\n```\n\n> `armored_mitigation_multiplier` defaults to `0.50` — see Tuning Knobs. Worked examples below use the default value and `armor_penetration = 0.0` unless stated.\n\n**Worked examples** (armored_mitigation_multiplier = 0.50):\n- raw_damage = 47.3, is_armored = false → final_damage = 47\n- raw_damage = 80.7, is_armored = true, armor_penetration = 0.0 → floor(80.7 × 0.50) = floor(40.35) = **40**\n- raw_damage = 5.0, is_armored = true, armor_penetration = 0.0 → floor(5.0 × 0.50) = floor(2.5) = **2** (minimum possible tower damage on armored target)\n- raw_damage = 80.7, is_armored = true, armor_penetration = 0.5 → effective_mitigation = 0.50 + 0.50×0.5 = 0.75 → floor(80.7 × 0.75) = floor(60.525) = **60**\n- raw_damage = 80.7, is_armored = true, armor_penetration = 1.0 → effective_mitigation = 1.0 (mitigation fully countered) → floor(80.7) = **80**\n\n---"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 4.6,
+      "review": {
+        "verdict_correct": false,
+        "note": "Missed: the constant exists, ARMORED_MITIGATION_MULTIPLIER = 0.50 (damage_status.gd:12)."
+      }
+    },
+    {
+      "claim": "When is_armored is true and armor_penetration is 1.0, effective_mitigation equals 1.0.",
+      "quote": "raw_damage = 80.7, is_armored = true, armor_penetration = 1.0 → effective_mitigation = 1.0 (mitigation fully countered)",
+      "line": 208,
+      "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+      "run_id": "8bf44e66-8697-4cf8-a6cc-67a781dfeff7",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "The claim is supported by Design Source D1, which explicitly states that when armor_penetration is 1.0, the effective_mitigation becomes 1.0 (fully countered). Implementation Source C3 supports this by using the exact same clamp formula in code: `clampf(..., ARMORED_MITIGATION_MULTIPLIER, 1.0)`. When `armor_penetration` is 1.0, the calculated value inside the clamp reaches 1.0, which matches the upper bound of the clamp function.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D1 — Tower Damage Resolution",
+          "start_line": 192,
+          "end_line": 210,
+          "text": "```\neffective_mitigation = clamp(\n    armored_mitigation_multiplier + (1.0 - armored_mitigation_multiplier) × armor_penetration,\n    armored_mitigation_multiplier, 1.0\n) if is_armored else 1.0\nresolved_damage = raw_damage × effective_mitigation\nfinal_damage    = floor(resolved_damage)\n```\n\n> `armored_mitigation_multiplier` defaults to `0.50` — see Tuning Knobs. Worked examples below use the default value and `armor_penetration = 0.0` unless stated.\n\n**Worked examples** (armored_mitigation_multiplier = 0.50):\n- raw_damage = 47.3, is_armored = false → final_damage = 47\n- raw_damage = 80.7, is_armored = true, armor_penetration = 0.0 → floor(80.7 × 0.50) = floor(40.35) = **40**\n- raw_damage = 5.0, is_armored = true, armor_penetration = 0.0 → floor(5.0 × 0.50) = floor(2.5) = **2** (minimum possible tower damage on armored target)\n- raw_damage = 80.7, is_armored = true, armor_penetration = 0.5 → effective_mitigation = 0.50 + 0.50×0.5 = 0.75 → floor(80.7 × 0.75) = floor(60.525) = **60**\n- raw_damage = 80.7, is_armored = true, armor_penetration = 1.0 → effective_mitigation = 1.0 (mitigation fully countered) → floor(80.7) = **80**\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _on_tower_attacked",
+          "start_line": 123,
+          "end_line": 143,
+          "text": "_effect_duration: float, armor_penetration: float, is_crit: bool) -> void:\n\tvar mitigation: float = 1.0\n\tif is_armored:\n\t\tmitigation = clampf(\n\t\t\tARMORED_MITIGATION_MULTIPLIER + (1.0 - ARMORED_MITIGATION_MULTIPLIER) * armor_penetration,\n\t\t\tARMORED_MITIGATION_MULTIPLIER, 1.0\n\t\t)\n\tvar resolved: float = damage_amount * mitigation\n\tvar final_damage: int = floori(resolved)\n\tif final_damage <= 0:\n\t\treturn\n\tawait get_tree().process_frame\n\tif not is_instance_valid(self):\n\t\treturn\n\tvar ev: MonsterDamageTaken = MonsterDamageTaken.new()\n\tev.entity_id = target_monster_id\n\tev.amount = final_damage\n\tev.source_type = 0  # 0 = tower (see MonsterDamageTaken source_type values)\n\tev.is_crit = is_crit\n\tev.hero_bonus_tier = 0\n\tGEventBus.monster_damage_taken.emit(ev)"
+        }
+      ],
+      "seconds": 7.6
+    },
+    {
+      "claim": "The `hero_bonus_tier` variable accepts integer values strictly between 0 and 2 inclusive.",
+      "quote": "`hero_bonus_tier` | int | 0–2",
+      "line": 217,
+      "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+      "run_id": "b3aa2362-0daf-4cdb-b31d-7e70b286a613",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D2], and [D4] explicitly define `hero_bonus_tier` values as 0 (STANDARD), 1 (ELITE), and 2 (BOSS). Implementation sources [C1] and [C5] confirm this range with the comment '0 = STANDARD, 1 = ELITE, 2 = BOSS' attached to the integer variable declaration. All sources agree that the valid integers are strictly between 0 and 2 inclusive.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/event-bus.md",
+          "section": "EventBus System > Detailed Design > Interactions with Other Systems — Event Catalogue > Damage & Status System",
+          "start_line": 166,
+          "end_line": 168,
+          "text": "> **`hero_bonus_tier` values for `monster_damage_taken`, `hero_auto_attacked`, and `hero_skill_attacked`:** `0` = STANDARD, `1` = ELITE, `2` = BOSS. Set by Hero System at fire time from the target's archetype tag; read by D&S to apply the hero damage bonus multiplier (`damage-status.md` Formula D2 and Formula D7 alike — one shared constant, `hero_damage_bonus_multiplier`).\n\n---"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D7 — Hero Skill Damage Resolution *(added 2026-08-25; closes `TD-hero-001` — Skill Power previously had zero consumers anywhere in the codebase)*",
+          "start_line": 370,
+          "end_line": 381,
+          "text": "| `hero_bonus_tier` | int | 0–2 | Target tier from `HeroSkillAttackEvent` payload — identical semantics to Formula D2. |\n| `is_crit` | bool | — | Rolled by Hero System before emitting, identical to D2. |\n| `crit_multiplier_effective` | float | 1.75–3.25 | Pre-computed by Hero System, identical field/source-of-truth as D2 — D&S never rolls or reads `crit_multiplier_bonus` separately. Same cap discipline as EC-5 applies here (see EC-19). |\n| `final_damage` | int | ≥ 0 | Resolved skill damage applied via `monster_damage_taken` |\n\n**Expression** (structurally identical to D2 from `tier_damage` onward — only the input term changes):\n```\nbase_skill_damage = skill_power × skill_power_coefficient\ntier_damage        = base_skill_damage × (hero_damage_bonus_multiplier if hero_bonus_tier > 0 else 1.0)\ncrit_damage        = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage       = floor(crit_damage)\n```"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 212,
+          "end_line": 227,
+          "text": "#### D2 — Hero Damage Resolution\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_damage` | float | > 0 | Hero base damage stat from `HeroAutoAttackEvent` payload |\n| `hero_bonus_tier` | int | 0–2 | Target tier from `HeroAutoAttackEvent` payload: 0 = STANDARD (no bonus), 1 = ELITE (bonus applies), 2 = BOSS (bonus applies). Hero reads target archetype tier at attack-roll time. |\n| `is_crit` | bool | — | Rolled by Hero System before emitting event |\n| `crit_multiplier_effective` | float | 1.75–3.25 | Pre-computed by Hero System (`hero_crit_multiplier_base + crit_multiplier_bonus`) — carried in `HeroAutoAttackEvent` payload; D&S never reads crit_multiplier_bonus separately |\n| `final_damage` | int | > 0 | Resolved hero damage |\n\n**Expression:**\n```\ntier_damage  = base_damage × (hero_damage_bonus_multiplier if hero_bonus_tier > 0 else 1.0)\ncrit_damage  = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage = floor(crit_damage)\n```"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/foundation/event_bus/event_payloads/hero_skill_attack_event.gd",
+          "section": "HeroSkillAttackEvent > declarations: skill_id, target_id, skill_power, skill_power_coefficient, is_crit, crit_multiplier_effective, hero_bonus_tier, damage_type, target_armor, target_evasion, target_elemental_resist, hero_level",
+          "start_line": 21,
+          "end_line": 43,
+          "text": "## directly, only this pre-resolved value (Rule IX.1).\n## hero_bonus_tier values (identical semantics to HeroAutoAttackEvent):\n##   0 = STANDARD, 1 = ELITE, 2 = BOSS\n\n@export var skill_id: StringName = &\"\"\n@export var target_id: int = -1\n@export var skill_power: float = 0.0\n@export var skill_power_coefficient: float = 0.0\n@export var is_crit: bool = false\n@export var crit_multiplier_effective: float = 1.0\n@export var hero_bonus_tier: int = 0  ## 0 = STANDARD, 1 = ELITE, 2 = BOSS\n## Hero Combat & Stats Redesign (2026-09-18): the cast skill's own damage_type\n## (SkillDefinitionResource.effect_data.damage_type, \"\" normalized to\n## \"physical\" by Hero at emission time -- see hero.gd's\n## _resolve_skill_hit()). Drives D&S's mitigation branch: \"physical\" ->\n## target_armor's curve, any other value -> target_elemental_resist, \"true\"\n## -> no mitigation.\n@export var damage_type: String = \"physical\"\n## Target's MonsterResource.armor, resolved by Hero at emission time. Only\n## consulted when damage_type == \"physical\".\n@export var target_armor: float = 0.0\n## Target's MonsterResource.evasion [0,100], resolved by Hero at emission\n## time. Rolled first, before any damage math (Section 3.5.1)."
+        },
+        {
+          "path": "src/foundation/event_bus/event_payloads/hero_auto_attack_event.gd",
+          "section": "HeroAutoAttackEvent > declarations: base_damage, is_crit, target_id, crit_multiplier_effective, hero_lifesteal_fraction, hero_bonus_tier, damage_type, target_armor, target_evasion, target_elemental_resist, hero_level",
+          "start_line": 1,
+          "end_line": 25,
+          "text": "class_name HeroAutoAttackEvent\nextends Resource\n\n## Event-payload Resource for the hero_auto_attacked EventBus signal.\n##\n## ADR-0001 Rule 3: 6 fields — requires Resource subclass payload.\n## ADR-0009: Event-payload Resources are short-lived; never saved as .tres files.\n## GDD source: design/gdd/event-bus.md — Hero System event catalogue.\n##\n## Emitted by: Hero System (when the hero's auto-attack animation resolves).\n##   Hero System rolls crit and reads target tier before emitting — all derived\n##   values are pre-computed so Damage & Status needs no back-reference to Hero.\n## Key subscribers: Damage & Status System (pipeline trigger).\n##\n## hero_bonus_tier values (GDD event-bus.md note after D&S section):\n##   0 = STANDARD, 1 = ELITE, 2 = BOSS\n##   Set by Hero System from the target's archetype tag at fire time.\n##   Read by D&S to apply the hero damage bonus multiplier.\n\n@export var base_damage: float = 0.0\n@export var is_crit: bool = false\n@export var target_id: int = -1\n@export var crit_multiplier_effective: float = 1.0\n@export var hero_lifesteal_fraction: float = 0.0\n@export var hero_bonus_tier: int = 0  ## 0 = STANDARD, 1 = ELITE, 2 = BOSS"
+        }
+      ],
+      "seconds": 8.5
+    },
+    {
+      "claim": "The `crit_multiplier_effective` variable is a float with a value range of 1.75 to 3.25.",
+      "quote": "`crit_multiplier_effective` | float | 1.75–3.25",
+      "line": 219,
+      "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+      "run_id": "b4bb5d8c-e441-45d9-a44a-a9c5159e33ab",
+      "status": "awaiting_approval",
+      "verdict": "potential_discrepancy",
+      "explanation": "Design sources [D1], [D2], [D3], [D4], and [D5] all explicitly state that `crit_multiplier_effective` is a float with a range of 1.75 to 3.25, derived from a base of 1.75 plus a bonus up to 1.50. Implementation source [C5] declares the variable type as float but initializes it to 1.0 without specifying the runtime range in the code snippet, while [C3] defines a different `crit_multiplier` with a range of 1.0 to 3.0, which contradicts the specific claim about `crit_multiplier_effective`. Sources [C1], [C2], [C4], and [C6] are unrelated to the specific variable's value range.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 4: Auto-Attack Damage (Full Pipeline — Reference Only, Split Ownership)",
+          "start_line": 290,
+          "end_line": 298,
+          "text": "| Crit check | `is_crit` | bool | {0, 1} | `rand_float(0, 1) < effective_crit_chance`. Rolled by Hero, applied by D&S. | Hero rolls / D&S applies |\n| Crit multiplier (effective) | `crit_multiplier_effective` | float | 1.5× – 3.5× | Hero's Crit Multiplier stat, already fully resolved via Formula 7's diminishing-returns curve (base 1.5× with a diminishing-curve bonus on top, hard ceiling 3.5×). **This redesign removed the old additive base+bonus fold** — `get_effective_stat(&\"crit_multiplier\")` returns this complete, ready-to-use multiplier directly; Hero forwards it as a single value and D&S applies it with no further folding. See Formula 7 for the full math and worked examples. | Hero System (Formula 7) / D&S applies |\n\n**Output range:** Minimum 0. No hard cap on `final_damage` itself. Maximum crit multiplier: 3.5× (Formula 7's hard cap — base 1.5× plus a diminishing-curve bonus capped at 2.0×, never a flat addition).\n\n**Example (elite hit, crit) — full pipeline result, spanning both systems:**\n```\neffective_damage = 90 (Hero computes, emits as base_damage)\nhero_damage_bonus_multiplier = 1.5, is_crit = true (D&S applies)"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 225,
+          "end_line": 246,
+          "text": "crit_damage  = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage = floor(crit_damage)\n```\n\n> **Note:** `crit_multiplier_effective` is pre-computed by Hero System as `hero_crit_multiplier_base (1.75) + crit_multiplier_bonus (0.0–1.50)`. D&S receives the resolved value in the payload — it does not read `crit_multiplier_bonus` independently. `hero_damage_bonus_multiplier` defaults to `1.50` — see Tuning Knobs. Worked examples below use the default value.\n\n**Multiplier table (base crit only, crit_multiplier_bonus = 0, hero_damage_bonus_multiplier = 1.50):**\n\n| Target | Non-crit | Crit |\n|--------|----------|------|\n| STANDARD (`hero_bonus_tier = 0`) | 1.00× | 1.75× |\n| ELITE (`hero_bonus_tier = 1`) | 1.50× | 2.625× |\n| BOSS (`hero_bonus_tier = 2`) | 1.50× | 2.625× |\n\n**Worked examples** (base_damage = 100, crit_multiplier_bonus = 0):\n\n| Scenario | Calculation | final_damage |\n|----------|-------------|--------------|\n| Non-crit vs STANDARD | 100 × 1.0 × 1.0 | 100 |\n| Non-crit vs ELITE | 100 × 1.50 × 1.0 | 150 |\n| Crit vs STANDARD | 100 × 1.0 × 1.75 | 175 |\n| Crit vs ELITE | 100 × 1.50 × 1.75 | floor(262.5) = **262** |"
+        },
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 4: Auto-Attack Damage (Full Pipeline — Reference Only, Split Ownership)",
+          "start_line": 296,
+          "end_line": 303,
+          "text": "```\neffective_damage = 90 (Hero computes, emits as base_damage)\nhero_damage_bonus_multiplier = 1.5, is_crit = true (D&S applies)\ncrit_multiplier_effective = 2.5× (Hero resolves this via Formula 7 — Raw = 1.0 input, base 1.5× + curved bonus 1.0× = 2.5×, matching that formula's own worked example — and forwards the single ready-to-use value; D&S does no additional base/bonus fold)\nfinal_damage = 90 × 1.5 × 2.5 = 337.5 → 337  (D&S computes this; Hero never sees this number)\n```\n\n---"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Edge Cases",
+          "start_line": 443,
+          "end_line": 446,
+          "text": "**EC-5: `crit_multiplier_effective` at maximum**\n`crit_multiplier_effective=3.25` (Hero System pre-computes: `1.75 base + 1.50 max bonus`). A crit on an ELITE target with base_damage=100: `floor(100 × hero_damage_bonus_multiplier × 3.25)` = `floor(100 × 1.50 × 3.25) = floor(487.5) = 487` (at default hero_damage_bonus_multiplier=1.50). This is the maximum output of Formula D2 for a given base_damage. Equipment Forge GDD must ensure no equipment combination can produce `crit_multiplier_effective > 3.25`. D&S does not re-clamp this value — it trusts Hero System pre-validation. Note: at max crit chance (80%) the expected DPS vs ELITE/BOSS (2.40× of base_damage) always exceeds expected DPS vs STANDARD (1.60× of base_damage) at any crit rate — the hero's tier bonus applies to crit and non-crit hits alike, so ELITE/BOSS are always the hero's superior DPS targets.\n\n**EC-6: `hero_damage_taken` minimum enforcement**"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 212,
+          "end_line": 227,
+          "text": "#### D2 — Hero Damage Resolution\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `base_damage` | float | > 0 | Hero base damage stat from `HeroAutoAttackEvent` payload |\n| `hero_bonus_tier` | int | 0–2 | Target tier from `HeroAutoAttackEvent` payload: 0 = STANDARD (no bonus), 1 = ELITE (bonus applies), 2 = BOSS (bonus applies). Hero reads target archetype tier at attack-roll time. |\n| `is_crit` | bool | — | Rolled by Hero System before emitting event |\n| `crit_multiplier_effective` | float | 1.75–3.25 | Pre-computed by Hero System (`hero_crit_multiplier_base + crit_multiplier_bonus`) — carried in `HeroAutoAttackEvent` payload; D&S never reads crit_multiplier_bonus separately |\n| `final_damage` | int | > 0 | Resolved hero damage |\n\n**Expression:**\n```\ntier_damage  = base_damage × (hero_damage_bonus_multiplier if hero_bonus_tier > 0 else 1.0)\ncrit_damage  = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage = floor(crit_damage)\n```"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/tower/weapon_component.gd",
+          "section": "WeaponComponent > declarations: component_id, weapon_damage, attack_speed, projectile_type, element, aura_effect_type, aura_effect_value, aura_radius_cells, aoe_radius_cells, crit_chance, crit_multiplier, armor_penetration, status_proc_chance, damaged",
+          "start_line": 35,
+          "end_line": 51,
+          "text": "## introducing one just for crit would be disproportionate scope.\n@export var crit_chance: float = 0.0        # [0.0, 0.8]\n## Flat multiplier applied to a hit's damage when crit_chance rolls true.\n## No base-plus-bonus split (unlike Hero's CRIT_MULTIPLIER_BASE) — see\n## crit_chance's own doc comment for why.\n@export var crit_multiplier: float = 1.5    # [1.0, 3.0]\n## Fraction of armored-monster damage mitigation (ARMORED_MITIGATION_\n## MULTIPLIER in damage_status.gd, currently a flat 50%) this weapon negates.\n## 0.0 = no change to today's mitigation; 1.0 = mitigation fully countered.\n@export var armor_penetration: float = 0.0  # [0.0, 1.0]\n## Chance per attack that this weapon's Power effect (PowerComponent.\n## effect_type) actually applies. Previously effects always applied on every\n## hit (no roll existed) — 1.0 preserves that behavior for existing content;\n## values below 1.0 make status-effect towers a real probabilistic choice\n## rather than a guarantee.\n@export var status_proc_chance: float = 1.0 # [0.0, 1.0]\n@export var damaged: bool = false"
+        }
+      ],
+      "seconds": 12.9,
+      "review": {
+        "verdict_correct": true,
+        "note": "A real stale spec. The code uses CRIT_MULTIPLIER_BASE = 1.5 and a bonus cap of 2.0, i.e. 1.5x-3.5x (hero.gd:116, :63), as the redesigned hero.md says; this doc still says 1.75-3.25. The verdict is right, but the code it cites is the TOWER's crit_multiplier, a different variable: the better evidence is hero.gd."
+      }
+    },
+    {
+      "claim": "The effective critical multiplier is calculated as the base hero critical multiplier (1.75) plus the critical multiplier bonus.",
+      "quote": "`crit_multiplier_effective` is pre-computed by Hero System as `hero_crit_multiplier_base (1.75) + crit_multiplier_bonus (0.0–1.50)`",
+      "line": 229,
+      "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+      "run_id": "bb211f18-e83d-46e5-bb8b-ae0cc7df343c",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources D2, D3, and D4 all explicitly state that `crit_multiplier_effective` is calculated as the sum of a base value (1.75 in D3/D4) and a bonus component. Source D2 confirms this by noting the removal of an old additive fold in favor of returning a 'complete, ready-to-use multiplier' derived from Formula 7, which combines a base and a diminishing-curve bonus. No implementation sources were provided to verify the code execution.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 4: Auto-Attack Damage (Full Pipeline — Reference Only, Split Ownership)",
+          "start_line": 290,
+          "end_line": 298,
+          "text": "| Crit check | `is_crit` | bool | {0, 1} | `rand_float(0, 1) < effective_crit_chance`. Rolled by Hero, applied by D&S. | Hero rolls / D&S applies |\n| Crit multiplier (effective) | `crit_multiplier_effective` | float | 1.5× – 3.5× | Hero's Crit Multiplier stat, already fully resolved via Formula 7's diminishing-returns curve (base 1.5× with a diminishing-curve bonus on top, hard ceiling 3.5×). **This redesign removed the old additive base+bonus fold** — `get_effective_stat(&\"crit_multiplier\")` returns this complete, ready-to-use multiplier directly; Hero forwards it as a single value and D&S applies it with no further folding. See Formula 7 for the full math and worked examples. | Hero System (Formula 7) / D&S applies |\n\n**Output range:** Minimum 0. No hard cap on `final_damage` itself. Maximum crit multiplier: 3.5× (Formula 7's hard cap — base 1.5× plus a diminishing-curve bonus capped at 2.0×, never a flat addition).\n\n**Example (elite hit, crit) — full pipeline result, spanning both systems:**\n```\neffective_damage = 90 (Hero computes, emits as base_damage)\nhero_damage_bonus_multiplier = 1.5, is_crit = true (D&S applies)"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Edge Cases",
+          "start_line": 443,
+          "end_line": 446,
+          "text": "**EC-5: `crit_multiplier_effective` at maximum**\n`crit_multiplier_effective=3.25` (Hero System pre-computes: `1.75 base + 1.50 max bonus`). A crit on an ELITE target with base_damage=100: `floor(100 × hero_damage_bonus_multiplier × 3.25)` = `floor(100 × 1.50 × 3.25) = floor(487.5) = 487` (at default hero_damage_bonus_multiplier=1.50). This is the maximum output of Formula D2 for a given base_damage. Equipment Forge GDD must ensure no equipment combination can produce `crit_multiplier_effective > 3.25`. D&S does not re-clamp this value — it trusts Hero System pre-validation. Note: at max crit chance (80%) the expected DPS vs ELITE/BOSS (2.40× of base_damage) always exceeds expected DPS vs STANDARD (1.60× of base_damage) at any crit rate — the hero's tier bonus applies to crit and non-crit hits alike, so ELITE/BOSS are always the hero's superior DPS targets.\n\n**EC-6: `hero_damage_taken` minimum enforcement**"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 225,
+          "end_line": 246,
+          "text": "crit_damage  = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage = floor(crit_damage)\n```\n\n> **Note:** `crit_multiplier_effective` is pre-computed by Hero System as `hero_crit_multiplier_base (1.75) + crit_multiplier_bonus (0.0–1.50)`. D&S receives the resolved value in the payload — it does not read `crit_multiplier_bonus` independently. `hero_damage_bonus_multiplier` defaults to `1.50` — see Tuning Knobs. Worked examples below use the default value.\n\n**Multiplier table (base crit only, crit_multiplier_bonus = 0, hero_damage_bonus_multiplier = 1.50):**\n\n| Target | Non-crit | Crit |\n|--------|----------|------|\n| STANDARD (`hero_bonus_tier = 0`) | 1.00× | 1.75× |\n| ELITE (`hero_bonus_tier = 1`) | 1.50× | 2.625× |\n| BOSS (`hero_bonus_tier = 2`) | 1.50× | 2.625× |\n\n**Worked examples** (base_damage = 100, crit_multiplier_bonus = 0):\n\n| Scenario | Calculation | final_damage |\n|----------|-------------|--------------|\n| Non-crit vs STANDARD | 100 × 1.0 × 1.0 | 100 |\n| Non-crit vs ELITE | 100 × 1.50 × 1.0 | 150 |\n| Crit vs STANDARD | 100 × 1.0 × 1.75 | 175 |\n| Crit vs ELITE | 100 × 1.50 × 1.75 | floor(262.5) = **262** |"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 5.3,
+      "review": {
+        "verdict_correct": false,
+        "note": "Missed: same stale spec as above. The code's base is 1.5, not 1.75 (hero.gd:116), so this should have been flagged as a mismatch."
+      }
+    },
+    {
+      "claim": "The default value for the hero damage bonus multiplier is 1.50.",
+      "quote": "`hero_damage_bonus_multiplier` defaults to `1.50`",
+      "line": 229,
+      "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+      "run_id": "76530e2c-9106-493e-a91b-c5d04f8ae264",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D3] explicitly states that `hero_damage_bonus_multiplier` defaults to 1.50 in the 'Tuning Knobs' section and uses this value in its worked examples. Implementation source [C2] supports this by applying a constant `HERO_DAMAGE_BONUS_MULTIPLIER` for tiers greater than 0, which aligns with the stated default of 1.50. Source [C1] is unrelated as it only defines variable declarations and tier semantics without specifying the multiplier's value.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 225,
+          "end_line": 246,
+          "text": "crit_damage  = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage = floor(crit_damage)\n```\n\n> **Note:** `crit_multiplier_effective` is pre-computed by Hero System as `hero_crit_multiplier_base (1.75) + crit_multiplier_bonus (0.0–1.50)`. D&S receives the resolved value in the payload — it does not read `crit_multiplier_bonus` independently. `hero_damage_bonus_multiplier` defaults to `1.50` — see Tuning Knobs. Worked examples below use the default value.\n\n**Multiplier table (base crit only, crit_multiplier_bonus = 0, hero_damage_bonus_multiplier = 1.50):**\n\n| Target | Non-crit | Crit |\n|--------|----------|------|\n| STANDARD (`hero_bonus_tier = 0`) | 1.00× | 1.75× |\n| ELITE (`hero_bonus_tier = 1`) | 1.50× | 2.625× |\n| BOSS (`hero_bonus_tier = 2`) | 1.50× | 2.625× |\n\n**Worked examples** (base_damage = 100, crit_multiplier_bonus = 0):\n\n| Scenario | Calculation | final_damage |\n|----------|-------------|--------------|\n| Non-crit vs STANDARD | 100 × 1.0 × 1.0 | 100 |\n| Non-crit vs ELITE | 100 × 1.50 × 1.0 | 150 |\n| Crit vs STANDARD | 100 × 1.0 × 1.75 | 175 |\n| Crit vs ELITE | 100 × 1.50 × 1.75 | floor(262.5) = **262** |"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _on_hero_auto_attacked",
+          "start_line": 146,
+          "end_line": 162,
+          "text": "## D2 formula, extended by Hero Combat & Stats Redesign (2026-09-18): evasion\n## roll -> floor(base × tier_mult × crit_mult × target_mitigation ×\n## combat_variance). One flat HERO_DAMAGE_BONUS_MULTIPLIER for any\n## hero_bonus_tier > 0 (ELITE and BOSS resolve identically) — confirmed\n## correct per design/gdd/hero.md Formula 4 (`elite_boss_multiplier` range is\n## {1.0, 1.5}, no distinct BOSS value) and user decision (TD-story-002,\n## resolved 2026-07-08). Story 004's own text originally claimed a distinct\n## BOSS=2.0x, contradicting its own governing GDD; the story text was\n## corrected to match this shipped behavior instead. Target mitigation (real\n## armor/elemental-resist reduction of Hero's own outgoing damage) did not\n## exist at all before this redesign -- closes that gap. Lifesteal fraction\n## registered before await — must survive across the frame boundary.\nfunc _on_hero_auto_attacked(event: HeroAutoAttackEvent) -> void:\n\tif _roll_evasion(event.target_evasion):\n\t\treturn\n\tvar tier_dmg: float = event.base_damage * (HERO_DAMAGE_BONUS_MULTIPLIER if event.hero_bonus_tier > 0 else 1.0)\n\tvar crit_dmg: float = tier_dmg * (event.crit_multiplier_effective if event.is_crit else 1.0)"
+        }
+      ],
+      "seconds": 5.8,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The damage calculation for a Crit vs ELITE target with a +0.50 bonus results in a final value of 337 after applying the floor function to 337.5.",
+      "quote": "Crit (+0.50 bonus) vs ELITE | 100 × 1.50 × 2.25 | floor(337.5) = **337**",
+      "line": 247,
+      "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+      "run_id": "2bba5dac-86ef-48f8-8daa-d911aac4a1c4",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D1] explicitly states the calculation for 'Crit (+0.50 bonus) vs ELITE' results in floor(337.5) = 337. Design source [D2] supports this by defining the formula `final_damage = floor(crit_damage)` and showing a worked example where `100 × 1.50 × 1.75` equals `floor(262.5)`, confirming the logic for ELITE targets. Implementation source [C2] supports the claim by implementing the exact same logic: it calculates `tier_dmg` (applying the tier multiplier) and then `crit_dmg` using `event.crit_multiplier_effective`, which matches the design's pre-computed effective multipliers.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 245,
+          "end_line": 250,
+          "text": "| Crit vs STANDARD | 100 × 1.0 × 1.75 | 175 |\n| Crit vs ELITE | 100 × 1.50 × 1.75 | floor(262.5) = **262** |\n| Crit (+0.50 bonus) vs ELITE | 100 × 1.50 × 2.25 | floor(337.5) = **337** |\n| Crit (max 3.25×) vs ELITE | 100 × 1.50 × 3.25 | floor(487.5) = **487** |\n\n---"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 225,
+          "end_line": 246,
+          "text": "crit_damage  = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage = floor(crit_damage)\n```\n\n> **Note:** `crit_multiplier_effective` is pre-computed by Hero System as `hero_crit_multiplier_base (1.75) + crit_multiplier_bonus (0.0–1.50)`. D&S receives the resolved value in the payload — it does not read `crit_multiplier_bonus` independently. `hero_damage_bonus_multiplier` defaults to `1.50` — see Tuning Knobs. Worked examples below use the default value.\n\n**Multiplier table (base crit only, crit_multiplier_bonus = 0, hero_damage_bonus_multiplier = 1.50):**\n\n| Target | Non-crit | Crit |\n|--------|----------|------|\n| STANDARD (`hero_bonus_tier = 0`) | 1.00× | 1.75× |\n| ELITE (`hero_bonus_tier = 1`) | 1.50× | 2.625× |\n| BOSS (`hero_bonus_tier = 2`) | 1.50× | 2.625× |\n\n**Worked examples** (base_damage = 100, crit_multiplier_bonus = 0):\n\n| Scenario | Calculation | final_damage |\n|----------|-------------|--------------|\n| Non-crit vs STANDARD | 100 × 1.0 × 1.0 | 100 |\n| Non-crit vs ELITE | 100 × 1.50 × 1.0 | 150 |\n| Crit vs STANDARD | 100 × 1.0 × 1.75 | 175 |\n| Crit vs ELITE | 100 × 1.50 × 1.75 | floor(262.5) = **262** |"
+        },
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 4: Auto-Attack Damage (Full Pipeline — Reference Only, Split Ownership)",
+          "start_line": 296,
+          "end_line": 303,
+          "text": "```\neffective_damage = 90 (Hero computes, emits as base_damage)\nhero_damage_bonus_multiplier = 1.5, is_crit = true (D&S applies)\ncrit_multiplier_effective = 2.5× (Hero resolves this via Formula 7 — Raw = 1.0 input, base 1.5× + curved bonus 1.0× = 2.5×, matching that formula's own worked example — and forwards the single ready-to-use value; D&S does no additional base/bonus fold)\nfinal_damage = 90 × 1.5 × 2.5 = 337.5 → 337  (D&S computes this; Hero never sees this number)\n```\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _on_hero_auto_attacked",
+          "start_line": 146,
+          "end_line": 162,
+          "text": "## D2 formula, extended by Hero Combat & Stats Redesign (2026-09-18): evasion\n## roll -> floor(base × tier_mult × crit_mult × target_mitigation ×\n## combat_variance). One flat HERO_DAMAGE_BONUS_MULTIPLIER for any\n## hero_bonus_tier > 0 (ELITE and BOSS resolve identically) — confirmed\n## correct per design/gdd/hero.md Formula 4 (`elite_boss_multiplier` range is\n## {1.0, 1.5}, no distinct BOSS value) and user decision (TD-story-002,\n## resolved 2026-07-08). Story 004's own text originally claimed a distinct\n## BOSS=2.0x, contradicting its own governing GDD; the story text was\n## corrected to match this shipped behavior instead. Target mitigation (real\n## armor/elemental-resist reduction of Hero's own outgoing damage) did not\n## exist at all before this redesign -- closes that gap. Lifesteal fraction\n## registered before await — must survive across the frame boundary.\nfunc _on_hero_auto_attacked(event: HeroAutoAttackEvent) -> void:\n\tif _roll_evasion(event.target_evasion):\n\t\treturn\n\tvar tier_dmg: float = event.base_damage * (HERO_DAMAGE_BONUS_MULTIPLIER if event.hero_bonus_tier > 0 else 1.0)\n\tvar crit_dmg: float = tier_dmg * (event.crit_multiplier_effective if event.is_crit else 1.0)"
+        }
+      ],
+      "seconds": 7.9
+    },
+    {
+      "claim": "The maximum Crit multiplier against an ELITE target is 3.25, resulting in a calculated damage of 487.5 which floors to 487.",
+      "quote": "Crit (max 3.25×) vs ELITE | 100 × 1.50 × 3.25 | floor(487.5) = **487**",
+      "line": 248,
+      "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+      "run_id": "11f11915-9f73-4b5f-9585-acd10fddd469",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1, D2, D3, and D4 all explicitly state that the maximum `crit_multiplier_effective` is 3.25, which applied to an ELITE target (tier bonus 1.50) yields a pre-floor value of 487.5 that floors to 487. Implementation source C2 supports this by noting that damage arrives with crit already applied, implying the system handles the specific multiplier values defined in design. Source C3 is unrelated as it defines a generic weapon component with a default multiplier of 1.5 and a range up to 3.0, which does not contradict the specific maximum value used for heroes.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D7 — Hero Skill Damage Resolution *(added 2026-08-25; closes `TD-hero-001` — Skill Power previously had zero consumers anywhere in the codebase)*",
+          "start_line": 398,
+          "end_line": 411,
+          "text": "tier_damage        = 240 × 1.50 = 360   (ELITE tier bonus)\ncrit_damage        = 360 × 1.75 = 630\nfinal_damage       = floor(630) = 630\n```\nCombined multiplier vs. the non-crit/STANDARD baseline: `1.50 × 1.75 = 2.625×` — identical stacking ratio to Formula D2's own ELITE-crit case (100 × 1.50 × 1.75 = 262), confirming parity between the two pipelines.\n\n*(c) Boundary — `skill_power = 0`* — `skill_power_coefficient=1.20`, `hero_bonus_tier=1`, `is_crit=true`, `crit_multiplier_effective=3.25`:\n```\nbase_skill_damage = 0 × 1.20 = 0\ntier_damage        = 0 × 1.50 = 0\ncrit_damage        = 0 × 3.25 = 0\nfinal_damage       = floor(0)  = 0   → suppression guard fires; monster_damage_taken is NOT emitted\n```\nNo divide-by-zero, no negative, no NaN. Unlike D4's `max(1, ...)` floor (a hit must always deal at least 1 damage), a 0-power skill hit is a legitimate non-event, not a hit that must be forced to deal damage."
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Edge Cases",
+          "start_line": 443,
+          "end_line": 446,
+          "text": "**EC-5: `crit_multiplier_effective` at maximum**\n`crit_multiplier_effective=3.25` (Hero System pre-computes: `1.75 base + 1.50 max bonus`). A crit on an ELITE target with base_damage=100: `floor(100 × hero_damage_bonus_multiplier × 3.25)` = `floor(100 × 1.50 × 3.25) = floor(487.5) = 487` (at default hero_damage_bonus_multiplier=1.50). This is the maximum output of Formula D2 for a given base_damage. Equipment Forge GDD must ensure no equipment combination can produce `crit_multiplier_effective > 3.25`. D&S does not re-clamp this value — it trusts Hero System pre-validation. Note: at max crit chance (80%) the expected DPS vs ELITE/BOSS (2.40× of base_damage) always exceeds expected DPS vs STANDARD (1.60× of base_damage) at any crit rate — the hero's tier bonus applies to crit and non-crit hits alike, so ELITE/BOSS are always the hero's superior DPS targets.\n\n**EC-6: `hero_damage_taken` minimum enforcement**"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 225,
+          "end_line": 246,
+          "text": "crit_damage  = tier_damage × (crit_multiplier_effective if is_crit else 1.0)\nfinal_damage = floor(crit_damage)\n```\n\n> **Note:** `crit_multiplier_effective` is pre-computed by Hero System as `hero_crit_multiplier_base (1.75) + crit_multiplier_bonus (0.0–1.50)`. D&S receives the resolved value in the payload — it does not read `crit_multiplier_bonus` independently. `hero_damage_bonus_multiplier` defaults to `1.50` — see Tuning Knobs. Worked examples below use the default value.\n\n**Multiplier table (base crit only, crit_multiplier_bonus = 0, hero_damage_bonus_multiplier = 1.50):**\n\n| Target | Non-crit | Crit |\n|--------|----------|------|\n| STANDARD (`hero_bonus_tier = 0`) | 1.00× | 1.75× |\n| ELITE (`hero_bonus_tier = 1`) | 1.50× | 2.625× |\n| BOSS (`hero_bonus_tier = 2`) | 1.50× | 2.625× |\n\n**Worked examples** (base_damage = 100, crit_multiplier_bonus = 0):\n\n| Scenario | Calculation | final_damage |\n|----------|-------------|--------------|\n| Non-crit vs STANDARD | 100 × 1.0 × 1.0 | 100 |\n| Non-crit vs ELITE | 100 × 1.50 × 1.0 | 150 |\n| Crit vs STANDARD | 100 × 1.0 × 1.75 | 175 |\n| Crit vs ELITE | 100 × 1.50 × 1.75 | floor(262.5) = **262** |"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D2 — Hero Damage Resolution",
+          "start_line": 245,
+          "end_line": 250,
+          "text": "| Crit vs STANDARD | 100 × 1.0 × 1.75 | 175 |\n| Crit vs ELITE | 100 × 1.50 × 1.75 | floor(262.5) = **262** |\n| Crit (+0.50 bonus) vs ELITE | 100 × 1.50 × 2.25 | floor(337.5) = **337** |\n| Crit (max 3.25×) vs ELITE | 100 × 1.50 × 3.25 | floor(487.5) = **487** |\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _on_tower_attacked",
+          "start_line": 107,
+          "end_line": 123,
+          "text": "## D1 formula: floor(raw_damage × mitigation). is_siege unused at MVP.\n## effect_type/effect_value/effect_duration (2026-08-13): burn/poison status\n## ticks are resolved by Monster System's own status-tick pass, not D&S — see\n## damage-status.md Rule I.3's exception note. Ignored here on purpose.\n##\n## armor_penetration/is_crit (Tower Stats System Phase 1, 2026-08-16):\n## armor_penetration reduces the armored-mitigation multiplier itself —\n## effective_mitigation = ARMORED_MITIGATION_MULTIPLIER + (1.0 -\n## ARMORED_MITIGATION_MULTIPLIER) × armor_penetration, clamped to\n## [ARMORED_MITIGATION_MULTIPLIER, 1.0] (0% pen = today's flat 0.5, 100% pen\n## = mitigation fully countered). damage_amount arrives with crit already\n## applied (TowerSystem's own job) — is_crit is only forwarded here so\n## MonsterDamageTaken carries a real value instead of the previous hardcoded\n## false, for any VFX/audio/HUD hook that wants to react to a tower crit.\nfunc _on_tower_attacked(_tower_id: int, target_monster_id: int, damage_amount: float,\n\t\t_is_siege: bool, is_armored: bool, _effect_type: String, _effect_value: float,\n\t\t_effect_duration: float, armor_penetration: float, is_crit: bool) -> void:"
+        }
+      ],
+      "seconds": 8.1
+    },
+    {
+      "claim": "The heal_amount is calculated as the floor of absorbed multiplied by hero_lifesteal_fraction.",
+      "quote": "heal_amount = floor(absorbed × hero_lifesteal_fraction)",
+      "line": 262,
+      "section": "Damage & Status System > Formulas > D3 — Lifesteal Heal Amount",
+      "run_id": "2109a330-c109-4f8e-8886-a4633901724b",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D2], [D3], and [D4] explicitly state that the formula for healing is `floor(absorbed × hero_lifesteal_fraction)`. Implementation source [C1] supports this claim by using the exact same logic in code: `var heal_amount: int = floori(absorbed * fraction)`. The other implementation sources ([C2]-[C6]) are unrelated to the specific calculation of lifesteal healing amount.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D3 — Lifesteal Heal Amount",
+          "start_line": 252,
+          "end_line": 271,
+          "text": "#### D3 — Lifesteal Heal Amount\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `absorbed` | int | 0–unbounded | Actual HP removed from the target, as emitted by Monster System in `monster_hp_absorbed`. Equals `min(final_damage, pre_hit_hp)`. |\n| `hero_lifesteal_fraction` | float | 0.0–0.40 | Hero's effective lifesteal, capped at `hero_lifesteal_cap` (0.40) |\n| `heal_amount` | int | 0–unbounded | HP returned to hero (Hero System clamps at max HP) |\n\n**Expression:**\n```\nheal_amount = floor(absorbed × hero_lifesteal_fraction)\n```\n\nNotes: Uses `absorbed` (actual HP removed) rather than `final_damage` (resolved damage before overkill cap). On overkill hits, lifesteal is limited to HP the monster actually had — not the full resolved damage. `heal_amount` CAN be 0 due to floor rounding; no minimum is enforced. Formula does not apply if `hero_lifesteal_fraction == 0`.\n\n**Worked examples:**\n\n| Scenario | `absorbed` | Calculation | heal_amount |\n|----------|------------|-------------|-------------|\n| 262 dmg, 20% lifesteal, target had 300 HP (no overkill) | 262 | floor(262 × 0.20) | **52** |"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Detailed Design > Core Rules",
+          "start_line": 96,
+          "end_line": 104,
+          "text": "4. `heal_amount = floor(absorbed × hero_lifesteal_fraction)`\n5. If `heal_amount > 0`: emit `hero_healed` immediately (synchronous — no `await`) with `amount: int = heal_amount`.\n6. If `heal_amount == 0` (due to floor rounding or `absorbed == 0`): suppress `hero_healed` — do not emit a zero-heal event.\n\nNote: At MVP, the hero attacks once per animation cycle. If a future mechanic introduces simultaneous multi-hit on the same target, `_lifesteal_pending[target_id]` would be overwritten by the second hit before the first `monster_hp_absorbed` arrives — an edge case to address if multi-hit is ever added.\n\n**VII. Wave Boundary Cleanup** (event: `wave_completed`)\n\n1. D&S subscribes to `wave_completed` (fourth subscription — see Rule I.2)."
+        },
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 6: Lifesteal Healing",
+          "start_line": 342,
+          "end_line": 350,
+          "text": "```\nheal_amount = floor(absorbed × hero_lifesteal_fraction)     [D&S computes this — Rule VI.4, damage-status.md]\nhp_recovered = min(heal_amount, max_health − current_health) [Hero applies the overheal clamp on hero_healed receipt]\n```\n\n| Variable | Symbol | Type | Range | Description | Owner |\n|----------|--------|------|-------|-------------|-------|\n| Absorbed damage | `absorbed` | int | 0 – target's pre-hit HP | Actual HP removed from the target, overkill-capped: `min(amount_received, pre_hit_hp)`. Computed by Monster System, emitted in `monster_hp_absorbed`. **Replaces the old `damage_dealt` basis**, which used the uncapped raw damage number and over-healed on overkill hits. | Monster System computes / D&S consumes |\n| Lifesteal fraction | `hero_lifesteal_fraction` | float | 0.00 – 0.40 | Hero's Lifesteal stat, clamped at `hero_lifesteal_cap = 0.40` (Hero-owned tuning knob). Forwarded to D&S in `HeroAutoAttackEvent.hero_lifesteal_fraction`, cached in D&S's `_lifesteal_pending` until the deferred `monster_hp_absorbed` arrives. **Renamed from `effective_lifesteal`** — same concept, matches the actual EventBus payload field name. | Hero System |"
+        },
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 6: Lifesteal Healing",
+          "start_line": 338,
+          "end_line": 342,
+          "text": "### Formula 6: Lifesteal Healing\n\n*(Corrected 2026-07-15 — flagged by `/review-all-gdds` as using a stale pre-overkill-cap basis. This formula previously computed healing from `damage_dealt`, the raw resolved damage before Monster System applies it to the target's HP — which can exceed the target's remaining HP on a killing blow (overkill). The actual, authoritative resolution is owned by the Damage & Status System (Rule VI, `damage-status.md`): D&S waits for `monster_hp_absorbed` from the Monster System, whose `absorbed: int` field is `min(amount_received, pre_hit_hp)` — the real HP removed, capped at what the monster had. Lifesteal off an overkill hit heals based on the monster's remaining HP, not the full (possibly much larger) damage number. Hero System does not compute `hp_recovered` itself at all — D&S computes `heal_amount` and emits `hero_healed`; Hero only applies the overheal clamp on receipt (Rule 6's sibling rule for `hero_healed` handling) and owns the `hero_lifesteal_cap` tuning constant. This formula is retained as a reference showing the actual healing math, corrected to the real basis and variable names.)*\n\n```"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/core/damage_status/damage_status.gd",
+          "section": "DamageStatus > _on_monster_hp_absorbed",
+          "start_line": 217,
+          "end_line": 225,
+          "text": "## D3 formula: floor(absorbed × fraction). Synchronous — ADR-0007 Level-1 cascade exemption.\nfunc _on_monster_hp_absorbed(entity_id: int, absorbed: int) -> void:\n\tif not _lifesteal_pending.has(entity_id):\n\t\treturn\n\tvar fraction: float = _lifesteal_pending[entity_id]\n\t_lifesteal_pending.erase(entity_id)\n\tvar heal_amount: int = floori(absorbed * fraction)\n\tif heal_amount > 0:\n\t\tGEventBus.hero_healed.emit(heal_amount)"
+        }
+      ],
+      "seconds": 9.6
+    },
+    {
+      "claim": "The hero_lifesteal_fraction is capped at 0.40.",
+      "quote": "hero_lifesteal_fraction | float | 0.0–0.40 | Hero's effective lifesteal, capped at `hero_lifesteal_cap` (0.40)",
+      "line": 257,
+      "section": "Damage & Status System > Formulas > D3 — Lifesteal Heal Amount",
+      "run_id": "3ba6284e-3847-4d39-8ec8-d014b2e05fff",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources D1, D3, and D4 explicitly state that `hero_lifesteal_fraction` is capped at 0.40 (or 40%), citing this as a tuning knob limit to prevent trivializing damage. Implementation sources C5 and C6 define the field but do not specify the cap value in their declarations or comments, making them unrelated to the specific claim about the cap limit.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Tuning Knobs",
+          "start_line": 512,
+          "end_line": 518,
+          "text": "| `hero_lifesteal_cap` (`hero_lifesteal_fraction` ceiling) | 40% | 20–60% | Lifesteal sustain trivialises damage; hero is unkillable | Lifesteal stat has no observable impact on survivability |\n| `effective_crit_chance` cap | 85% | 60–90% | High crit builds guarantee crits; variance disappears | Crit chance cap too low for crit-focused builds to feel distinct |\n| CDR cap | 75% | 50–90% | Near-zero cooldowns; skill spam eliminates resource management | CDR affixes feel useless; skills feel too slow |\n| Min effective cooldown | 0.5 seconds | 0.3–1.0 | Floor too high; CDR stops feeling useful before cap | Spammable skills with zero CDR; game becomes trivial |\n| Tower affinity bonus cap | 200% (+2.00) | 100–300% | Tower-affinity builds dwarf all other build paths | Diminishing returns kick in too early; affinity feels like a minor bonus |\n| Kill XP — STANDARD tier | 5 | 2–10 | Low-tier kills grant too little XP; grind feels endless | Early progression trivializes end-game; level cap reached too fast |\n| Kill XP — ELITE tier | 15 | 8–25 | Elite kills feel unrewarding | Elite farming becomes dominant XP strategy |"
+        },
+        {
+          "path": "design/gdd/damage-status.md",
+          "section": "Damage & Status System > Formulas > D3 — Lifesteal Heal Amount",
+          "start_line": 252,
+          "end_line": 271,
+          "text": "#### D3 — Lifesteal Heal Amount\n\n| Variable | Type | Range | Description |\n|----------|------|-------|-------------|\n| `absorbed` | int | 0–unbounded | Actual HP removed from the target, as emitted by Monster System in `monster_hp_absorbed`. Equals `min(final_damage, pre_hit_hp)`. |\n| `hero_lifesteal_fraction` | float | 0.0–0.40 | Hero's effective lifesteal, capped at `hero_lifesteal_cap` (0.40) |\n| `heal_amount` | int | 0–unbounded | HP returned to hero (Hero System clamps at max HP) |\n\n**Expression:**\n```\nheal_amount = floor(absorbed × hero_lifesteal_fraction)\n```\n\nNotes: Uses `absorbed` (actual HP removed) rather than `final_damage` (resolved damage before overkill cap). On overkill hits, lifesteal is limited to HP the monster actually had — not the full resolved damage. `heal_amount` CAN be 0 due to floor rounding; no minimum is enforced. Formula does not apply if `hero_lifesteal_fraction == 0`.\n\n**Worked examples:**\n\n| Scenario | `absorbed` | Calculation | heal_amount |\n|----------|------------|-------------|-------------|\n| 262 dmg, 20% lifesteal, target had 300 HP (no overkill) | 262 | floor(262 × 0.20) | **52** |"
+        },
+        {
+          "path": "design/gdd/hero.md",
+          "section": "Hero System > Formulas > Formula 6: Lifesteal Healing",
+          "start_line": 342,
+          "end_line": 350,
+          "text": "```\nheal_amount = floor(absorbed × hero_lifesteal_fraction)     [D&S computes this — Rule VI.4, damage-status.md]\nhp_recovered = min(heal_amount, max_health − current_health) [Hero applies the overheal clamp on hero_healed receipt]\n```\n\n| Variable | Symbol | Type | Range | Description | Owner |\n|----------|--------|------|-------|-------------|-------|\n| Absorbed damage | `absorbed` | int | 0 – target's pre-hit HP | Actual HP removed from the target, overkill-capped: `min(amount_received, pre_hit_hp)`. Computed by Monster System, emitted in `monster_hp_absorbed`. **Replaces the old `damage_dealt` basis**, which used the uncapped raw damage number and over-healed on overkill hits. | Monster System computes / D&S consumes |\n| Lifesteal fraction | `hero_lifesteal_fraction` | float | 0.00 – 0.40 | Hero's Lifesteal stat, clamped at `hero_lifesteal_cap = 0.40` (Hero-owned tuning knob). Forwarded to D&S in `HeroAutoAttackEvent.hero_lifesteal_fraction`, cached in D&S's `_lifesteal_pending` until the deferred `monster_hp_absorbed` arrives. **Renamed from `effective_lifesteal`** — same concept, matches the actual EventBus payload field name. | Hero System |"
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 7.3,
+      "review": {
+        "verdict_correct": false,
+        "note": "Missed: the cap exists, LIFESTEAL_CAP = 0.4 (hero.gd:68)."
+      }
+    }
+  ],
+  "project": "sanctuary"
+}

@@ -1,0 +1,561 @@
+{
+  "document": "design/gdd/wave-manager.md",
+  "section_filter": "Core Rules",
+  "generated": "2026-11-03T06:33:32+00:00",
+  "model": "qwen3.5",
+  "embedding_model": "nomic-embed-text",
+  "judge_mode": "per_source",
+  "evidence_gate": 0.6,
+  "passages_read": 8,
+  "passages_failed": [],
+  "minutes": 2.0,
+  "counts": {
+    "consistent": 9,
+    "insufficient_evidence": 3
+  },
+  "claims": [
+    {
+      "claim": "The Wave Manager is an Autoload singleton.",
+      "quote": "1. The Wave Manager is an Autoload singleton.",
+      "line": 47,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 1 — System Identity",
+      "run_id": "9a488db3-c401-4091-95b5-0532621474dc",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D2] and [D3] explicitly state that the Wave Manager is an 'Autoload singleton' responsible for mission phases. Implementation source [C1] supports this by noting in its header comments that `GWaveManager` is correctly registered as Autoload #7 in the project configuration.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Overview",
+          "start_line": 17,
+          "end_line": 17,
+          "text": "The Wave Manager is the mission director: it owns the full phase lifecycle of a mission (SCOUT → WAVE_ACTIVE → INTERMISSION → MISSION_COMPLETE / DEFEAT), sequences monster spawns within each wave, tracks wave-clear conditions, and drives phase transitions. It is an Autoload singleton, active for the duration of a mission and idle between missions. At mission launch it receives wave composition data from a `WaveConfig` Resource — an ordered list of `WaveScript` entries that define which monster types spawn, in what quantities, and on what per-spawn schedule for each wave. During WAVE_ACTIVE, the Wave Manager emits `monster_spawn_requested` events at timed intervals to cue the Monster System to instantiate entities. It tracks incoming `monster_died` / `monsters_died_batch` and `boss_died` events to detect wave completion, then advances to INTERMISSION (if more waves remain) or triggers MISSION_COMPLETE. A BOSS breach (`monster_breached` with `tier == 2`) counts as wave-cleared rather than a defeat condition — the Mission HUD provides the warning feedback. `hero_died` transitions to DEFEAT at any point. Phase timers (60s Scout, 20s Intermission, 10s pre-wave countdown) drive the wave"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 1 — System Identity",
+          "start_line": 45,
+          "end_line": 50,
+          "text": "#### Group 1 — System Identity\n\n1. The Wave Manager is an Autoload singleton. Active during missions; idle between missions. It is the sole authority on mission phase transitions — no other system may trigger a phase change.\n2. All cross-system communication goes through EventBus. The only direct Autoload calls are: (1) `Grid.get_spawn_cells()` once at `mission_launched`, and (2) `PathfindingSystem.is_rebuild_pending()` at the INTERMISSION→PRE_WAVE transition (Rule 22). All other cross-system communication uses EventBus signals.\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > declarations: Phase, scout_duration_sec, pre_wave_duration_sec, intermission_duration_sec, watchdog_stall_sec, watchdog_force_sec, _phase, _phase_locked, _wave_index, _enemies_alive, _all_spawns_fired, _templates_ready, _spawn_active, _rebuild_pending_gate, _spawn_cell, _wave_spawn_ent",
+          "start_line": 1,
+          "end_line": 22,
+          "text": "class_name WaveManager\nextends Node\n\n## Mission phase FSM — Sprint 3 Phase 1 (single-lane spawn coroutine), extended\n## by Story 001 (epic-04-wave-manager) with DEFEAT / MISSION_COMPLETE win-loss\n## conditions.\n##\n## Design source: production/stories/core/s3-06-wave-manager-phase1.md\n##   + production/epics/epic-04-wave-manager/story-001-defeat-mission-complete.md\n## Governing ADR: docs/architecture/adr-0012-wave-manager-fsm.md (Accepted)\n## ADR-0002 (revised 2026-05-24) specifies WaveManager as Autoload #7, after\n## GameDataRegistry (#5) and SceneManager (#6). `GWaveManager` is correctly\n## registered at position 7 in project.godot (TD-wave-001 closed 2026-07-03,\n## once S4-01/S4-02 landed both prerequisite Autoloads).\n##\n## Out of Scope for this story (see s3-06 story file and story-001/002 above):\n##   - Multi-lane spawn scripts — single-lane MVP only\n##\n## Story 003 (boss-fastpaths-wave-clear-robustness) landed: _on_boss_died() /\n## _on_monster_breached() / _on_monsters_died_batch() now *consume* the\n## _wave_clear_fired latch that Story 002 declares and sets — see those\n## handlers below (end of file), and the boss_died / monster_breached /"
+        }
+      ],
+      "seconds": 6.6
+    },
+    {
+      "claim": "The Wave Manager is the sole authority on mission phase transitions.",
+      "quote": "It is the sole authority on mission phase transitions — no other system may trigger a phase change.",
+      "line": 47,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 1 — System Identity",
+      "run_id": "daad9c94-b28a-4421-b7d7-9d8bbfbf1d36",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1, D4, and D5 explicitly state that the Wave Manager is the sole authority on mission phase transitions and that no other system may trigger a phase change. Implementation source C3 supports this by showing the Mission HUD reacting strictly to signals emitted by the Wave Manager via `_on_mission_phase_changed`. Source C4 further supports the claim by demonstrating the Wave Manager internally managing transitions between phases like SCOUT and MISSION_COMPLETE.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Overview",
+          "start_line": 17,
+          "end_line": 17,
+          "text": "The Wave Manager is the mission director: it owns the full phase lifecycle of a mission (SCOUT → WAVE_ACTIVE → INTERMISSION → MISSION_COMPLETE / DEFEAT), sequences monster spawns within each wave, tracks wave-clear conditions, and drives phase transitions. It is an Autoload singleton, active for the duration of a mission and idle between missions. At mission launch it receives wave composition data from a `WaveConfig` Resource — an ordered list of `WaveScript` entries that define which monster types spawn, in what quantities, and on what per-spawn schedule for each wave. During WAVE_ACTIVE, the Wave Manager emits `monster_spawn_requested` events at timed intervals to cue the Monster System to instantiate entities. It tracks incoming `monster_died` / `monsters_died_batch` and `boss_died` events to detect wave completion, then advances to INTERMISSION (if more waves remain) or triggers MISSION_COMPLETE. A BOSS breach (`monster_breached` with `tier == 2`) counts as wave-cleared rather than a defeat condition — the Mission HUD provides the warning feedback. `hero_died` transitions to DEFEAT at any point. Phase timers (60s Scout, 20s Intermission, 10s pre-wave countdown) drive the wave"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Overview",
+          "start_line": 17,
+          "end_line": 19,
+          "text": "rhythm and are surfaced to the player via `phase_timer_tick` and `wave_countdown_warning` events consumed by the Mission HUD. Without the Wave Manager, no monsters spawn, no phases advance, and the mission has no rhythm — the defence systems have nothing to defend against.\n\nFrom the player's perspective, the Wave Manager is what makes the battlefield feel alive: the countdown before a wave that creates urgency, the composition of the incoming horde that shapes the next 90 seconds, the escalation from wave 1 to the final BOSS. It doesn't announce itself — but every time the player feels pressure build, braces for the next wave, or exhales as the last monster falls, that is the Wave Manager's work."
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 1 — System Identity",
+          "start_line": 45,
+          "end_line": 50,
+          "text": "#### Group 1 — System Identity\n\n1. The Wave Manager is an Autoload singleton. Active during missions; idle between missions. It is the sole authority on mission phase transitions — no other system may trigger a phase change.\n2. All cross-system communication goes through EventBus. The only direct Autoload calls are: (1) `Grid.get_spawn_cells()` once at `mission_launched`, and (2) `PathfindingSystem.is_rebuild_pending()` at the INTERMISSION→PRE_WAVE transition (Rule 22). All other cross-system communication uses EventBus signals.\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/presentation/mission_hud/mission_hud.gd",
+          "section": "MissionHud > _on_mission_phase_changed",
+          "start_line": 343,
+          "end_line": 359,
+          "text": "## AC-2/AC-3: mount on IDLE->SCOUT (reset + become visible), unmount on entry\n## to MISSION_COMPLETE/DEFEAT (become hidden, node persists). AC-6: tower HP\n## bars cleared wholesale on every INTERMISSION entry (towers reset to\n## max_hp between waves). AC-8/AC-9/AC-10 (Story 002): drives the Planning\n## Cluster's re-instantiate/teardown/partial-interactivity lifecycle.\nfunc _on_mission_phase_changed(previous_phase: String, new_phase: String, _timestamp: float) -> void:\n\t_current_phase = new_phase\n\t_phase_label.text = tr(\"HUD_PHASE\") % phase_display_name(new_phase)  # AC-63 (PC-4)\n\t# Story 012 (AC-70) fix: originally gated on previous_phase == \"IDLE\"\n\t# specifically — but WaveManager never resets its own _phase back to IDLE\n\t# before re-emitting mission_launched on a DEFEAT retry (_reset_all_state()\n\t# resets _wave_index/counters, not _phase itself), so a retry's transition\n\t# arrives as (previous_phase=\"DEFEAT\", new_phase=\"SCOUT\"). WaveManager's\n\t# FSM only ever enters SCOUT as a mission-start transition (never\n\t# mid-mission), so gating on new_phase alone is safe and is what AC-70\n\t# actually requires (\"reacts to it exactly like an initial mission launch\").\n\tmatch new_phase:"
+        },
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _on_mission_launched",
+          "start_line": 827,
+          "end_line": 844,
+          "text": "_transition_to(Phase.MISSION_COMPLETE)  # AC-36 — bypasses SCOUT entirely\n\t\treturn\n\tif _wave_config.wave_scripts.is_empty():\n\t\tpush_error(\"WaveManager: WaveConfig has 0 wave_scripts — mission has no waves. Triggering MISSION_COMPLETE immediately.\")\n\t\t_transition_to(Phase.MISSION_COMPLETE)  # AC-19 — bypasses SCOUT entirely\n\t\treturn\n\t_wave_scripts_count = _wave_config.wave_scripts.size()\n\t_validate_wave_time_budgets()  # AC-41 — logs only, never aborts\n\t# Do NOT duplicate the [0.10, 0.25] bounds check inline here — Story 004\n\t# already implemented this exact validation as _validate_difficulty_growth_rate(),\n\t# reading the WaveManager-level `difficulty_growth_rate` field (idempotent,\n\t# no state mutation, safe to call at any FSM phase). Assign the loaded\n\t# WaveConfig's value into that existing field, then call the existing\n\t# function, so Story 004's 5 validation tests actually cover the real\n\t# production path instead of exercising a function that never gets called.\n\tdifficulty_growth_rate = _wave_config.difficulty_growth_rate\n\t_validate_difficulty_growth_rate()\n\t_transition_to(Phase.SCOUT)"
+        }
+      ],
+      "seconds": 8.6
+    },
+    {
+      "claim": "The total number of waves in a mission is constrained to a range of 5 to 8.",
+      "quote": "`wave_scripts.size()` = total wave count (5–8)",
+      "line": 58,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+      "run_id": "e2d3f8bd-923b-4c3c-8c40-8c0b439d9148",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources D1, D2, D3, and D5 explicitly state that the wave count range is 5 to 8, with D2 noting this is the 'safe range' for the Wave Manager. Implementation source C3 defines `base_wave_count` as an integer starting at 5, while C2 and C4 use `_wave_scripts_count` to determine penultimate and final waves, implying a count that fits within the documented bounds. Although C1 simply records the total, it supports the claim by treating the total as a valid metric without contradicting the range.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Tuning Knobs > Tuning Notes",
+          "start_line": 430,
+          "end_line": 432,
+          "text": "- `wave_count` of 8 at `r=0.25` produces `wave_reward_scalar` of 4.768× at the final wave — the designed ceiling. Do not author more than 8 waves.\n- **Wave count and total mission economy**: Longer missions yield disproportionately higher total economic output under dual-dimension scaling. At r=0.20, the sum of `wave_reward_scalar^2` (combined quantity × quality output per wave) across all waves is **11.80** for a 5-wave mission and **39.74** for an 8-wave mission — an 8-wave mission produces approximately **3.37× the total combined economic output** of a 5-wave mission. This disparity is intentional: longer missions represent greater investment and greater reward. The Resource Economy GDD must not normalize per-wave base drop rates by `wave_count` unless this principle is explicitly revised. *(Note: the quantity-only sum ratio is 7.44 vs 16.50 = 2.22× — the 3.37× figure is the correct combined-dimension figure and the one the Resource Economy GDD must calibrate against.)*\n- Increasing `pre_wave_countdown` beyond 15s is inadvisable: after the intermission debrief is done, the player is waiting without control — tension decays into boredom."
+        },
+        {
+          "path": "design/gdd/mission-select.md",
+          "section": "Mission Select System > Formulas > Formula 1: Requested Wave Count Delta",
+          "start_line": 123,
+          "end_line": 127,
+          "text": "**Output range**: Unbounded by this GDD — 5 to 10 is the raw arithmetic range at Alpha's `base_wave_count` (5–8) and `extend_waves_value` (0–2) bounds. **Not clamped here.** Wave Manager's own registered safe range for total wave count is 5–8 (`wave_count` tuning knob, `wave-manager.md`) — any requested value above 8 is Wave Manager's own responsibility to clamp or reject (Rule 9's non-duplication decision). This GDD only defines what is *requested*, never what is *honored*.\n\n**Worked example**: A mission with `base_wave_count = 6` and the player toggling `\"extend_waves\"` to its high position (`extend_waves_value = 2.0`) yields `requested_wave_count = 8` — at the top of Wave Manager's own safe range, so in this example the request is fully honored. A mission with `base_wave_count = 8` and the same toggle yields `requested_wave_count = 10` — 2 above Wave Manager's ceiling; per Rule 9, Mission Select still sends `extend_waves_value = 2.0` unmodified via `run_modifier_selected`, and Wave Manager's own clamp (not specified here) determines the actual outcome.\n\n---"
+        },
+        {
+          "path": "design/gdd/mission-select.md",
+          "section": "Mission Select System > Formulas > Formula 1: Requested Wave Count Delta",
+          "start_line": 111,
+          "end_line": 121,
+          "text": "### Formula 1: Requested Wave Count Delta\n\n```\nrequested_wave_count = base_wave_count + extend_waves_value\n```\n\n| Symbol | Type | Range | Description |\n|--------|------|-------|-------------|\n| `base_wave_count` | int | 5–8 | The mission's authored base wave count (cached display value; Wave Manager's loaded `WaveConfig.wave_scripts.size()` is the real source). |\n| `extend_waves_value` | float | `{0.0, 1.0, 2.0}` | The `\"extend_waves\"` `run_modifier_selected` value currently toggled. |\n| `requested_wave_count` | float | 5–10 (unclamped here) | The value Mission Select conceptually \"requests.\" Never sent as its own field — Wave Manager derives its actual final wave count from its own `WaveConfig` content plus this modifier per its own rules. |"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+          "start_line": 52,
+          "end_line": 62,
+          "text": "#### Group 2 — Wave Composition Schema\n\n3. Wave composition is defined by a `WaveConfig` Resource (`.tres` file in `assets/data/waves/`). One `WaveConfig` per mission. Fields:\n\n   | Field | Type | Description |\n   |-------|------|-------------|\n   | `wave_scripts` | `Array[WaveScript]` | Ordered list of waves; `wave_scripts.size()` = total wave count (5–8) |\n   | `difficulty_growth_rate` | `float` | Per-wave exponential scalar growth. Default: 0.20. Safe range: 0.15–0.25 |\n   | `wave_time_budget` | `float` | Maximum total `pre_delay` sum (seconds) across all entries in a single `WaveScript`. Default: 90s. Safe range: 45–120s. Validated at `mission_launched`; content authoring error if any wave exceeds this budget. **Bounds the spawn-scheduling window only** — prevents excessively long `pre_delay` chains. Independent of `wave_stuck_timeout`, which governs the post-spawn stuck-state safety net. Maximum WAVE_ACTIVE duration at defaults = `wave_time_budget` (90s) + `wave_stuck_timeout` (60s) + monster traversal time — these timers are sequential, not competing. |\n\n4. A `WaveScript` Resource defines one wave. Field: `entries: Array[WaveSpawnEntry]`."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/presentation/mission_outcome/mission_outcome_stats.gd",
+          "section": "MissionOutcomeStats > on_wave_started",
+          "start_line": 28,
+          "end_line": 30,
+          "text": "## wave_started handler: records the mission's total wave count.\nfunc on_wave_started(_wave_number: int, total: int, _difficulty: float) -> void:\n\ttotal_waves = total"
+        },
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _is_penultimate_wave",
+          "start_line": 769,
+          "end_line": 774,
+          "text": "## Rule 15c / AC-12 (Story 004): penultimate = second-to-last wave, ONLY for\n## missions with 5+ waves — sub-5-wave missions never report penultimate\n## (the sub-5-wave exemption). O(1) per call; invoked once per spawn entry\n## (from _run_spawn_sequence()'s per-entry loop), not per frame.\nfunc _is_penultimate_wave() -> bool:\n\treturn _wave_index == _wave_scripts_count - 1 and _wave_scripts_count >= 5"
+        },
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _is_final_wave",
+          "start_line": 759,
+          "end_line": 766,
+          "text": "## Rule 13 / AC-6 (Story 001): the mission's final wave clearing ends the\n## mission (MISSION_COMPLETE) instead of opening another INTERMISSION.\n## _wave_index is 1-based (incremented in _enter_wave_active() before the\n## first spawn); _wave_scripts_count is the Story 001 test-injection\n## placeholder for the total wave count (see field comment — Story 006\n## supersedes it with the real WaveConfig.wave_scripts.size()).\nfunc _is_final_wave() -> bool:\n\treturn _wave_index >= _wave_scripts_count"
+        }
+      ],
+      "seconds": 7.7
+    },
+    {
+      "claim": "The default value for `difficulty_growth_rate` is 0.20 with a safe range of 0.15–0.25.",
+      "quote": "Default: 0.20. Safe range: 0.15–0.25",
+      "line": 59,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+      "run_id": "4e8aaca0-c1c6-43cb-bb87-be88879d5873",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D3], and [D5] explicitly state that the default `difficulty_growth_rate` is 0.20 with a safe range of 0.15–0.25 (or 0.10–0.25 in validation contexts). Implementation source [C5] supports this by defining the default value as 0.20 and referencing the GDD's safe range, while [C1] shows a specific mission instance using 0.22, which falls within the stated safe range.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/mission-select.md",
+          "section": "Mission Select System > Formulas > Formula 2: Requested Difficulty Growth Rate Delta",
+          "start_line": 129,
+          "end_line": 141,
+          "text": "### Formula 2: Requested Difficulty Growth Rate Delta\n\n```\nrequested_r = base_r + difficulty_growth_boost_value\n```\n\n| Symbol | Type | Range | Description |\n|--------|------|-------|-------------|\n| `base_r` | float | 0.15–0.25 | The mission's authored `WaveConfig.difficulty_growth_rate` (Wave Manager's own data; default 0.20). |\n| `difficulty_growth_boost_value` | float | `{0.0, 0.03, 0.05}` | The `\"difficulty_growth_boost\"` `run_modifier_selected` value currently toggled. |\n| `requested_r` | float | 0.15–0.30 (unclamped here) | The conceptual requested growth rate. Never sent as its own field — Wave Manager applies this modifier to its own `WaveConfig` value per its own rules. |\n\n**Output range**: Unbounded by this GDD. Wave Manager's own runtime-validated hard range is 0.10–0.25 (`wave_reward_scalar`/`difficulty_growth_rate`, `wave-manager.md`) — a `requested_r` above 0.25 is Wave Manager's own clamp responsibility (Rule 9)."
+        },
+        {
+          "path": "design/gdd/game-concept.md",
+          "section": "Sanctuary Defenders — Game Concept > Tuning Knobs",
+          "start_line": 144,
+          "end_line": 154,
+          "text": "## Tuning Knobs\n\n| Parameter | Default Value | Safe Range | Too High | Too Low |\n|---|---|---|---|---|\n| Default wave count | 6 | 5–8 | Mission feels endless | Mission ends before build pays off |\n| Scout phase duration | 60 sec | 30–120 sec | Kills urgency | Not enough time to plan |\n| Intermission duration | 30 sec | 25–40 sec | Breaks mission tension | Too rushed to make decisions |\n| Wave reward growth rate (`wave_reward_scalar`'s `r`) | 0.20 | 0.10–0.35 | Late-wave rewards feel excessive relative to escalating cost | No reward escalation felt. *(Renamed 2026-07-15 from \"Wave difficulty growth rate\" — this knob controls reward scaling, not combat difficulty; see the Wave Reward Scalar section above. Combat difficulty escalation is `monster.md`'s separate `hp_wave_growth_rate`.)* |\n| Extended mode ceiling | 45 min | 30–90 min | Session fatigue | Modifiers feel cosmetic |\n| Base material drop rate | 0.45 | 0.3–0.6 | Crafting trivialised | Meta-progression grinds to a halt |\n| Menagerie quality bonus ceiling | 1.5× | 1.0–2.0× | Replaces crafting skill | Menagerie investment feels pointless |"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+          "start_line": 52,
+          "end_line": 62,
+          "text": "#### Group 2 — Wave Composition Schema\n\n3. Wave composition is defined by a `WaveConfig` Resource (`.tres` file in `assets/data/waves/`). One `WaveConfig` per mission. Fields:\n\n   | Field | Type | Description |\n   |-------|------|-------------|\n   | `wave_scripts` | `Array[WaveScript]` | Ordered list of waves; `wave_scripts.size()` = total wave count (5–8) |\n   | `difficulty_growth_rate` | `float` | Per-wave exponential scalar growth. Default: 0.20. Safe range: 0.15–0.25 |\n   | `wave_time_budget` | `float` | Maximum total `pre_delay` sum (seconds) across all entries in a single `WaveScript`. Default: 90s. Safe range: 45–120s. Validated at `mission_launched`; content authoring error if any wave exceeds this budget. **Bounds the spawn-scheduling window only** — prevents excessively long `pre_delay` chains. Independent of `wave_stuck_timeout`, which governs the post-spawn stuck-state safety net. Maximum WAVE_ACTIVE duration at defaults = `wave_time_budget` (90s) + `wave_stuck_timeout` (60s) + monster traversal time — these timers are sequential, not competing. |\n\n4. A `WaveScript` Resource defines one wave. Field: `entries: Array[WaveSpawnEntry]`."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "assets/data/waves/the_duskwood_waves.tres",
+          "section": "WaveConfig",
+          "start_line": 330,
+          "end_line": 332,
+          "text": "difficulty_growth_rate = 0.22\nwave_time_budget = 110.0\nreward_base = 1.0"
+        },
+        {
+          "path": "src/gameplay/wave_config.gd",
+          "section": "WaveConfig > declarations: wave_scripts, difficulty_growth_rate, wave_time_budget, reward_base",
+          "start_line": 1,
+          "end_line": 21,
+          "text": "class_name WaveConfig\nextends Resource\n\n## Per-mission wave composition data. One WaveConfig.tres per mission, stored\n## at assets/data/waves/{mission_id}_waves.tres (ADR-0009: Resource Data Model\n## — \"WaveConfig — Embedded Nested Resources\"). WaveScript / WaveSpawnEntry\n## are embedded sub-Resources — no separate .tres files per wave or entry.\n##\n## Field schema note (Story 006, epic-04-wave-manager, 2026-07-05): ADR-0009's\n## canonical schema (Key Interfaces section) lists `reward_base` but not\n## `wave_time_budget`. This story's own Implementation Notes and AC-41 require\n## `wave_time_budget` — it has no other source anywhere in this codebase.\n## Resolution: keep BOTH fields. `wave_time_budget` is read and validated by\n## WaveManager (AC-41 — pre_delay-sum overrun check, logs only). `reward_base`\n## is kept for ADR-0009 schema-completeness; it is NOT yet wired to anything —\n## Story 004's wave_reward_scalar formula reads WaveManager's own\n## `difficulty_growth_rate` field, not this Resource's `reward_base`. Do not\n## drop either field.\n##\n## GDD source: design/gdd/wave-manager.md\n## Governing ADRs: docs/architecture/adr-0009-resource-data-model.md (Accepted)"
+        }
+      ],
+      "seconds": 8.3
+    },
+    {
+      "claim": "The penultimate wave (wave N-1) must contain only ELITE monster_id values.",
+      "quote": "The **penultimate wave** (wave N−1, where N = `wave_scripts.size()`) entries must contain only ELITE `monster_id` values.",
+      "line": 73,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+      "run_id": "ac16c699-4c0a-4e92-8a73-7a41fc59e384",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design sources D2 and D5 explicitly state that the penultimate wave must contain only ELITE-tier entries, with D2 noting this applies when `wave_scripts.size() >= 5` and D5 defining the rule for missions above the minimum wave count. Implementation sources C1 through C6 define data structures and signals but do not contain logic enforcing or contradicting this specific content constraint; they are unrelated to the claim's validity regarding wave composition rules.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Acceptance Criteria > Edge Case Handling",
+          "start_line": 566,
+          "end_line": 567,
+          "text": "- **If `wave_scripts.size() >= 5`**: The penultimate wave contains only ELITE-tier entries; tier is determined by reading `MonsterResource.tier` from the corresponding `.tres` file resolved by `monster_id` match to the `id` field. Tier schema cross-reference: `{0: STANDARD, 1: ELITE, 2: BOSS}` per Monster System GDD — the validator must read this schema from MonsterResource, not hard-code it. **If `wave_scripts.size() < 5`**: Skip the penultimate tier check (emit advisory log only; do not fail CI). This matches Rule 6's exemption for sub-5-wave missions.\n- **Minimum entries per wave**: Every wave must contain at least 2 entries (`entries.size() >= 2`). A 1-entry wave is a content authoring error (insufficient to create meaningful wave pressure). Hard CI failure."
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+          "start_line": 62,
+          "end_line": 74,
+          "text": "4. A `WaveScript` Resource defines one wave. Field: `entries: Array[WaveSpawnEntry]`.\n\n5. A `WaveSpawnEntry` Resource defines one monster spawn event. Fields:\n\n   | Field | Type | Description |\n   |-------|------|-------------|\n   | `monster_id` | `StringName` | References a MonsterResource by id |\n   | `spawn_cell_index` | `int` | Index into `Grid.get_spawn_cells()`. `-1` = round-robin auto-assign |\n   | `pre_delay` | `float` | Seconds to wait after the previous entry (or after `wave_started` for index 0) before firing this spawn. Minimum: 0.0 |\n\n6. Content constraints (validated by QA, not enforced at runtime):\n   - The **penultimate wave** (wave N−1, where N = `wave_scripts.size()`) entries must contain only ELITE `monster_id` values. For a 5-wave mission this is wave 4; for an 8-wave mission this is wave 7. For a 2-wave mission (below the 5-wave minimum) this rule does not apply.\n   - The final wave's entries must contain at least two entries: one or more standard/elite monsters followed by exactly one BOSS `monster_id` as the last entry."
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 10.0
+    },
+    {
+      "claim": "The final wave's entries must contain exactly one BOSS monster_id as the last entry.",
+      "quote": "The final wave's entries must contain at least two entries: one or more standard/elite monsters followed by exactly one BOSS `monster_id` as the last entry.",
+      "line": 74,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+      "run_id": "65440e17-0a44-41ee-b71b-88327df78701",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "All design sources (D1, D2, D3, D4, D5) explicitly state that the final wave must contain exactly one BOSS-tier entry as the last element of its array. Implementation sources (C1-C6) are unrelated to this specific structural claim as they define data structures or signals without enforcing the ordering constraint.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Acceptance Criteria > Edge Case Handling",
+          "start_line": 568,
+          "end_line": 570,
+          "text": "- **Final wave constraints**: The final wave contains `entries.size() >= 2` AND all entries at indices `[0 .. N-2]` (every entry except the last) are **not** BOSS-tier — AND the last entry is exactly one BOSS-tier entry (same tier-resolution method). A single-entry final wave containing only a BOSS fails this check. **AND the final wave's BOSS entry (last entry) has `spawn_cell_index >= 0`** — hard CI failure if `spawn_cell_index == -1` *(added during `/design-review` 2026-07-14 re-review, enforces Rule 6's boss-lane-telegraph constraint — a round-robin BOSS spawn cell cannot be resolved at `wave_preview_available` preview time)*.\n- **BOSS-at-non-last in any wave**: For every wave at any index, no entry at position `[0 .. entries.size()-2]` (any non-last position) may be BOSS-tier (hard CI failure). This closes the gap that EC-10's DEBUG-only runtime assert cannot catch in release builds.\n- No individual wave's total `pre_delay` sum exceeds `wave_time_budget`"
+        },
+        {
+          "path": "design/gdd/mission-hud.md",
+          "section": "Mission HUD System > Detailed Rules > Core Rules",
+          "start_line": 39,
+          "end_line": 39,
+          "text": "- `_boss_state: {entity_id, display_name, current_hp, max_hp} or null` — set on `monster_spawned` with BOSS tier **only if `_boss_state == null`**; if a second BOSS-tier `monster_spawned` arrives while `_boss_state != null`, log a warning and discard without overwriting. This should never trigger in practice — `wave-manager.md`'s CI validator (Rule enforcing \"no entry at any non-last position may be BOSS-tier,\" final wave \"exactly one BOSS-tier entry as the last entry\") guarantees at most one BOSS exists per mission. The guard exists as defense-in-depth, not because concurrent bosses are a supported case. Cleared on `boss_died` **only if the received `entity_id` matches `_boss_state.entity_id`** — a `boss_died` for a non-matching (or already-null) entity_id is treated as stray and discarded, same idempotent spirit as the existing null-state guard in Edge Cases. (Resolves a correctness bug found during `/design-review`: the original unkeyed version would silently swap or wipe the wrong boss's bar if the one-BOSS invariant were ever violated upstream.)"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Edge Cases > EC-10 — BOSS authored at a non-last position in WaveScript",
+          "start_line": 360,
+          "end_line": 364,
+          "text": "### EC-10 — BOSS authored at a non-last position in WaveScript\n\nContent constraint violation: a `WaveSpawnEntry` with a BOSS `monster_id` appears at any index other than the final entry in a `WaveScript`. At runtime, when the BOSS dies or breaches, the `boss_died` / BOSS breach fast-path (Rules 20–21) clears the wave immediately — all un-fired entries after the BOSS index are discarded. The wave ends 30–50% through its intended spawn list with no player-visible indication of the missing monsters.\n\n**Detection**: DEBUG assert in Wave Manager on `mission_launched`. On receiving the event, Wave Manager iterates each `WaveScript.entries` array: for every entry at any index less than `entries.size() - 1`, if the `monster_id` resolves to a BOSS-tier MonsterResource, log an error: `\"WaveScript[N] authoring error: BOSS entry at position [i] is not the last entry. Entries at indices [i+1 … end] will never fire if the BOSS is killed or breached.\"` The assert fires in DEBUG builds only; the mission continues without crashing."
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+          "start_line": 75,
+          "end_line": 77,
+          "text": "- **The final wave's BOSS entry must use an explicit `spawn_cell_index >= 0` — round-robin (`spawn_cell_index = -1`) is not permitted on a BOSS entry.** *(Added during `/design-review` 2026-07-14 re-review, resolves Tower GDD OQ-11's boss-lane telegraph requirement.)* **Rationale:** `wave_preview_available` (Rule 11) must surface the boss's spawn cell at INTERMISSION entry, before the wave's spawn sequencing has run — but round-robin resolution (Rule 15b) depends on `_round_robin_counter`, which only advances as entries actually fire during WAVE_ACTIVE (Rule 10f resets it to 0 at wave start). A round-robin boss entry has no resolvable spawn cell at preview time. Requiring an explicit index sidesteps building a parallel simulated-resolution algorithm. Enforced by the AC-19b CI validator (see Edge Cases and Acceptance Criteria).\n\n---"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+          "start_line": 62,
+          "end_line": 74,
+          "text": "4. A `WaveScript` Resource defines one wave. Field: `entries: Array[WaveSpawnEntry]`.\n\n5. A `WaveSpawnEntry` Resource defines one monster spawn event. Fields:\n\n   | Field | Type | Description |\n   |-------|------|-------------|\n   | `monster_id` | `StringName` | References a MonsterResource by id |\n   | `spawn_cell_index` | `int` | Index into `Grid.get_spawn_cells()`. `-1` = round-robin auto-assign |\n   | `pre_delay` | `float` | Seconds to wait after the previous entry (or after `wave_started` for index 0) before firing this spawn. Minimum: 0.0 |\n\n6. Content constraints (validated by QA, not enforced at runtime):\n   - The **penultimate wave** (wave N−1, where N = `wave_scripts.size()`) entries must contain only ELITE `monster_id` values. For a 5-wave mission this is wave 4; for an 8-wave mission this is wave 7. For a 2-wave mission (below the 5-wave minimum) this rule does not apply.\n   - The final wave's entries must contain at least two entries: one or more standard/elite monsters followed by exactly one BOSS `monster_id` as the last entry."
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 11.5
+    },
+    {
+      "claim": "The final wave's BOSS entry must use an explicit spawn_cell_index with a value greater than or equal to 0.",
+      "quote": "The final wave's BOSS entry must use an explicit `spawn_cell_index >= 0`",
+      "line": 75,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+      "run_id": "51481818-f60b-47dc-a88c-2bfb09dd181b",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D2], and [D3] explicitly state that the final wave's BOSS entry must use an explicit `spawn_cell_index >= 0`, forbidding round-robin (`-1`). Implementation source [C1] supports this by noting the preview function simulates resolution rules where 'explicit spawn_cell_index >= 0' is required, while [C2] implements the logic to handle positive indices first. Source [C5] further states that `spawn_cell_index` represents a positive index or -1 for round-robin, aligning with the design constraint.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+          "start_line": 75,
+          "end_line": 77,
+          "text": "- **The final wave's BOSS entry must use an explicit `spawn_cell_index >= 0` — round-robin (`spawn_cell_index = -1`) is not permitted on a BOSS entry.** *(Added during `/design-review` 2026-07-14 re-review, resolves Tower GDD OQ-11's boss-lane telegraph requirement.)* **Rationale:** `wave_preview_available` (Rule 11) must surface the boss's spawn cell at INTERMISSION entry, before the wave's spawn sequencing has run — but round-robin resolution (Rule 15b) depends on `_round_robin_counter`, which only advances as entries actually fire during WAVE_ACTIVE (Rule 10f resets it to 0 at wave start). A round-robin boss entry has no resolvable spawn cell at preview time. Requiring an explicit index sidesteps building a parallel simulated-resolution algorithm. Enforced by the AC-19b CI validator (see Edge Cases and Acceptance Criteria).\n\n---"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Acceptance Criteria > Edge Case Handling",
+          "start_line": 568,
+          "end_line": 570,
+          "text": "- **Final wave constraints**: The final wave contains `entries.size() >= 2` AND all entries at indices `[0 .. N-2]` (every entry except the last) are **not** BOSS-tier — AND the last entry is exactly one BOSS-tier entry (same tier-resolution method). A single-entry final wave containing only a BOSS fails this check. **AND the final wave's BOSS entry (last entry) has `spawn_cell_index >= 0`** — hard CI failure if `spawn_cell_index == -1` *(added during `/design-review` 2026-07-14 re-review, enforces Rule 6's boss-lane-telegraph constraint — a round-robin BOSS spawn cell cannot be resolved at `wave_preview_available` preview time)*.\n- **BOSS-at-non-last in any wave**: For every wave at any index, no entry at position `[0 .. entries.size()-2]` (any non-last position) may be BOSS-tier (hard CI failure). This closes the gap that EC-10's DEBUG-only runtime assert cannot catch in release builds.\n- No individual wave's total `pre_delay` sum exceeds `wave_time_budget`"
+        },
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Detailed Design > Core Rules > Group 3: Placement",
+          "start_line": 166,
+          "end_line": 166,
+          "text": "_spawn_cell` is **always present** in the payload — sentinel `Vector2i(-1, -1)` on non-boss waves, never conditionally absent. **No separate `has_boss` field exists** — Wave Manager's own review found it redundant: boss presence for the previewed wave is already derivable from `next_wave_number == total_waves`, and is already present in the payload's existing `composition` array via the boss's `monster_id`; a second boolean would be a second, desync-prone source of truth for the same fact. **Cross-doc requirement:** this is a Wave Manager GDD change (`wave_preview_available` payload extension, Rule 11) and a Mission HUD display requirement, not something Tower System implements directly — Tower System does not consume `wave_preview_available` (the HUD does), same as the existing wave-preview mandate above. **This field is content-authoring-dependent**: Wave Manager's Rule 6 now requires the final wave's BOSS entry to use an explicit `spawn_cell_index` (round-robin forbidden) so `boss_spawn_cell` is resolvable at preview time — Tower System has no dependency on this constraint beyond consuming its result."
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _preview_boss_spawn_cell",
+          "start_line": 479,
+          "end_line": 495,
+          "text": "## Mission HUD ADR-0031 (Story 006, closes tower.md's OQ-11): read-only\n## preview of the BOSS-tier entry's spawn cell for wave_number, so it can be\n## carried in wave_preview_available BEFORE that wave actually spawns.\n## Deliberately does NOT call _resolve_spawn_cell() / touch the real\n## _round_robin_counter — that field is wave-scoped mutable state consumed\n## during actual spawning (_run_spawn_sequence()), and calling it here would\n## desync the real spawn resolution from what was previewed. Instead\n## simulates round-robin locally with its own counter, mirroring\n## _resolve_spawn_cell()'s exact resolution rules (explicit spawn_cell_index\n## >= 0, or round-robin for -1) without any shared mutable state.\n## Returns Vector2i(-1,-1) if the wave has no BOSS-tier entry, spawn cells\n## are empty, or wave_number has no known composition yet.\nfunc _preview_boss_spawn_cell(wave_number: int) -> Vector2i:\n\tvar entries: Array = []\n\tif _wave_config != null and wave_number >= 1 and wave_number <= _wave_config.wave_scripts.size():\n\t\tentries = (_wave_config.wave_scripts[wave_number - 1] as WaveScript).entries\n\telif _wave_composition_by_number.has(wave_number):"
+        },
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _resolve_spawn_cell",
+          "start_line": 535,
+          "end_line": 552,
+          "text": "func _resolve_spawn_cell(entry: WaveSpawnEntry) -> Vector2i:\n\tif _spawn_cells.is_empty():\n\t\tpush_error(\"WaveManager: _resolve_spawn_cell() called with empty _spawn_cells — should have been caught by Story 006's mission_launched guard.\")\n\t\treturn Vector2i(-1, -1)\n\tif entry.spawn_cell_index >= 0:\n\t\tvar index: int = entry.spawn_cell_index\n\t\tif index >= _spawn_cells.size():\n\t\t\tpush_warning(\"WaveManager: spawn_cell_index [%d] out of range — wrapping to %d.\" % [index, index % _spawn_cells.size()])\n\t\treturn _spawn_cells[index % _spawn_cells.size()]\n\telse:\n\t\t# Code review fix (Story 007): Rule 15b only defines behavior for\n\t\t# spawn_cell_index >= 0 (positive index) or exactly -1 (round-robin) —\n\t\t# any other negative value (e.g. a content-authoring typo like -2) was\n\t\t# previously silently treated as round-robin with no signal to the\n\t\t# author that something is off. Warn on that undocumented case, but\n\t\t# still resolve via round-robin (least-surprising fallback), matching\n\t\t# the positive-index path's warn-but-still-resolve pattern above.\n\t\tif entry.spawn_cell_index != -1:"
+        }
+      ],
+      "seconds": 8.9
+    },
+    {
+      "claim": "Round-robin spawning (spawn_cell_index = -1) is not permitted on a BOSS entry.",
+      "quote": "round-robin (`spawn_cell_index = -1`) is not permitted on a BOSS entry.",
+      "line": 75,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+      "run_id": "4b2e795f-d4f1-49b4-9166-ae7550229a80",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D2], [D3], and [D4] explicitly state that round-robin spawning (spawn_cell_index = -1) is forbidden for BOSS entries to ensure the spawn cell is resolvable at preview time. Implementation sources [C1] and [C4] support this by defining the resolution logic strictly for explicit indices >= 0 or exactly -1, while warning against other negative values. Source [C5] further states that -1 is reserved specifically for round-robin auto-assignment, reinforcing the design constraint.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 2 — Wave Composition Schema",
+          "start_line": 75,
+          "end_line": 77,
+          "text": "- **The final wave's BOSS entry must use an explicit `spawn_cell_index >= 0` — round-robin (`spawn_cell_index = -1`) is not permitted on a BOSS entry.** *(Added during `/design-review` 2026-07-14 re-review, resolves Tower GDD OQ-11's boss-lane telegraph requirement.)* **Rationale:** `wave_preview_available` (Rule 11) must surface the boss's spawn cell at INTERMISSION entry, before the wave's spawn sequencing has run — but round-robin resolution (Rule 15b) depends on `_round_robin_counter`, which only advances as entries actually fire during WAVE_ACTIVE (Rule 10f resets it to 0 at wave start). A round-robin boss entry has no resolvable spawn cell at preview time. Requiring an explicit index sidesteps building a parallel simulated-resolution algorithm. Enforced by the AC-19b CI validator (see Edge Cases and Acceptance Criteria).\n\n---"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+          "start_line": 110,
+          "end_line": 110,
+          "text": "**Boss-lane telegraph (`boss_spawn_cell`, added during `/design-review` 2026-07-14 re-review, resolves Tower GDD OQ-11):** `boss_spawn_cell: Vector2i` is **always present** in this payload (fixed-shape, matching this document's `monster_spawn_requested` convention — see AC-12). When the upcoming wave (`next_wave_number == wave_scripts.size()`, i.e. the final wave — the only wave that can contain a BOSS per Rule 6) is being previewed, `boss_spawn_cell` resolves to the actual grid cell the BOSS's `WaveSpawnEntry` will spawn at: `spawn_cells[entries[last].spawn_cell_index % spawn_cells.size()]` (post-EC-7-modulo-wrap value, not the raw authored index — consistent with the resolved value Rule 15b actually uses at spawn time). This is resolvable at preview time only because Rule 6 now forbids round-robin (`spawn_cell_index = -1`) on the BOSS entry. For every other wave, `boss_spawn_cell` is the sentinel `Vector2i(-1, -1)`. **No separate `has_boss` field is emitted** — the player (or Mission HUD) can already derive boss presence for the previewed wave from `next_wave_number == total_waves` (available via the prior `wave_started` event), and the `composition` array already contains th"
+        },
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Detailed Design > Core Rules > Group 3: Placement",
+          "start_line": 166,
+          "end_line": 166,
+          "text": "_spawn_cell` is **always present** in the payload — sentinel `Vector2i(-1, -1)` on non-boss waves, never conditionally absent. **No separate `has_boss` field exists** — Wave Manager's own review found it redundant: boss presence for the previewed wave is already derivable from `next_wave_number == total_waves`, and is already present in the payload's existing `composition` array via the boss's `monster_id`; a second boolean would be a second, desync-prone source of truth for the same fact. **Cross-doc requirement:** this is a Wave Manager GDD change (`wave_preview_available` payload extension, Rule 11) and a Mission HUD display requirement, not something Tower System implements directly — Tower System does not consume `wave_preview_available` (the HUD does), same as the existing wave-preview mandate above. **This field is content-authoring-dependent**: Wave Manager's Rule 6 now requires the final wave's BOSS entry to use an explicit `spawn_cell_index` (round-robin forbidden) so `boss_spawn_cell` is resolvable at preview time — Tower System has no dependency on this constraint beyond consuming its result."
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Acceptance Criteria > Edge Case Handling",
+          "start_line": 568,
+          "end_line": 570,
+          "text": "- **Final wave constraints**: The final wave contains `entries.size() >= 2` AND all entries at indices `[0 .. N-2]` (every entry except the last) are **not** BOSS-tier — AND the last entry is exactly one BOSS-tier entry (same tier-resolution method). A single-entry final wave containing only a BOSS fails this check. **AND the final wave's BOSS entry (last entry) has `spawn_cell_index >= 0`** — hard CI failure if `spawn_cell_index == -1` *(added during `/design-review` 2026-07-14 re-review, enforces Rule 6's boss-lane-telegraph constraint — a round-robin BOSS spawn cell cannot be resolved at `wave_preview_available` preview time)*.\n- **BOSS-at-non-last in any wave**: For every wave at any index, no entry at position `[0 .. entries.size()-2]` (any non-last position) may be BOSS-tier (hard CI failure). This closes the gap that EC-10's DEBUG-only runtime assert cannot catch in release builds.\n- No individual wave's total `pre_delay` sum exceeds `wave_time_budget`"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _preview_boss_spawn_cell",
+          "start_line": 479,
+          "end_line": 495,
+          "text": "## Mission HUD ADR-0031 (Story 006, closes tower.md's OQ-11): read-only\n## preview of the BOSS-tier entry's spawn cell for wave_number, so it can be\n## carried in wave_preview_available BEFORE that wave actually spawns.\n## Deliberately does NOT call _resolve_spawn_cell() / touch the real\n## _round_robin_counter — that field is wave-scoped mutable state consumed\n## during actual spawning (_run_spawn_sequence()), and calling it here would\n## desync the real spawn resolution from what was previewed. Instead\n## simulates round-robin locally with its own counter, mirroring\n## _resolve_spawn_cell()'s exact resolution rules (explicit spawn_cell_index\n## >= 0, or round-robin for -1) without any shared mutable state.\n## Returns Vector2i(-1,-1) if the wave has no BOSS-tier entry, spawn cells\n## are empty, or wave_number has no known composition yet.\nfunc _preview_boss_spawn_cell(wave_number: int) -> Vector2i:\n\tvar entries: Array = []\n\tif _wave_config != null and wave_number >= 1 and wave_number <= _wave_config.wave_scripts.size():\n\t\tentries = (_wave_config.wave_scripts[wave_number - 1] as WaveScript).entries\n\telif _wave_composition_by_number.has(wave_number):"
+        },
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _resolve_spawn_cell",
+          "start_line": 535,
+          "end_line": 552,
+          "text": "func _resolve_spawn_cell(entry: WaveSpawnEntry) -> Vector2i:\n\tif _spawn_cells.is_empty():\n\t\tpush_error(\"WaveManager: _resolve_spawn_cell() called with empty _spawn_cells — should have been caught by Story 006's mission_launched guard.\")\n\t\treturn Vector2i(-1, -1)\n\tif entry.spawn_cell_index >= 0:\n\t\tvar index: int = entry.spawn_cell_index\n\t\tif index >= _spawn_cells.size():\n\t\t\tpush_warning(\"WaveManager: spawn_cell_index [%d] out of range — wrapping to %d.\" % [index, index % _spawn_cells.size()])\n\t\treturn _spawn_cells[index % _spawn_cells.size()]\n\telse:\n\t\t# Code review fix (Story 007): Rule 15b only defines behavior for\n\t\t# spawn_cell_index >= 0 (positive index) or exactly -1 (round-robin) —\n\t\t# any other negative value (e.g. a content-authoring typo like -2) was\n\t\t# previously silently treated as round-robin with no signal to the\n\t\t# author that something is off. Warn on that undocumented case, but\n\t\t# still resolve via round-robin (least-surprising fallback), matching\n\t\t# the positive-index path's warn-but-still-resolve pattern above.\n\t\tif entry.spawn_cell_index != -1:"
+        }
+      ],
+      "seconds": 9.5
+    },
+    {
+      "claim": "The Wave Manager logs a content warning if the number of wave_scripts is greater than 0 and less than 5.",
+      "quote": "If `wave_scripts.size() > 0` and `wave_scripts.size() < 5`, logs a content warning: \"WaveConfig has [N] wave_scripts — below the 5-wave minimum. is_penultimate_wave flag semantics may not behave as designed.\"",
+      "line": 93,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+      "run_id": "42da7de5-858c-4db1-9d53-2269f9ab0b8d",
+      "status": "completed",
+      "verdict": "insufficient_evidence",
+      "explanation": "Design source [D2] explicitly states that if `wave_scripts.size()` is greater than 0 and less than 5, the system logs a content warning regarding the wave count being below the minimum. No implementation sources were provided to verify if this specific warning logic is executed in code.",
+      "downgrade_reason": "no_decisive_stance",
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+          "start_line": 90,
+          "end_line": 93,
+          "text": "| `MISSION_COMPLETE` | Final wave cleared | None | None |\n   | `DEFEAT` | `hero_died` received | None | None |\n\n8. On `mission_launched`: Wave Manager transitions `IDLE → SCOUT`. Reads `WaveConfig` from the mission resource. Reads `difficulty_tier: int` from the mission launch data. Reads SPAWN cells via `Grid.get_spawn_cells()`. Resets `_wave_index = 0`, `_round_robin_counter = 0`. If `wave_scripts.size() > 0` and `wave_scripts.size() < 5`, logs a content warning: `\"WaveConfig has [N] wave_scripts — below the 5-wave minimum. is_penultimate_wave flag semantics may not behave as designed.\"` Mission continues; this surfaces authoring errors without blocking runtime."
+        }
+      ],
+      "implementation_evidence": [],
+      "seconds": 5.2
+    },
+    {
+      "claim": "The Wave Manager resets `_wave_index` to 0 on mission launch.",
+      "quote": "Resets `_wave_index = 0`, `_round_robin_counter = 0`.",
+      "line": 93,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+      "run_id": "345e849e-acad-4e4a-8983-770c72ff6b56",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1] and [D2] explicitly state that `_wave_index` is reset to 0 during mission launch or restart. Implementation source [C4] supports this by showing the call to `_reset_all_state()` within `_on_mission_launched`, which is the function responsible for re-arming wave state upon launch.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+          "start_line": 90,
+          "end_line": 93,
+          "text": "| `MISSION_COMPLETE` | Final wave cleared | None | None |\n   | `DEFEAT` | `hero_died` received | None | None |\n\n8. On `mission_launched`: Wave Manager transitions `IDLE → SCOUT`. Reads `WaveConfig` from the mission resource. Reads `difficulty_tier: int` from the mission launch data. Reads SPAWN cells via `Grid.get_spawn_cells()`. Resets `_wave_index = 0`, `_round_robin_counter = 0`. If `wave_scripts.size() > 0` and `wave_scripts.size() < 5`, logs a content warning: `\"WaveConfig has [N] wave_scripts — below the 5-wave minimum. is_penultimate_wave flag semantics may not behave as designed.\"` Mission continues; this surfaces authoring errors without blocking runtime."
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Edge Cases > EC-9 — Mission restart (loss → restart) with Wave Manager in non-IDLE state",
+          "start_line": 352,
+          "end_line": 358,
+          "text": "### EC-9 — Mission restart (loss → restart) with Wave Manager in non-IDLE state\n\nIf the player restarts the mission from the DEFEAT or MISSION_COMPLETE screen, the Wave Manager must return to IDLE before receiving the new `mission_launched` event. All internal state is reset: `_phase_locked = false`, all timers stopped, all spawn sequencing cancelled, `_wave_index = 0`, `_round_robin_counter = 0`, `_enemies_alive = 0`, `_all_spawns_fired = false`, `_wave_clear_fired = false`, `_templates_ready = false`, `_rebuild_pending_gate = false`. The new `WaveConfig` is loaded fresh on the subsequent `mission_launched`. No stale state from the previous run persists.\n\n**Critical**: `_templates_ready` must be reset to `false`. If stale `true` from the prior mission persists, the wave-1 pathfinding gate (Rule 22) is bypassed on the new mission — a player pressing Ready at t=0 of SCOUT on mission 2 can enter WAVE_ACTIVE before Pathfinding has rebuilt templates for the (potentially different) map layout.\n\n---"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > declarations: Phase, scout_duration_sec, pre_wave_duration_sec, intermission_duration_sec, watchdog_stall_sec, watchdog_force_sec, _phase, _phase_locked, _wave_index, _enemies_alive, _all_spawns_fired, _templates_ready, _spawn_active, _rebuild_pending_gate, _spawn_cell, _wave_spawn_ent",
+          "start_line": 161,
+          "end_line": 180,
+          "text": "## The mission's WaveConfig, loaded fresh at every mission_launched via\n## _load_wave_config(). null until the first mission_launched fires (or in\n## tests that only exercise functions unrelated to mission_launched).\nvar _wave_config: WaveConfig = null\n\n## SPAWN cells read once per mission_launched via _grid.get_spawn_cells()\n## (ADR-0012's documented direct-Grid-read exception to EventBus-only\n## cross-system comms). Round-robin *consumption* of this array (assigning\n## _spawn_cells[i % n] to each spawn entry) is Story 007's job — this story\n## only reads and stores it, plus guards on it being non-empty (AC-36).\nvar _spawn_cells: Array[Vector2i] = []\n\n## Rule 8 (Story 006): round-robin spawn-cell index — reset every mission and\n## every WAVE_ACTIVE entry per ADR-0012's private-state list. This story only\n## declares and resets the counter; Story 007 owns actually consuming it.\nvar _round_robin_counter: int = 0\n\n## Sourced fresh from mission_launched's 3rd argument on every mission launch\n## (see \"difficulty_tier sourcing\" in story-006-waveconfig-resource-loading.md)\n## — deliberately NOT part of _reset_all_state()'s field list, since it is"
+        },
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _on_mission_launched",
+          "start_line": 811,
+          "end_line": 829,
+          "text": "_reset_all_state()\n\t_difficulty_tier = difficulty_tier\n\t_current_mission_id = mission_id  # ADR-0036: needed by tarot_wave_config_override's content-error log format\n\t_wave_config = _load_wave_config(mission_id)\n\t# Code review fix (Story 006): _default_load_wave_config() establishes a\n\t# \"never return null\" contract, but _wave_config_loader is an injectable\n\t# Callable seam explicitly designed for override — a future non-conforming\n\t# override returning null would otherwise crash on the wave_scripts.is_empty()\n\t# check below. Defensive fallback matches _default_load_wave_config()'s own\n\t# empty-WaveConfig contract exactly, so AC-19's guard below still handles it.\n\tif _wave_config == null:\n\t\tpush_error(\"WaveManager: _wave_config_loader returned null for mission '%s' — using an empty fallback (0 wave_scripts).\" % mission_id)\n\t\t_wave_config = WaveConfig.new()\n\t_spawn_cells = _grid.get_spawn_cells()\n\tif _spawn_cells.is_empty():\n\t\tpush_error(\"WaveManager: 0 spawn cells — cannot spawn any monsters. Triggering MISSION_COMPLETE immediately.\")\n\t\t_transition_to(Phase.MISSION_COMPLETE)  # AC-36 — bypasses SCOUT entirely\n\t\treturn\n\tif _wave_config.wave_scripts.is_empty():"
+        }
+      ],
+      "seconds": 7.5,
+      "review": {
+        "verdict_correct": true
+      }
+    },
+    {
+      "claim": "The Wave Manager emits a WavePreviewEvent Resource immediately upon SCOUT entry.",
+      "quote": "**Wave 1 preview on SCOUT entry:** Immediately on SCOUT entry, Wave Manager emits `wave_preview_available(next_wave_number: 1, composition: Array[WaveCompositionEntry], boss_spawn_cell: Vector2i)` (as a `WavePreviewEvent` Resource",
+      "line": 95,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+      "run_id": "518a8f98-aadd-4232-bd36-a0851528ad55",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design sources [D1], [D4], and [D5] explicitly state that the Wave Manager emits a preview event immediately upon SCOUT entry to provide Wave 1 composition. Implementation source [C2] confirms this behavior in code comments, noting the signal is emitted 'once at SCOUT entry for wave 1'. Source [C1] defines the `wave_preview_available` signal signature used for this emission.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Detailed Design > Core Rules > Group 3: Placement",
+          "start_line": 162,
+          "end_line": 162,
+          "text": "**Scout Phase information layer:** When the mission enters `SCOUT` phase, the Wave Manager emits a `wave_preview_available` event delivering **Wave 1 composition** (monster types, counts, tier) to the Mission HUD. This data is the **intended information baseline for Scout Phase placement decisions** — the player builds against a known threat profile, not a blank slate. The Tower System does not own or produce this data; it is surfaced via Mission HUD and the `wave_preview_available` event (see Wave Manager GDD)."
+        },
+        {
+          "path": "design/gdd/tower.md",
+          "section": "Tower System > Dependencies",
+          "start_line": 793,
+          "end_line": 793,
+          "text": "| **Wave Manager** | Upstream dependency | Tower System subscribes to `wave_started`, `wave_completed`, `mission_phase_changed` (all Wave Manager–owned events). Additionally, the Wave Manager must emit `wave_preview_available` on **both** `SCOUT` phase entry (Wave 1 preview) and `INTERMISSION` phase entry (upcoming wave preview — showing the next wave, not the just-completed wave), always including a `boss_spawn_cell: Vector2i` field (sentinel `Vector2i(-1,-1)` on non-boss waves, resolved cell on the boss wave — see Rule 8's Boss-lane telegraph). Tower System does not directly consume `wave_preview_available` — the HUD does — but the authorship fantasy for Intermission decisions, and specifically the legibility of a T4 boss-lane investment (OQ-11), is gated on this mandate. | **Resolved 2026-07-15** — `design/gdd/wave-manager.md` Rule 11 now emits `boss_spawn_cell: Vector2i` on `wave_preview_available` (Rule 6 additionally requires boss entries to use an explicit `spawn_cell_index`, no round-robin, so the field is resolvable at preview time; AC-42 added). Mission HUD GDD still needs display logic for the boss telegraph — not yet closable end-to-end. |"
+        },
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+          "start_line": 95,
+          "end_line": 95,
+          "text": "**Wave 1 preview on SCOUT entry:** Immediately on SCOUT entry, Wave Manager emits `wave_preview_available(next_wave_number: 1, composition: Array[WaveCompositionEntry], boss_spawn_cell: Vector2i)` (as a `WavePreviewEvent` Resource — see Rule 11's payload note; **corrected 2026-07-15, `/review-all-gdds`** — this was still stated as `Array[Dictionary]` after `event-bus.md` promoted it to `WaveCompositionEntry`/`WavePreviewEvent` Resource subclasses on 2026-07-15) using the same payload format as Rule 11 (one dict per unique `monster_id` with `count: int`; `boss_spawn_cell` per the Boss-lane telegraph note below Rule 11 — relevant only for the rare case of a 1-wave mission where wave 1 is also the final/boss wave, sentinel `Vector2i(-1,-1)` otherwise). This gives the player full wave 1 composition during tower placement — closing the \"forewarning, not surprise\" gap that would otherwise leave wave 1 as the only unpreviewed wave. **If `wave_scripts` is empty, skip this emit** (EC-6 handles the empty case). The Mission HUD must display this preview in the SCOUT phase HUD. *(Corrected 2026-07-15d — `/review-all-gdds` 6th pass: this previously said \"same composition display it shows du"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/foundation/event_bus/event_bus.gd",
+          "section": "EventBus > declarations: mission_phase_changed, wave_started, wave_completed, wave_countdown_warning, phase_timer_tick, monster_spawn_requested, wave_preview_available, wave_stalled, player_ready, game_paused, game_unpaused, scene_transition_started, scene_transition_completed, hero_auto_attacked, h",
+          "start_line": 47,
+          "end_line": 71,
+          "text": "# Wave Manager\n# =============================================================================\n\n## Any SCOUT / WAVE_ACTIVE / INTERMISSION / MISSION_COMPLETE / DEFEAT transition.\n## Key subscribers: all mission-active systems, Save & Persistence, Audio.\nsignal mission_phase_changed(previous_phase: String, new_phase: String, timestamp: float)\n\n## Wave timer expires and first monster spawns.\n## Key subscribers: Monster, Hero, Tower, Mission HUD.\nsignal wave_started(wave_number: int, total_waves: int, wave_difficulty: float)\n\n## All wave enemies are dead or boss is killed.\n## was_boss_breached: true only when the wave-clear cause was a BOSS breach\n## (Story 003 territory, epic-04-wave-manager) — every clear path this\n## codebase currently implements (standard clear, watchdog force-clear)\n## emits false (Story 002).\n## Key subscribers: Monster, Resource Economy, Mission HUD.\nsignal wave_completed(wave_number: int, enemies_remaining: int, was_boss_breached: bool)\n\n## 10 seconds before wave launch.\n## Key subscribers: Mission HUD, Audio.\nsignal wave_countdown_warning(seconds_remaining: int)\n\n## Every second during Scout Phase and Intermission.\n## Key subscribers: Mission HUD."
+        },
+        {
+          "path": "src/foundation/event_bus/event_bus.gd",
+          "section": "EventBus > declarations: mission_phase_changed, wave_started, wave_completed, wave_countdown_warning, phase_timer_tick, monster_spawn_requested, wave_preview_available, wave_stalled, player_ready, game_paused, game_unpaused, scene_transition_started, scene_transition_completed, hero_auto_attacked, h",
+          "start_line": 68,
+          "end_line": 87,
+          "text": "signal wave_countdown_warning(seconds_remaining: int)\n\n## Every second during Scout Phase and Intermission.\n## Key subscribers: Mission HUD.\nsignal phase_timer_tick(phase: String, seconds_remaining: float)\n\n## Per spawn entry during WAVE_ACTIVE, after each pre_delay elapses. Resource payload (5 fields).\n## wave_reward_scalar is consumed by Resource Economy only — Monster System must not apply to stats.\n## Key subscribers: Monster System.\nsignal monster_spawn_requested(payload: MonsterSpawnRequest)\n\n## Immediately on INTERMISSION entry (non-final wave), and once at SCOUT\n## entry for wave 1. Delivers upcoming wave composition.\n## boss_spawn_cell (Mission HUD ADR-0031, Story 006): Vector2i(-1,-1) if the\n## previewed wave has no BOSS-tier entry, otherwise the cell that entry will\n## resolve to when it actually spawns — closes tower.md's OQ-11 (boss-lane\n## telegraph). Added when this signal's real shipped payload was found to be\n## missing the field the GDD/tower.md had already assumed existed.\n## Key subscribers: Mission HUD.\nsignal wave_preview_available(next_wave_number: int, composition: Array, boss_spawn_cell: Vector2i)"
+        }
+      ],
+      "seconds": 9.3
+    },
+    {
+      "claim": "If wave_scripts is empty, the Wave Manager skips emitting the preview.",
+      "quote": "**If `wave_scripts` is empty, skip this emit** (EC-6 handles the empty case).",
+      "line": 95,
+      "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+      "run_id": "532d8e7a-225d-4411-bfcf-8c3a65309362",
+      "status": "completed",
+      "verdict": "consistent",
+      "explanation": "Design source [D5] explicitly states that if `wave_scripts` is empty, the Wave Manager should 'skip this emit' regarding the preview. Implementation source [C3] supports this by showing code logic where an empty `_wave_config.wave_scripts` triggers a transition directly to `MISSION_COMPLETE`, effectively bypassing the SCOUT phase where the preview would normally be emitted.",
+      "downgrade_reason": null,
+      "design_evidence": [
+        {
+          "path": "design/gdd/wave-manager.md",
+          "section": "Wave Manager > Detailed Design > Core Rules > Group 3 — Phase Lifecycle",
+          "start_line": 95,
+          "end_line": 95,
+          "text": "**Wave 1 preview on SCOUT entry:** Immediately on SCOUT entry, Wave Manager emits `wave_preview_available(next_wave_number: 1, composition: Array[WaveCompositionEntry], boss_spawn_cell: Vector2i)` (as a `WavePreviewEvent` Resource — see Rule 11's payload note; **corrected 2026-07-15, `/review-all-gdds`** — this was still stated as `Array[Dictionary]` after `event-bus.md` promoted it to `WaveCompositionEntry`/`WavePreviewEvent` Resource subclasses on 2026-07-15) using the same payload format as Rule 11 (one dict per unique `monster_id` with `count: int`; `boss_spawn_cell` per the Boss-lane telegraph note below Rule 11 — relevant only for the rare case of a 1-wave mission where wave 1 is also the final/boss wave, sentinel `Vector2i(-1,-1)` otherwise). This gives the player full wave 1 composition during tower placement — closing the \"forewarning, not surprise\" gap that would otherwise leave wave 1 as the only unpreviewed wave. **If `wave_scripts` is empty, skip this emit** (EC-6 handles the empty case). The Mission HUD must display this preview in the SCOUT phase HUD. *(Corrected 2026-07-15d — `/review-all-gdds` 6th pass: this previously said \"same composition display it shows du"
+        }
+      ],
+      "implementation_evidence": [
+        {
+          "path": "src/gameplay/wave_manager.gd",
+          "section": "WaveManager > _on_mission_launched",
+          "start_line": 827,
+          "end_line": 844,
+          "text": "_transition_to(Phase.MISSION_COMPLETE)  # AC-36 — bypasses SCOUT entirely\n\t\treturn\n\tif _wave_config.wave_scripts.is_empty():\n\t\tpush_error(\"WaveManager: WaveConfig has 0 wave_scripts — mission has no waves. Triggering MISSION_COMPLETE immediately.\")\n\t\t_transition_to(Phase.MISSION_COMPLETE)  # AC-19 — bypasses SCOUT entirely\n\t\treturn\n\t_wave_scripts_count = _wave_config.wave_scripts.size()\n\t_validate_wave_time_budgets()  # AC-41 — logs only, never aborts\n\t# Do NOT duplicate the [0.10, 0.25] bounds check inline here — Story 004\n\t# already implemented this exact validation as _validate_difficulty_growth_rate(),\n\t# reading the WaveManager-level `difficulty_growth_rate` field (idempotent,\n\t# no state mutation, safe to call at any FSM phase). Assign the loaded\n\t# WaveConfig's value into that existing field, then call the existing\n\t# function, so Story 004's 5 validation tests actually cover the real\n\t# production path instead of exercising a function that never gets called.\n\tdifficulty_growth_rate = _wave_config.difficulty_growth_rate\n\t_validate_difficulty_growth_rate()\n\t_transition_to(Phase.SCOUT)"
+        }
+      ],
+      "seconds": 7.6
+    }
+  ],
+  "project": "sanctuary"
+}

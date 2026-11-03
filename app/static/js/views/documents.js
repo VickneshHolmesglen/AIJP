@@ -2,7 +2,7 @@ import { api } from "../api.js";
 import { clear, h, rise } from "../dom.js";
 import { basename, bytes, dirname, shortDate } from "../format.js";
 
-const ALLOWED = new Set(["pdf", "txt", "md", "py", "gd", "json", "yaml", "yml"]);
+const ALLOWED = new Set(["pdf", "txt", "md", "py", "gd", "json", "yaml", "yml", "tres"]);
 const ACCEPT = [...ALLOWED].map((e) => `.${e}`).join(",");
 // Directories that are never worth indexing when a whole project folder is chosen.
 const JUNK = /(^|\/)(\.[^/]+|node_modules|__pycache__|venv|dist|build|target)\//;

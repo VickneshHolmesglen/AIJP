@@ -84,10 +84,19 @@ def test_ollama_llm_returns_content_and_sends_system_prompt() -> None:
     assert seen["options"]["temperature"] == 0
 
 
+def test_ollama_llm_error_carries_ollamas_short_reason() -> None:
+    reason = "prediction aborted, token repeat limit reached"
+    llm = _llm(lambda request: httpx.Response(500, json={"error": reason + "x" * 500}))
+    with pytest.raises(LLMError) as exc:
+        llm.generate("s", "u")
+    assert reason in str(exc.value) and len(str(exc.value)) < 300
+
+
 @pytest.mark.parametrize(
     "response",
     [
         httpx.Response(500),
+        httpx.Response(500, text="<html>not json</html>"),
         httpx.Response(200, json={"nope": 1}),
         httpx.Response(200, json={"message": {"content": "  "}}),
     ],
